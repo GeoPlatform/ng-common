@@ -1,0 +1,88 @@
+/* ------------------------------------------------- *\
+    Notifications
+    ...
+\* ------------------------------------------------- */
+
+.notifications {
+    position: fixed;
+    z-index: 9999;
+    bottom: 1rem;
+    right:  1rem;
+    max-height: 50%;
+    overflow: auto;
+}
+
+
+.notification {
+
+    position: fixed;
+    z-index: 3000;
+    width: 30rem;
+    padding: 1rem 2rem;
+    opacity: 1;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 2px;
+
+    .notifications & {
+        position: relative;
+        margin-top: 0.5rem;
+        width: 20rem;
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        max-height: 10rem;
+        overflow: auto;
+    }
+    
+    &.ng-hide-add, 
+    &.ng-hide-remove {
+        transition: all linear .5s;
+    }
+
+    &.ng-hide {
+        opacity: 0;
+    } 
+
+    .notification__actions {
+        text-align: right;
+
+        button, button.btn-link,
+        a, a.btn-link {
+            color: inherit;
+        }
+    }
+}
+
+.notification--br {
+    bottom: 2rem;
+    right:  1rem;
+}
+.notification--tc {
+    top: 5rem;
+    left: 50%;
+    margin-left: -15rem;
+}
+.notification--tr {
+    top: 5rem;
+    right: 1rem;
+}
+.notification--default {
+    border-color:   @color-gray-md;
+    background:     @color-gray-lt;
+    color:          @color-gray-dk;
+}
+.notification--success {
+    border-color:   darken(@color-success, 20%);
+    background:     lighten(@color-success, 30%); //CEE6CE
+    color:          darken(@color-success, 20%);
+}
+.notification--error {
+    border-color:   darken(@color-danger, 20%);
+    background:     lighten(@color-danger, 30%);
+    color:          darken(@color-danger, 20%);
+}
+.notification--info {
+    border-color:   darken(@color-info, 20%);
+    background:     lighten(@color-info, 30%);
+    color:          darken(@color-info, 20%);
+}
