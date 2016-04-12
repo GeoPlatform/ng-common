@@ -40,7 +40,7 @@
      */
     .service('AuthenticationService', ['$q', '$http', 'GPConfig', function($q, $http, Config) {
 
-        // console.log("IDSP Base Url: " + Config.idspBaseUrl);
+        // console.log("IDSP Base Url: " + Config.idspUrl);
 
         function User(opts) {
             for(var p in opts) {
@@ -156,7 +156,7 @@
                     return _user;
                 }
                 var current = window.location.href;
-                window.location = Config.idspBaseUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+                window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
             };
 
             /**
@@ -168,7 +168,7 @@
                     return _user;
                 }
                 var current = window.location.href;
-                window.location = Config.idspBaseUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+                window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
             };
 
 
@@ -190,7 +190,7 @@
                 self.status = STATUS.INITIALIZING;
 
                 //check authentication on load
-                $http.get(Config.idspBaseUrl + '/authenticategeosaml.php?as=geosaml')
+                $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml')
                 .success(function(response) {
                     
                     if(response.Success) {  //authenticated
@@ -288,8 +288,8 @@
                 if($scope.minimal === 'true') $scope.minimal = true;
                 if($scope.minimal !== true) $scope.minimal = false;
 
-                $scope.idpUrl = Config.idmBaseUrl;
-                // console.log("IDM Base Url: " + Config.idmBaseUrl);
+                $scope.idpUrl = Config.idmUrl;
+                // console.log("IDM Base Url: " + Config.idmUrl);
                 
                 AuthenticationService.getUser(function(user) {
                     $timeout(function() {
@@ -357,7 +357,7 @@
             ].join(' '),
             controller: function($scope, $element) {
                 
-                $scope.idpUrl = Config.idmBaseUrl;
+                $scope.idpUrl = Config.idmUrl;
 
                 AuthenticationService.getUser(function(user) {
                     $timeout(function() {

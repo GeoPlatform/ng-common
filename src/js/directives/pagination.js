@@ -2,7 +2,7 @@
     
     "use strict";
 
-    angular.module('gp-common').directive('gp-Pagination', function() {
+    angular.module('gp-common').directive('gpPagination', function() {
 
 
         function Controller($scope, $element) {
@@ -125,8 +125,8 @@
                 '      <a>{{total}} results</a>',
                 '    </li>',
                 '    <li class="pagination-control hidden-xs" ng-if="total>0">',
-                '      <span dropdown>',
-                '        <a href="" dropdown-toggle title="Change the number of results returned">',
+                '      <span uib-dropdown>',
+                '        <a href="" uib-dropdown-toggle title="Change the number of results returned">',
                 '          {{pageSize}} per page <span class="caret"></span>',
                 '        </a>',
                 '        <ul class="dropdown-menu" role="menu">',

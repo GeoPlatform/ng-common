@@ -94,7 +94,7 @@
      *
      * Usage: 
      *
-     *  <ul role="menu" class="nav-menu" gp-header-menu>
+     *  <ul role="menu" class="header__menu" gp-header-menu>
      *      <li><a href="#/maps">Maps</a></li>
      *      <li><a href="#/galleries">Galleries</a></li>
      *      ...
@@ -103,11 +103,21 @@
      */
     .directive('gpHeaderMenu', ['$location', function($location) {
 
+        //default href for "home" link in header__menu
+        //uses 'goHome' to avoid angular-route issues with empty hash not 
+        // triggering a page reload. Relies upon the "otherwise" condition
+        // being configured inside a routeProvider within the application.
+        var homeLink = '#/goHome';
+
         function update($element) {
+
             var path = $location.path();
+            
             if(path === '/' || path === '/#' || path === '/#/')
-                path = 'maps';
-            if(path[0] === '/') path = path.substring(1);
+                path = homeLink;
+
+            if(path[0] === '/') 
+                path = path.substring(1);
 
             var menu = $element;
             menu.find('li.active').removeClass('active');
@@ -123,9 +133,16 @@
         }
 
         return {
-            scope: {},
+            scope: {
+                homeHref: '@'
+            },
             restrict: "A",
-            controller: function($rootScope, $scope, $element) {},
+            
+            controller: function($rootScope, $scope, $element) {
+                if($scope.homeHref)
+                    homeLink = $scope.homeHref;
+            },
+
             link: function($scope, $element) {
 
                 update($element);
