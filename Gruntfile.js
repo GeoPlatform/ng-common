@@ -20,11 +20,11 @@ module.exports = function(grunt) {
             //Module src
             js: {                
                 src: [
-                    'src/lang.js',           //language extensions
-                    'src/module.js',         //common module
-                    'src/auth.js',           //authentication support
-                    'src/directives/*.js',   //common directives
-                    'src/filters/*.js'       //common filters
+                    'src/js/lang.js',           //language extensions
+                    'src/js/module.js',         //common module
+                    'src/js/auth.js',           //authentication support
+                    'src/js/directives/*.js',   //common directives
+                    'src/js/filters/*.js'       //common filters
                 ],
                 dest: 'dist/<%= pkg.name %>.js'
             },
@@ -62,7 +62,7 @@ module.exports = function(grunt) {
                 ]
             }
         }
-        
+
     });
 
     

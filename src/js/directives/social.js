@@ -18,7 +18,7 @@
                 timeout = setTimeout(later, wait);
                 if (callNow) func.apply(context, args);
             };
-        };
+        }
 
         return {
             link: function(scope, element, attr) {

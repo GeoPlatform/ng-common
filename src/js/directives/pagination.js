@@ -7,6 +7,13 @@
 
         function Controller($scope, $element) {
 
+            if(!$scope.pageSizeOpts) {
+                $scope.pageSizeOpts = [5, 10, 25, 50];
+            }
+            if($scope.pageSize && $scope.pageSizeOpts.indexOf($scope.pageSize*1)<0) {
+                $scope.pageSizeOpts.push($scope.pageSize*1).sort();
+            }
+
             $scope.previous = function() { 
                 $scope.start = Math.max(0, $scope.start*1 - $scope.pageSize*1);
                 $scope.$emit('pagination:change', $scope.start, $scope.pageSize);
@@ -104,7 +111,8 @@
             scope: {
                 start: '=',
                 pageSize: '=',
-                total: '='
+                total: '=',
+                pageSizeOpts: '='
             },
             replace: true,
             template: [
@@ -113,10 +121,9 @@
                 '    <div class="col-xs-6">{{total}} results</div>',
                 '    <div class="col-xs-6">',
                 '      <select class="form-control" ng-model="pageSize">',
-                '        <option value="5">5 per page</option>',
-                '        <option value="10">10 per page</option>',
-                '        <option value="25">25 per page</option>',
-                '        <option value="50">50 per page</option>',
+                '        <option ng-repeat="ps in pageSizeOpts" ',
+                '          ng-selected="pageSize===ps" ',
+                '          value="{{ps}}">{{ps}} per page</option>',
                 '      </select>',
                 '    </div>',
                 '  </div>',
@@ -130,10 +137,7 @@
                 '          {{pageSize}} per page <span class="caret"></span>',
                 '        </a>',
                 '        <ul class="dropdown-menu" role="menu">',
-                '          <li><a href="" ng-click="setPageSize(5)">5 per page</a></li>',
-                '          <li><a href="" ng-click="setPageSize(10)">10 per page</a></li>',
-                '          <li><a href="" ng-click="setPageSize(25)">25 per page</a></li>',
-                '          <li><a href="" ng-click="setPageSize(50)">50 per page</a></li>',
+                '          <li ng-repeat="ps in pageSizeOpts"><a ng-click="setPageSize(ps)">{{ps}} per page</a></li>',
                 '        </ul>',
                 '      </span>',
                 '    </li>',

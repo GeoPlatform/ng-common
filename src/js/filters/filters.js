@@ -24,7 +24,14 @@
             //TODO support irregular words like "foot" -> "feet"
             // and words that need duplicate letters: "quiz" -> "quizzes"
         };
+    })    
+
+    .filter('capitalize', function() {
+        return function(text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
     })
+
 
     .filter('facets', function() {
 
@@ -42,6 +49,8 @@
             if(input.length) return input.join(delimiter || ', ');
             else             return emptyValue || '';
         };
-    });
+    })
+
+    ;
 
 })(jQuery, angular);
