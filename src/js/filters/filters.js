@@ -51,6 +51,30 @@
         };
     })
 
+
+
+    .filter('defaultValue', function() {
+        return function(text, defVal) {
+            if(typeof(text)==='undefined' || !text.length) return defVal;
+            return text;
+        };
+    })
+
+    .filter('count', function() {
+        return function(input) {
+            if(typeof(input) !== 'undefined') {
+                if(typeof(input.push) === 'function') 
+                    return input.length;
+                if(typeof(input) === 'object') {
+                    if(typeof(Object.keys) !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+
     ;
 
 })(jQuery, angular);
