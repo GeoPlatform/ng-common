@@ -760,7 +760,7 @@
         //uses 'goHome' to avoid angular-route issues with empty hash not 
         // triggering a page reload. Relies upon the "otherwise" condition
         // being configured inside a routeProvider within the application.
-        var homeLink = '#/goHome';
+        var homeLink = 'goHome';
 
         function update($element) {
 
