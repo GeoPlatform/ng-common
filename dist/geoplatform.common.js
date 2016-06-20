@@ -774,8 +774,20 @@
 
             var menu = $element;
             menu.find('li.active').removeClass('active');
-            menu.find('li > a[href="#/' + path + '"]').parent().addClass('active');
-
+            
+            var link = menu.find('li > a[href="#/' + path + '"]');
+            if(link.length) {
+                //check if link is within a dropdown in the header menu
+                var dd = link.closest('.dropdown-menu');
+                if(dd.length) {
+                    //find next ancestor that is a list element and mark it active
+                    dd.closest('li').addClass('active');
+                } else {
+                    //not in a dropdown, mark this link active
+                    link.parent().addClass('active');
+                }
+            }
+            
             menu.find('li > a').each(function(i,a) {
                 var $a = $(a), href = $a.attr('href');
                 if(!href) return;
