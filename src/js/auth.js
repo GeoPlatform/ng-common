@@ -85,7 +85,19 @@
         var _user = null;
 
         if(isDEV()) {
-            _user = TEST_USER.clone();
+
+            /*
+             * If testing when user is not logged in, inject the following before
+             *  this ng-common library is included in the page:
+             * 
+             *     GeoPlatform.TEST_NO_AUTH = true;
+             * 
+             *  but be sure to inject AFTER the GeoPlatform configuration object exists!
+             */
+            if(GeoPlatform && GeoPlatform.TEST_NO_AUTH)
+                _user = null;
+            else 
+                _user = TEST_USER.clone();
         }    
 
         var STATUS = {
@@ -236,31 +248,22 @@
             scope: {
                 minimal: '@'
             },
+            replace: true,
             template: [
 
-                //not logged in
-                '<div class="btn-account btn-group" ng-if="!user" >' + 
-                '    <a class="hidden-xs btn btn-link" ng-click="login()">' + 
-                '        <span class="glyphicon glyphicon-user"></span>' + 
-                '        Sign In' + 
-                '    </a>' + 
-                '    <button type="button" class="visible-xs btn btn-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false">' + 
-                '        <span class="glyphicon glyphicon-user"></span>' + 
-                '        <span class="caret"></span>' + 
-                '    </button>' + 
-                '    <ul class="dropdown-menu dropdown-menu-right" role="menu">' + 
-                '        <li><a ng-click="login()">Sign In</a></li>' + 
-                '    </ul>' + 
-                '</div>' + 
+                '<div class="btn-account btn-group">' + 
 
+                //not logged in
+                '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' + 
+                
                 //logged in
-                '<div class="btn-account btn-group" ng-if="user" >' + 
-                '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" aria-expanded="false">' + 
+                '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + 
+                '   aria-expanded="false" ng-if="user">' + 
                 '     <span class="glyphicon glyphicon-user"></span> ' +
                 '     <span class="hidden-xs">{{::user.name}}</span> ' + 
                 '     <span class="caret"></span>' + 
                 '  </button>' + 
-                '  <ul class="dropdown-menu dropdown-menu-right" role="menu">' + 
+                '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + 
                 '    <li class="account-details">' + 
                 '      <div class="media">' + 
                 '        <div class="media-left">' + 
@@ -281,6 +284,8 @@
                 '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + 
                 '    <li><a href ng-click="logout()">Sign Out</a></li>' + 
                 '  </ul>' + 
+
+
                 '</div>'
             ].join(' '),
             controller: function($scope, $element) {
