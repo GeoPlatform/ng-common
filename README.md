@@ -9,10 +9,14 @@ __Add as a Bower dependency__
 ```json 
 "dependencies": {
     
-    "gp.common": "GeoPlatform/ng-common#<BRANCH_OR_VERSION>",
+    "gp.common": "GeoPlatform/ng-common#<version number>",
 
 }
 ```
+
+Note: _version number_ should be that of the current release version of this project.  It is advised to __never__ reference any non-release tag or branch, such as "develop" or "master", when adding this project as a dependency in another.
+
+
 
 __Include the JavaScript__
 
