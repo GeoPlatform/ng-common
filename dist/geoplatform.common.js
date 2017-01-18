@@ -328,8 +328,8 @@
                 self.status = STATUS.INITIALIZING;
 
                 //check authentication on load
-                $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml')
-                .success(function(response) {
+                var promise = $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml');
+                promise.then(function(response) {
                     
                     if(response.Success) {  //authenticated
                         _user = new User({
@@ -345,7 +345,7 @@
 
                     deferred.resolve(_user);
                     
-                }).error(function(data, status, headers) {   // failed check
+                }, function(data, status, headers) {   // failed check
                     console.log("Authentication call failed");
                     deferred.reject(data);
                 });
