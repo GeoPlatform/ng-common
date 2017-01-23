@@ -260,7 +260,7 @@
             this.getUser = function(callback) {
                 if(callback && typeof(callback) === 'function') {
 
-                    console.log("Getting user info: " + self.status + ", " + JSON.stringify(_user||{empty:true}));
+                    // console.log("Getting user info: " + self.status + ", " + JSON.stringify(_user||{empty:true}));
 
                     //if already checked, return what we have
                     if(self.status === STATUS.INITIALIZED) 
@@ -321,7 +321,7 @@
                 var deferred = $q.defer();
                 
                 if(isDEV()) {
-                    console.log("Dev env");
+                    // console.log("Dev env");
                     setTimeout(function() {
                         deferred.resolve(_user);
                     }, 1000);
@@ -336,7 +336,7 @@
                     
                     var content = response.data ? response.data : response;
 
-                    console.log("Received from SP: " + content);
+                    // console.log("Received from SP: " + content);
                     if(typeof(content) === 'string') {
                         try {
                             content = JSON.parse(content);
@@ -354,20 +354,20 @@
                             name     : content.first_name[0] + ' ' + content.last_name[0],
                             org      : content.organization[0]
                         });
-                        console.log("Authenticated user: " + JSON.stringify(_user));
+                        // console.log("Authenticated user: " + JSON.stringify(_user));
 
                     } else {
                         _user = null;       //not authenticated
-                        console.log("Failed to authenticate user");
+                        // console.log("Failed to authenticate user");
                     }
 
                     deferred.resolve(_user);
                     
                 }, function(data, status, headers) {   // failed check
-                    console.log("Authentication call failed");
+                    // console.log("Authentication call failed");
                     deferred.reject(data);
                 }).catch(function(e) {
-                    console.log("Authentication check caught an error: " + e.message);
+                    // console.log("Authentication check caught an error: " + e.message);
                     deferred.reject(e.message);
                 });
 
@@ -382,7 +382,7 @@
             }, function(err) {
                 self.status = STATUS.INITIALIZED;
             }).catch(function(e) {
-                console.log("Initial auth check errored");
+                // console.log("Initial auth check errored");
             });
 
         };
