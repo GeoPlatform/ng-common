@@ -334,6 +334,7 @@
                 var promise = $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml');
                 promise.then(function(response) {
                     
+                    console.log("Received from SP: " + JSON.stringify(response));
                     if(response.Success) {  //authenticated
                         _user = new User({
                             id       : response.name[0],
