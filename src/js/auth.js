@@ -208,14 +208,25 @@
                 var promise = $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml');
                 promise.then(function(response) {
                     
-                    console.log("Received from SP: " + JSON.stringify(response));
-                    if(response.Success) {  //authenticated
+                    var content = response.data ? response.data : response;
+
+                    console.log("Received from SP: " + content);
+                    if(typeof(content) === 'string') {
+                        try {
+                            content = JSON.parse(content);
+                        } catch(e) {
+                            deferred.reject(e);
+                            return;
+                        }
+                    }
+                    
+                    if(content.Success) {  //authenticated
                         _user = new User({
-                            id       : response.name[0],
-                            username : response.name[0],
-                            email    : response.mail[0],
-                            name     : response.first_name[0] + ' ' + response.last_name[0],
-                            org      : response.organization[0]
+                            id       : content.name[0],
+                            username : content.name[0],
+                            email    : content.mail[0],
+                            name     : content.first_name[0] + ' ' + content.last_name[0],
+                            org      : content.organization[0]
                         });
                         console.log("Authenticated user: " + JSON.stringify(_user));
 
