@@ -165,7 +165,7 @@
              * Redirects the page to the login site
              */
             this.login = function () {
-                if(isDEV()) {
+                if(isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
                     _user = TEST_USER.clone();
                     return _user;
                 }
