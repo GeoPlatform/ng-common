@@ -133,7 +133,11 @@
                 if(this.tracking.hasOwnProperty(event)) {
                     let tracks = this.tracking[event];
                     if(tracks && tracks.length) {
-                        angular.forEach(tracks, (id) => { this.end(event, id); });
+                        /* jshint ignore:start */
+                        angular.forEach(tracks, (id) => { 
+                            this.end(event, id); 
+                        });
+                        /* jshint ignore:end */
                     }        
                 }
             }
