@@ -40,17 +40,22 @@
 
 
 
+    /**
+     *
+     */
     class SocketService {
 
-        constructor (id, url) {
+        constructor (url, options) {
+            'ngInject';
+
+            angular.copy(options||{}, this);
 
             this.socket = null;
-            this.socketId = id;
 
             //list of ids of things being tracked, such as 
             // items edited, in order to send messages
             // about the things lifecycle
-            this.tracking = [];
+            this.tracking = {};
 
             //events supported.
             // Note that lifecycles can be added by using the 
@@ -60,7 +65,8 @@
                 CREATED: 'created',
                 UPDATED: 'updated',
                 DELETED: 'deleted',
-                EDITING: 'editing'
+                EDITING: 'editing',
+                STATUS: 'status'
             };
 
             if(typeof(io) === 'undefined') {
@@ -73,10 +79,26 @@
                 return;
             }
 
+            //make connection
             this.socket = io.connect(url);
+
+            //listen for the init event indicating connection has been made
+            // and to get the socket's id from the server
+            this.socket.on("init", (evt) => { 
+                console.log("Socket has id " + evt.id);
+                this.socketId = evt.id; 
+            });
+
+            //if unable to connect
+            this.socket.on('error', () => {
+                console.log("Unable to connect to " + url + " with websockets");
+            });
 
         }
 
+        /**
+         *
+         */
         getId () { return this.socketId; }
             
         /**
@@ -85,36 +107,19 @@
          * @return {Function} to remove the listener
          */
         on (eventName, callback) {
-            if(!this.socket) return;
-            
-            // let handle =  () => {  
-            //     var args = arguments;
-            //     $rootScope.$apply( () => {
-            //         callback.apply(this.socket, args);
-            //     });
-            // };
-
+            if(!this.socket) return function() { };
+            //add the listener to the socket
             this.socket.on(eventName, callback);
-
+            //return an 'off' function to remove the listener
             return () => { this.socket.off(eventName, callback); };
         }
 
         /**
          *
          */
-        emit (eventName, data /*, callback*/) {
+        emit ( eventName, data, callback ) {
             if(!this.socket) return;
-
-            this.socket.emit(eventName, data, () => {
-                /*
-                var args = arguments;
-                $rootScope.$apply(() => {
-                    if (callback) {
-                        callback.apply(this.socket, args);
-                    }
-                });
-                */
-            });  
+            this.socket.emit(eventName, data, callback);
         }
 
         /**
@@ -122,9 +127,15 @@
          */
         close () { 
 
-            //if this app was editing an obj, notify listeners that it is no longer
-            if(this.tracking && this.tracking.length) {
-                angular.forEach(this.tracking, (id) => { this.end(id); });
+            //if this app was tracking an obj, 
+            // notify listeners that it is no longer
+            for(var event in this.tracking) {
+                if(this.tracking.hasOwnProperty(event)) {
+                    let tracks = this.tracking[event];
+                    if(tracks && tracks.length) {
+                        angular.forEach(tracks, (id) => { this.end(event, id); });
+                    }        
+                }
             }
 
             if(this.socket) {
@@ -140,12 +151,16 @@
          * @param {string} objId - identifier of the item being tracked
          */
         begin (event, objId) {
-            this.tracking.push(objId);
-            this.emit('client', {
-                event: event + '_start',
-                clientId: this.socketId,
-                data: { id: objId }
+
+            this.tracking[event] = this.tracking[event] || [];
+            this.tracking[event].push(objId);
+
+            let room = objId + "_" + event.toLowerCase();
+
+            this.join(room, () => {
+                this.socket.emit(event, room, this.socketId, true);
             });
+
         }
 
         /**
@@ -153,16 +168,38 @@
          * @param {string} objId - identifier of the item being tracked
          */
         end (event, objId) {
-            let idx = this.tracking.indexOf(objId);
-            if(idx >= 0) {
-                this.tracking.splice(idx, 1);
 
-                this.emit('client', {
-                    event: event + '_end',
-                    clientId: this.socketId,
-                    data: { id: objId }
-                });
-            }
+            this.tracking[event] = this.tracking[event] || [];
+            if(!this.tracking[event].length) return;    //empty, ignore request
+
+            let idx = this.tracking[event].indexOf(objId);
+            if(idx < 0) //not found, ignore request
+                
+            //remove tracker
+            this.tracking[event].splice(idx, 1);
+
+            //send event to server about client stopping it's tracking
+            let room = objId + "_" + event.toLowerCase();
+            this.socket.emit(event, room, this.socketId, false, () => {
+                this.leave(room);
+            });
+
+        }
+
+        /**
+         *
+         */
+        join (objId, callback) {
+            console.log("Joining " + objId);
+            this.emit('join', objId, callback);
+        }
+
+        /**
+         *
+         */
+        leave (objId, callback) {
+            console.log("Leaving " + objId);
+            this.emit('leave', objId, callback);
         }
 
     }
@@ -183,12 +220,12 @@
 
         var cache = {};
 
-
         //disconnect whenever the app is closed
         var onClose = (e) => { 
-            for(var url in cache) {
-                if(cache.hasOwnProperty(url)) {
-                    cache[url].close();
+            for(var key in cache) {
+                if(cache.hasOwnProperty(key)) {
+                    cache[key].close();
+                    cache[key] = null;
                 }
             }
             cache = null;
@@ -212,11 +249,59 @@
 
         return function(url) {
 
-            if(!url) return null;
-            if(cache[url]) return cache[url];
+            // if(!url) return null;
+            // if(cache[url]) return cache[url];
 
-            let service = new SocketService(UUID(), url);
-            cache[url] = service;
+            let cacheRef = UUID();
+            let service = new SocketService(url, $rootScope, {cacheRef: cacheRef});
+            let closeDelegate = service.close;
+            service.close = function() {
+                let id = service.cacheRef;
+                closeDelegate.call(service); //have service disconnect and clean up itself
+                //then clean up cache reference
+                delete cache[id];
+            };
+
+            let onDelegate = service.on;
+            service.on = function(event, callback) {
+
+                if(typeof(callback) === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    let handle = function() {
+                        var args = arguments;
+                        $rootScope.$apply(function() { 
+                            callback.apply(service.socket, args); 
+                        });
+                    };
+                    return onDelegate.call(service, event, handle);
+
+                } else {
+                    return onDelegate.call(service, event);
+                }
+            };
+
+            let emitDelegate = service.emit;
+            service.emit = function(event, data, callback) {
+                
+                if(typeof(callback) === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    let handle = function() {
+                        var args = arguments;
+                        $rootScope.$apply(function() { 
+                            callback.apply(service.socket, args); 
+                        });
+                    };
+                    emitDelegate.call(service, event, data, handle);
+
+                } else {
+                    emitDelegate.call(service, event, data);
+                }
+            };
+
+            // cache[url] = service;
+            cache[cacheRef] = service;
             return service;
 
         };
