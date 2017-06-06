@@ -48,7 +48,9 @@
         constructor (url, options) {
             'ngInject';
 
-            angular.copy(options||{}, this);
+            let opts = typeof(options) === 'object' ? options : {};
+            for(var key in opts)
+                this[key] = opts[key];
 
             this.socket = null;
 
@@ -85,7 +87,6 @@
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", (evt) => { 
-                console.log("Socket has id " + evt.id);
                 this.socketId = evt.id; 
             });
 
@@ -194,7 +195,6 @@
          *
          */
         join (objId, callback) {
-            console.log("Joining " + objId);
             this.emit('join', objId, callback);
         }
 
@@ -202,7 +202,6 @@
          *
          */
         leave (objId, callback) {
-            console.log("Leaving " + objId);
             this.emit('leave', objId, callback);
         }
 
