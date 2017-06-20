@@ -166,10 +166,10 @@
              * Redirects the page to the login site
              */
             this.login = function () {
-                if(isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
-                    _user = TEST_USER.clone();
-                    return _user;
-                }
+                // if(isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
+                //     _user = TEST_USER.clone();
+                //     return _user;
+                // }
                 //use current window
                 var current = window.location.href;
                 //client id, returnto url
@@ -178,7 +178,7 @@
                 window.location = Config.IDP_BASE_URL + '/auth/authorize?client_id=' +
                   Config.APP_ID + '&response_type=' +
                   Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(current);
-                  
+
                 //use modal pop-up
             };
 
