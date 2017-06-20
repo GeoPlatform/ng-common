@@ -1912,6 +1912,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 dirty(0, resetStart);
             },
 
+            reset: function reset() {
+                _options = {
+                    start: 0,
+                    size: _pageSizeBase[0],
+                    total: 0,
+                    sort: "modified,desc", order: "asc",
+                    facets: {}
+                };
+
+                _facets = [];
+                _selectedFacets = [];
+                _results = [];
+                _isLoading = false;
+                _selected = [];
+
+                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+                _dirtyPromise = null;
+            },
+
             destroy: function destroy() {
                 if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
             }
