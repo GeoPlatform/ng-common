@@ -28,6 +28,16 @@
             }
         };
     }
+    if(typeof(Array.prototype.indexOfObj) === 'undefined') {
+        Array.prototype.indexOfObj = function(obj, comparatorFn) {
+            let arr = this, len = arr.length;
+            for(let i=0; i<len; ++i) {
+                if(comparatorFn(obj, arr[i]))
+                    return i;
+            }
+            return -1;
+        };
+    }
     if(typeof(String.prototype.startsWith) === 'undefined') {
         String.prototype.startsWith = function(value) {
             var str = this;

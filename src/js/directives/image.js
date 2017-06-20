@@ -4,13 +4,10 @@
 
     angular.module("gp-common").directive('onImgFail', function() {
         return {
-            scope: {
-                onImgFail: '@'
-            },
-            link: function($scope, $element) {
+            link: function($scope, $element, $attrs) {
                 var jqEl = jQuery($element);
                 jqEl.on('error', function() {
-                    jqEl.attr('src', $scope.onImgFail);
+                    jqEl.attr('src', $attrs.onImgFail);
                 });
             }
         };
