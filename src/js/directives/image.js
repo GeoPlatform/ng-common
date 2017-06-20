@@ -1,4 +1,4 @@
-(function(angular) {
+(function(angular, Constants) {
     
     "use strict";
 
@@ -55,4 +55,4 @@
 
     }]);
 
-}) (angular);
+}) (angular, GeoPlatform);
