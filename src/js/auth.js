@@ -3,12 +3,12 @@
     'use strict';
 
     //flag on whether we're in dev env
-    function isDEV() {
-        return "localhost" === window.location.hostname ||
-            ~window.location.hostname.indexOf("192.168")||
-            ~window.location.hostname.indexOf("localhost")||
-            ~window.location.hostname.indexOf("10.0");
-    }
+    // function isDEV() {
+    //     return "localhost" === window.location.hostname ||
+    //         ~window.location.hostname.indexOf("192.168")||
+    //         ~window.location.hostname.indexOf("localhost")||
+    //         ~window.location.hostname.indexOf("10.0");
+    // }
 
 
 
@@ -75,13 +75,13 @@
             };
         }
 
-        var TEST_USER = new User({
-            id: "tester",
-            username: "tester",
-            email: "tester@geoplatform.us",
-            name: "John Test",
-            org: "Other"
-        });
+        // var TEST_USER = new User({
+        //     id: "tester",
+        //     username: "tester",
+        //     email: "tester@geoplatform.us",
+        //     name: "John Test",
+        //     org: "Other"
+        // });
 
         var _user = null;
 
