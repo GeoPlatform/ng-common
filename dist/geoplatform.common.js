@@ -285,7 +285,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
-(function (angular) {
+(function (angular, Constants) {
 
     "use strict";
 
@@ -330,7 +330,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
         };
     }]);
-})(angular);
+})(angular, GeoPlatform);
 (function (angular) {
 
     "use strict";
