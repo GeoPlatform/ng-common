@@ -34,6 +34,7 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         .pipe(concat(pkg.name + '.js'))
         .pipe(babel({presets: ["es2015"]}))
         .pipe(ngAnnotate()).on('error', notify.onError("Error: <%= error.message %>"))
+        .pipe(gulp.dest('dist/'))
         .pipe(uglify()).on('error', notify.onError("Error: <%= error.message %>"))
         .pipe(rename({extname: ".min.js"}))
         .pipe(srcmaps.write('./'))
