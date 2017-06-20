@@ -649,6 +649,27 @@
                 dirty(0, resetStart);
             },
 
+            
+            reset: function() {
+                _options = {
+                    start: 0, 
+                    size: _pageSizeBase[0], 
+                    total: 0,
+                    sort: "modified,desc", order: "asc", 
+                    facets: {}
+                };
+
+                _facets = [];
+                _selectedFacets = [];                
+                _results = [];
+                _isLoading = false;
+                _selected = [];
+
+                if(_dirtyPromise) 
+                    $timeout.cancel(_dirtyPromise);
+                _dirtyPromise = null;                
+            },
+
             destroy: function() {
                 if(_dirtyPromise) 
                     $timeout.cancel(_dirtyPromise);
