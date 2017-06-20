@@ -177,7 +177,7 @@
                 //can return to jwt processing url
                 window.location = Config.IDP_BASE_URL + '/auth/authorize?client_id=' +
                   Config.APP_ID + '&response_type=' +
-                  Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(current);
+                  Config.RESPONSE_TYPE + '&redirect_uri=' + encodeURIComponent(current);
 
                 //use modal pop-up
             };
