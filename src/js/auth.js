@@ -85,21 +85,21 @@
 
         var _user = null;
 
-        if(isDEV()) {
-
-            /*
-             * If testing when user is not logged in, inject the following before
-             *  this ng-common library is included in the page:
-             *
-             *     GeoPlatform.TEST_NO_AUTH = true;
-             *
-             *  but be sure to inject AFTER the GeoPlatform configuration object exists!
-             */
-            if(GeoPlatform && GeoPlatform.TEST_NO_AUTH)
-                _user = null;
-            else
-                _user = TEST_USER.clone();
-        }
+        // if(isDEV()) {
+        //
+        //     /*
+        //      * If testing when user is not logged in, inject the following before
+        //      *  this ng-common library is included in the page:
+        //      *
+        //      *     GeoPlatform.TEST_NO_AUTH = true;
+        //      *
+        //      *  but be sure to inject AFTER the GeoPlatform configuration object exists!
+        //      */
+        //     if(GeoPlatform && GeoPlatform.TEST_NO_AUTH)
+        //         _user = null;
+        //     else
+        //         _user = TEST_USER.clone();
+        // }
 
         var STATUS = {
             NONE: 0,
@@ -186,10 +186,10 @@
              * Redirects the page to the logout site
              */
             this.logout = function() {
-                if(isDEV()) {
-                    _user = null;
-                    return _user;
-                }
+                // if(isDEV()) {
+                //     _user = null;
+                //     return _user;
+                // }
                 var current = window.location.href;
                 window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
             };
@@ -203,13 +203,13 @@
 
                 var deferred = $q.defer();
 
-                if(isDEV()) {
-                    // console.log("Dev env");
-                    setTimeout(function() {
-                        deferred.resolve(_user);
-                    }, 1000);
-                    return deferred.promise;
-                }
+                // if(isDEV()) {
+                //     // console.log("Dev env");
+                //     setTimeout(function() {
+                //         deferred.resolve(_user);
+                //     }, 1000);
+                //     return deferred.promise;
+                // }
 
                 self.status = STATUS.INITIALIZING;
 
