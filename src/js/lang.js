@@ -30,7 +30,12 @@
     }
     if(typeof(Array.prototype.indexOfObj) === 'undefined') {
         Array.prototype.indexOfObj = function(obj, comparatorFn) {
+            
             let arr = this, len = arr.length;
+            
+            if(typeof(comparatorFn) !== 'function')
+                comparatorFn = (a,b) => { return a===b; };
+
             for(let i=0; i<len; ++i) {
                 if(comparatorFn(obj, arr[i]))
                     return i;

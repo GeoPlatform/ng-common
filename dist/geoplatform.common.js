@@ -1,8 +1,8 @@
 "use strict";
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -435,117 +435,125 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     "use strict";
 
-    angular.module('gp-common').directive('gpPagination', function () {
+    /*
+     * Usage:
+     * 
+     *      <gp-pagination service="$ctrl.service" event-key="maps"></gp-pagination>
+     *
+     *  Expects a BrowseObjService instance for the 'service' binding, or at least 
+     * one that provides the same pagination and options API.
+     */
 
-        Controller.$inject = ["$scope", "$element"];
-        function Controller($scope, $element) {
+    /**
+     * Requires a service which exposes the following methods:
+     *   - getPagination() : returns {object} defining 'start', 'size', and 'total'
+     *   - start(int) : takes {int} defining which index to start requesting
+     *   - size(int) : takes {int} defining how many items to request
+     *   - on(eventName, listener) : must support event "gp:browse:<key>:pagination" where 'key' may be 'objects' or a custom key
+     */
 
-            if (!$scope.pageSizeOpts) {
-                $scope.pageSizeOpts = [5, 10, 25, 50];
-            }
-            if ($scope.pageSize && $scope.pageSizeOpts.indexOf($scope.pageSize * 1) < 0) {
-                $scope.pageSizeOpts.push($scope.pageSize * 1).sort();
-            }
+    var PaginationController = function () {
+        function PaginationController() {
+            'ngInject';
 
-            $scope.previous = function () {
-                $scope.start = Math.max(0, $scope.start * 1 - $scope.pageSize * 1);
-                $scope.$emit('pagination:change', $scope.start, $scope.pageSize);
-            };
-
-            $scope.next = function () {
-                $scope.start = Math.min($scope.total, $scope.start * 1 + $scope.pageSize * 1);
-                $scope.$emit('pagination:change', $scope.start, $scope.pageSize);
-            };
-
-            $scope.setPage = function (arg) {
-                var page = arg * 1;
-                $scope.start = (page - 1) * ($scope.pageSize * 1);
-                $scope.$emit('pagination:change', $scope.start, $scope.pageSize);
-            };
-
-            $scope.setPageSize = function (size) {
-
-                $scope.pageSize = size * 1;
-                //move start cursor to beginning of new current page based on updated pagesize
-                var currentPage = Math.floor($scope.start / $scope.pageSize) + 1;
-                $scope.setPage(currentPage);
-            };
-
-            $scope.hasPrevious = function () {
-                return $scope.start > 0;
-            };
-
-            $scope.hasNext = function () {
-                return $scope.start + $scope.pageSize < $scope.total;
-            };
-
-            function update() {
-
-                var ostart = $scope.start * 1;
-                var osize = $scope.pageSize * 1;
-
-                //calculate # of pages needed
-                var pages = [];
-                var maxPagination = 5;
-                var maxPaginationMidPoint = maxPagination % 2 !== 0 ? Math.ceil(maxPagination / 2) : maxPagination / 2;
-
-                if ($scope.total > 0) {
-
-                    var numPages = Math.ceil($scope.total / osize);
-                    var currentPage = Math.floor(ostart / osize);
-
-                    var s = 0;
-                    if (currentPage > Math.floor(maxPagination / 2)) {
-                        //  1 2 '3' 4 5
-                        s = currentPage - Math.floor(maxPagination / 2); //  1 2 3 '4' 5
-                        //  ...
-                    } else {
-                        //  '1' 2 3 4 5
-                        s = 0; //  1 '2' 3 4 5
-                        //  ...
-                    }
-
-                    var e = Math.min(s + maxPagination, numPages);
-
-                    //ensure at least <maxPagination> # of page links are shown
-                    // even if near the end of the results
-                    while (s > 0 && e - s < maxPagination) {
-                        s -= 1;
-                    }for (var i = s; i < e; ++i) {
-                        var pageStart = i * osize + 1;
-                        var pageEnd = Math.min(pageStart + osize - 1, $scope.total);
-                        pages.push({
-                            label: i + 1 + "",
-                            tooltip: "Results " + pageStart + "-" + pageEnd
-                        });
-                        if (i == currentPage) pages[pages.length - 1].active = true;
-                    }
-                }
-
-                $scope.pages = pages;
-            }
-
-            update();
-
-            $scope.$watch('start', update);
-            $scope.$watch('pageSize', update);
-            $scope.$watch('total', update);
+            _classCallCheck(this, PaginationController);
         }
 
-        return {
+        _createClass(PaginationController, [{
+            key: "$onInit",
+            value: function $onInit() {
+                var _this = this;
 
-            scope: {
-                start: '=',
-                pageSize: '=',
-                total: '=',
-                pageSizeOpts: '='
-            },
-            replace: true,
-            template: ['<div>', '  <div class="visible-xs row">', '    <div class="col-xs-6">{{total}} results</div>', '    <div class="col-xs-6">', '      <select class="form-control" ng-model="pageSize">', '        <option ng-repeat="ps in pageSizeOpts" ', '          ng-selected="pageSize===ps" ', '          value="{{ps}}">{{ps}} per page</option>', '      </select>', '    </div>', '  </div>', '  <ul class="pagination">', '    <li class="info hidden-xs">', '      <a>{{total}} results</a>', '    </li>', '    <li class="pagination-control hidden-xs" ng-if="total>0">', '      <span uib-dropdown>', '        <a href="" uib-dropdown-toggle title="Change the number of results returned">', '          {{pageSize}} per page <span class="caret"></span>', '        </a>', '        <ul class="dropdown-menu" role="menu">', '          <li ng-repeat="ps in pageSizeOpts"><a ng-click="setPageSize(ps)">{{ps}} per page</a></li>', '        </ul>', '      </span>', '    </li>', '    <li class="separator hidden-xs"></li>', '    <li ng-if="hasPrevious()">', '      <a ng-click="previous()">', '        <span class="glyphicon glyphicon-backward"></span>', '      </a>', '    </li>', '    <li ng-repeat="page in pages" ng-class="{active:page.active,disabled:page.disabled}">', '      <a ng-click="setPage(page.label)" title="{{::page.tooltip}}">{{::page.label}}</a>', '    </li>', '    <li ng-if="hasNext()">', '      <a ng-click="next()">', '        <span class="glyphicon glyphicon-forward"></span>', '      </a>', '    </li>', '  </ul>', '</div>'].join(' '),
+                if (!this.service) return;
 
-            controller: Controller
+                this.options = this.service.getPagination();
 
-        };
+                var event = 'gp:browse:';
+                if (this.eventKey) event = 'gp:browse:' + this.eventKey + ":";else event = 'gp:browse:objects:';
+
+                this.listener = this.service.on(event + 'pagination', function () {
+                    _this.options = _this.service.getPagination();
+                });
+            }
+        }, {
+            key: "$onDestroy",
+            value: function $onDestroy() {
+
+                //remove listener from service if exists
+                if (this.listener) this.listener();
+
+                this.service = null;
+            }
+        }, {
+            key: "previous",
+            value: function previous() {
+                if (this.service && this.hasPrevious()) {
+                    this.service.start(Math.max(0, this.options.start * 1 - this.options.size * 1), true);
+                }
+            }
+        }, {
+            key: "next",
+            value: function next() {
+                if (this.service && this.hasNext()) {
+                    this.service.start(Math.min(this.options.total, this.options.start * 1 + this.options.size * 1), true);
+                }
+            }
+        }, {
+            key: "first",
+            value: function first() {
+                if (this.service && this.hasPrevious()) {
+                    this.service.start(0, true);
+                }
+            }
+        }, {
+            key: "last",
+            value: function last() {
+                if (this.service && this.hasNext()) {
+                    var lastPage = Math.floor(this.options.total / this.options.size);
+                    this.setPage(lastPage);
+                }
+            }
+        }, {
+            key: "setPage",
+            value: function setPage(arg) {
+                if (this.service) {
+                    var page = arg * 1;
+                    this.service.start(page * (this.options.size * 1), true);
+                }
+            }
+        }, {
+            key: "setPageSize",
+            value: function setPageSize(size) {
+                if (this.service) {
+                    this.service.size(size * 1, true);
+                }
+            }
+        }, {
+            key: "hasPrevious",
+            value: function hasPrevious() {
+                return this.options && this.options.start > 0;
+            }
+        }, {
+            key: "hasNext",
+            value: function hasNext() {
+                return this.options && this.options.start + this.options.size < this.options.total;
+            }
+        }]);
+
+        return PaginationController;
+    }();
+
+    angular.module('gp-common').component('gpPagination', {
+
+        bindings: {
+            service: '=',
+            eventKey: '@'
+        },
+
+        controller: PaginationController,
+
+        template: "\n            <div class=\"c-pagination\">\n                <div class=\"c-pagination__total\">{{$ctrl.options.total||0}} results</div>\n                <div class=\"c-pagination__page-size\">\n                    <span uib-dropdown>\n                        <a href=\"\" uib-dropdown-toggle title=\"Change the number of results returned\">\n                            {{$ctrl.options.size}} per page <span class=\"caret\"></span>\n                        </a>\n                        <ul class=\"dropdown-menu\" role=\"menu\">\n                            <li ng-repeat=\"size in $ctrl.options.sizeOptions track by $index\">\n                                <a ng-click=\"$ctrl.setPageSize(size)\">{{size}} per page</a>\n                            </li>\n                        </ul>\n                    </span>\n                </div>\n                <div class=\"c-pagination__pages\">\n                    <div class=\"c-pagination__button\" ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\">\n                        <a ng-click=\"$ctrl.first()\"><span class=\"glyphicon glyphicon-fast-backward\"></span></a>\n                    </div>\n                    <div class=\"c-pagination__button\" ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\">\n                        <a ng-click=\"$ctrl.previous()\"><span class=\"glyphicon glyphicon-backward\"></span></a>\n                    </div>\n                    <div class=\"c-pagination__page\">\n                        {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}\n                    </div>\n                    <div class=\"c-pagination__button\" ng-class=\"{'is-disabled':!$ctrl.hasNext()}\">\n                        <a ng-click=\"$ctrl.next()\"><span class=\"glyphicon glyphicon-forward\"></span></a>\n                    </div>\n                    <div class=\"c-pagination__button\" ng-class=\"{'is-disabled':!$ctrl.hasNext()}\">\n                        <a ng-click=\"$ctrl.last()\"><span class=\"glyphicon glyphicon-fast-forward\"></span></a>\n                    </div>\n                </div>\n            </div>\n        "
+
     });
 })(jQuery, angular);
 (function (jQuery, angular) {
@@ -1764,10 +1772,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * select all items in current page of results
              */
             selectAll: function selectAll() {
-                var _this = this;
+                var _this2 = this;
 
                 angular.forEach(_results, function (obj) {
-                    if (!_this.isSelected(obj.id)) _selected.unshift(obj);
+                    if (!_this2.isSelected(obj.id)) _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
             },
@@ -2011,7 +2019,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function SocketService(url, options) {
             'ngInject';
 
-            var _this2 = this;
+            var _this3 = this;
 
             _classCallCheck(this, SocketService);
 
@@ -2054,7 +2062,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", function (evt) {
-                _this2.socketId = evt.id;
+                _this3.socketId = evt.id;
             });
 
             //if unable to connect
@@ -2083,14 +2091,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "on",
             value: function on(eventName, callback) {
-                var _this3 = this;
+                var _this4 = this;
 
                 if (!this.socket) return function () {};
                 //add the listener to the socket
                 this.socket.on(eventName, callback);
                 //return an 'off' function to remove the listener
                 return function () {
-                    _this3.socket.off(eventName, callback);
+                    _this4.socket.off(eventName, callback);
                 };
             }
 
@@ -2112,7 +2120,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "close",
             value: function close() {
-                var _this4 = this;
+                var _this5 = this;
 
                 //if this app was tracking an obj, 
                 // notify listeners that it is no longer
@@ -2122,7 +2130,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         if (tracks && tracks.length) {
                             /* jshint ignore:start */
                             angular.forEach(tracks, function (id) {
-                                _this4.end(event, id);
+                                _this5.end(event, id);
                             });
                             /* jshint ignore:end */
                         }
@@ -2145,7 +2153,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "begin",
             value: function begin(event, objId) {
-                var _this5 = this;
+                var _this6 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 this.tracking[event].push(objId);
@@ -2153,7 +2161,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var room = objId + "_" + event.toLowerCase();
 
                 this.join(room, function () {
-                    _this5.socket.emit(event, room, _this5.socketId, true);
+                    _this6.socket.emit(event, room, _this6.socketId, true);
                 });
             }
 
@@ -2165,7 +2173,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "end",
             value: function end(event, objId) {
-                var _this6 = this;
+                var _this7 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 if (!this.tracking[event].length) return; //empty, ignore request
@@ -2179,7 +2187,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 //send event to server about client stopping it's tracking
                 var room = objId + "_" + event.toLowerCase();
                 this.socket.emit(event, room, this.socketId, false, function () {
-                    _this6.leave(room);
+                    _this7.leave(room);
                 });
             }
 
@@ -2703,8 +2711,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     }
     if (typeof Array.prototype.indexOfObj === 'undefined') {
         Array.prototype.indexOfObj = function (obj, comparatorFn) {
+
             var arr = this,
                 len = arr.length;
+
+            if (typeof comparatorFn !== 'function') comparatorFn = function comparatorFn(a, b) {
+                return a === b;
+            };
+
             for (var i = 0; i < len; ++i) {
                 if (comparatorFn(obj, arr[i])) return i;
             }
