@@ -1,0 +1,41 @@
+
+
+.gp-ui-card__body .text--supporting[card-details-carousel-activator] {
+    position: relative;
+    padding-left: 1.5em;
+    padding-right: 1.5em;
+}
+.gp-ui-card__details-activator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 0.25em;
+    color: @color-gray-lt;
+    &.disabled {
+        color: #efefef;
+    }
+}
+.gp-ui-card__details-activator--left {
+    .gp-ui-card__details-activator;
+    left: 0;
+    background: linear-gradient( to left, #fff, #f5f5f5);
+    &:not(.disabled):hover {
+        background: linear-gradient( to left, #fff, #efefef);
+    }
+    // &.disabled {
+    //     color: #efefef;
+    // }
+}
+.gp-ui-card__details-activator--right {
+    .gp-ui-card__details-activator;
+    right: 0;
+    background: linear-gradient( to right, #fff, #f5f5f5);
+    &:not(.disabled):hover {
+        background: linear-gradient( to right, #fff, #efefef);
+    }
+    // &.disabled {
+    //     color: #efefef;
+    // }
+}

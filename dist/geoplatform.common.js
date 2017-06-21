@@ -21,6 +21,60 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     // (using 'value' since config might change)
     .value('GPConfig', GeoPlatform);
 })(jQuery, angular);
+(function (angular) {
+
+    "use strict";
+
+    var ACTIVATORS_HTML = "\n            <div class=\"gp-ui-card__details-activator--left\" title=\"Show previous details\"\n                ng-class=\"{disabled:!hasPrevious()}\" ng-click=\"previousDetails()\">\n                <span class=\"glyphicon glyphicon-chevron-left\"></span>\n            </div>\n            <div class=\"gp-ui-card__details-activator--right\" title=\"Show next details\"\n                ng-class=\"{disabled:!hasNext()}\" ng-click=\"nextDetails()\">\n                <span class=\"glyphicon glyphicon-chevron-right\"></span>\n            </div>\n        ";
+
+    /*
+     * Appends carousel-like activators onto a card section
+     * Usage: 
+     *
+     *  <div class="text--supporting" card-details-carousel-activator>
+     *      <div class="gp-ui-card__details active" id="description">...</div>    
+     *      <div class="gp-ui-card__details" id="author">...</div>        
+     *  </div>
+     */
+    angular.module("gp-common").directive('cardDetailsCarouselActivator', function () {
+
+        return {
+
+            compile: function compile($element) {
+                $element.append(ACTIVATORS_HTML);
+            },
+
+            controller: ["$scope", "$element", function controller($scope, $element) {
+
+                $scope.hasPrevious = function () {
+                    var pane = $element.find('.gp-ui-card__details.active');
+                    return pane.prevAll('.gp-ui-card__details').length;
+                };
+
+                $scope.hasNext = function () {
+                    var pane = $element.find('.gp-ui-card__details.active');
+                    return pane.nextAll('.gp-ui-card__details').length;
+                };
+
+                $scope.previousDetails = function () {
+                    if (!$scope.hasPrevious()) return;
+                    var pane = $element.find('.gp-ui-card__details.active');
+                    pane.removeClass('active');
+                    pane = pane.prevAll('.gp-ui-card__details');
+                    pane.addClass('active');
+                };
+
+                $scope.nextDetails = function () {
+                    if (!$scope.hasNext()) return;
+                    var pane = $element.find('.gp-ui-card__details.active');
+                    pane.removeClass('active');
+                    pane = pane.nextAll('.gp-ui-card__details');
+                    pane.addClass('active');
+                };
+            }]
+        };
+    });
+})(angular);
 (function (jQuery, angular) {
 
     'use strict';
