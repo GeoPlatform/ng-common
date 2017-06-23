@@ -276,6 +276,7 @@
         return {
 
             events: {
+                LOADING:            eventKey + 'querying',
                 RESULTS:            eventKey + 'results',
                 PAGINATION:         eventKey + 'pagination',
                 SELECTED:           eventKey + 'selected',
