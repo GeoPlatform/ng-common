@@ -527,12 +527,27 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 if (map.$promise && !map.$resolved) {
 
                     map.$promise.then(function (m) {
-                        $element.attr('src', getUrl(m));
+                        if (typeof m.thumbnail === 'string') //old map model
+                            $element.attr('src', getUrl(m));else buildThumbnail(m); //open map model
                     }).catch(function (e) {
                         $element.attr('src', null);
                     });
                 } else {
                     $element.attr('src', getUrl(map));
+                }
+
+                function buildThumbnail(map) {
+                    if (!map.thumbnail) {
+                        $element.attr('src', null);
+                    } else if (map.thumbnail.contentData) {
+                        $element.attr('style', {
+                            width: (map.thumbnail.width || '32') + 'px',
+                            height: (map.thumbnail.height || '32') + 'px',
+                            background: 'url(data:' + (map.thumbnail.mediaType || 'image/png') + ';base64,' + map.thumbnail.contentData + ')'
+                        });
+                    } else if (map.thumbnail.url) {
+                        $element.attr('src', map.thumbnail.url);
+                    } else $element.attr('src', null);
                 }
 
                 function getUrl(map) {
