@@ -11,6 +11,7 @@
             link: function($scope, $element, $attrs) {
                 var jqEl = jQuery($element);
                 jqEl.on('error', function() {
+                    jqEl.off('error');
                     jqEl.attr('src', $attrs.onImgFail);
                 });
             }
@@ -40,7 +41,7 @@
                     .catch( (e) => { $element.attr('src', null); });
 
                 } else {
-                    if(typeof(m.thumbnail) === 'string')    //old map model
+                    if(typeof(map.thumbnail) === 'string')    //old map model
                         $element.attr('src', getUrl(map));
                     else 
                         buildThumbnail(map);
