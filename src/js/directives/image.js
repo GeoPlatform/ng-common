@@ -52,7 +52,7 @@
                         $element.attr('src', null);
 
                     } else if(map.thumbnail.contentData) {
-                        $element.attr('style', {
+                        $element.style({
                             width: (map.thumbnail.width||'32') + 'px',
                             height: (map.thumbnail.height||'32') + 'px',
                             background: 'url(data:' + 

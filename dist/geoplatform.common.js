@@ -542,7 +542,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     if (!map.thumbnail) {
                         $element.attr('src', null);
                     } else if (map.thumbnail.contentData) {
-                        $element.attr('style', {
+                        $element.style({
                             width: (map.thumbnail.width || '32') + 'px',
                             height: (map.thumbnail.height || '32') + 'px',
                             background: 'url(data:' + (map.thumbnail.mediaType || 'image/png') + ';base64,' + map.thumbnail.contentData + ')'
