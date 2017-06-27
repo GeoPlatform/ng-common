@@ -542,11 +542,16 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     if (!map.thumbnail) {
                         $element.attr('src', null);
                     } else if (map.thumbnail.contentData) {
-                        $element.style({
-                            width: (map.thumbnail.width || '32') + 'px',
-                            height: (map.thumbnail.height || '32') + 'px',
-                            background: 'url(data:' + (map.thumbnail.mediaType || 'image/png') + ';base64,' + map.thumbnail.contentData + ')'
-                        });
+
+                        var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (map.thumbnail.mediaType || 'image/png') + ';base64,' + map.thumbnail.contentData + ');';
+
+                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        // ignore thumbnail dimensions. Otherwise, use them
+                        if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
+                            style += 'width:' + (map.thumbnail.width || '32') + 'px;' + 'height:' + (map.thumbnail.height || '32') + 'px;';
+                        }
+
+                        $element.attr('style', style);
                     } else if (map.thumbnail.url) {
                         $element.attr('src', map.thumbnail.url);
                     } else $element.attr('src', null);
