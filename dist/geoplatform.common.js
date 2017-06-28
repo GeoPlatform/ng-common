@@ -1589,6 +1589,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             facets: {}
         };
 
+        //list of field names to request in response
+        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
+
         var _facets = [];
         var _selectedFacets = [];
 
@@ -1696,7 +1699,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             params.includeFacet = facets.join(',');
 
             //request fields
-            params.fields = FIELDS.join(',');
+            params.fields = _fields.join(',');
 
             svc.query(params).$promise.then(function (response) {
 
@@ -2061,6 +2064,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
 
                 _doUpdate(true);
+            },
+
+            /**
+             * @param {array[string]} fields - list of field names to request for each search result
+             */
+            setFields: function setFields(fields) {
+                if (fields && typeof fields.push !== 'undefined') _fields = fields;
             },
 
             /**
