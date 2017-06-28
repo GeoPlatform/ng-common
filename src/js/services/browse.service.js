@@ -109,6 +109,8 @@
         var _isLoading = false;
 
         var _selected = [];
+
+        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
         
 
         /**
@@ -474,8 +476,18 @@
                     
                     let obj = _results.find(finder);
                     if(obj) {
-                        _selected.unshift(obj);
-                        notify(eventKey + 'selected:added', obj);
+
+                        if(_onSelectFn) {
+                            _onSelectFn(id, function(err, item) {
+                                if(item) {
+                                    _selected.unshift(item);
+                                    notify(eventKey + 'selected:added', item);
+                                }
+                            });
+                        } else {
+                            _selected.unshift(obj);
+                            notify(eventKey + 'selected:added', obj);
+                        }
                     }
                     
                 }

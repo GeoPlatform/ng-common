@@ -1603,6 +1603,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         var _selected = [];
 
+        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
+
         /**
          *
          */
@@ -1991,8 +1993,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                     var obj = _results.find(finder);
                     if (obj) {
-                        _selected.unshift(obj);
-                        notify(eventKey + 'selected:added', obj);
+
+                        if (_onSelectFn) {
+                            _onSelectFn(id, function (err, item) {
+                                if (item) {
+                                    _selected.unshift(item);
+                                    notify(eventKey + 'selected:added', item);
+                                }
+                            });
+                        } else {
+                            _selected.unshift(obj);
+                            notify(eventKey + 'selected:added', obj);
+                        }
                     }
                 }
 
