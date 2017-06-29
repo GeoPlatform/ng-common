@@ -28,8 +28,13 @@
     "matchdep": "^0.3.0",
     "pre-commit": "^1.1.3"
   },
-  "pre-commit": [ "distro" ],
+  "pre-commit": [
+    "distro"
+  ],
   "scripts": {
     "distro": "grunt"
+  },
+  "dependencies": {
+    "del": "^3.0.0"
   }
 }

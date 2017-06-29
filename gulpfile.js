@@ -1,10 +1,11 @@
-var pkg         = require('./package.json'), 
+var pkg         = require('./package.json'),
     gulp        = require('gulp'),
     concat      = require('gulp-concat'),
     ngAnnotate  = require('gulp-ng-annotate'),
     uglify      = require('gulp-uglify'),
     rename      = require('gulp-rename'),
-    notify      = require('gulp-notify')
+    notify      = require('gulp-notify'),
+    del         = require('del'),
     srcmaps     = require('gulp-sourcemaps');
 
 require('gulp-help')(gulp, { description: 'Help listing.' });
@@ -21,6 +22,10 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         .pipe(srcmaps.write('./'))
         .pipe(gulp.dest('dist/'))
         .pipe(notify('Uglified JavaScript'));
+});
+
+gulp.task('clean', function() {
+  return del('dist');
 });
 
 gulp.task('less', 'Compile less into a single app.css.', function() {
