@@ -135,20 +135,28 @@
                     </span>
                 </div>
                 <div class="c-pagination__pages">
-                    <div class="c-pagination__button" ng-class="{'is-disabled':!$ctrl.hasPrevious()}">
-                        <a ng-click="$ctrl.first()"><span class="glyphicon glyphicon-fast-backward"></span></a>
+                    <div class="c-pagination__button" 
+                        ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
+                        ng-click="$ctrl.first()">
+                        <span class="glyphicon glyphicon-fast-backward"></span>
                     </div>
-                    <div class="c-pagination__button" ng-class="{'is-disabled':!$ctrl.hasPrevious()}">
-                        <a ng-click="$ctrl.previous()"><span class="glyphicon glyphicon-backward"></span></a>
+                    <div class="c-pagination__button" 
+                        ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
+                        ng-click="$ctrl.previous()">
+                        <span class="glyphicon glyphicon-backward"></span>
                     </div>
                     <div class="c-pagination__page">
                         {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}
                     </div>
-                    <div class="c-pagination__button" ng-class="{'is-disabled':!$ctrl.hasNext()}">
-                        <a ng-click="$ctrl.next()"><span class="glyphicon glyphicon-forward"></span></a>
+                    <div class="c-pagination__button" 
+                        ng-class="{'is-disabled':!$ctrl.hasNext()}"
+                        ng-click="$ctrl.next()">
+                        <span class="glyphicon glyphicon-forward"></span>
                     </div>
-                    <div class="c-pagination__button" ng-class="{'is-disabled':!$ctrl.hasNext()}">
-                        <a ng-click="$ctrl.last()"><span class="glyphicon glyphicon-fast-forward"></span></a>
+                    <div class="c-pagination__button" 
+                        ng-class="{'is-disabled':!$ctrl.hasNext()}"
+                        ng-click="$ctrl.last()">
+                        <span class="glyphicon glyphicon-fast-forward"></span>
                     </div>
                 </div>
             </div>
