@@ -61,7 +61,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     var pane = $element.find('.gp-ui-card__details.active');
                     pane.removeClass('active');
                     pane = pane.prevAll('.gp-ui-card__details');
-                    pane.addClass('active');
+                    if (pane.length) angular.element(pane[0]).addClass('active');
                 };
 
                 $scope.nextDetails = function () {
@@ -69,7 +69,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     var pane = $element.find('.gp-ui-card__details.active');
                     pane.removeClass('active');
                     pane = pane.nextAll('.gp-ui-card__details');
-                    pane.addClass('active');
+                    if (pane.length) angular.element(pane[0]).addClass('active');
                 };
             }]
         };
