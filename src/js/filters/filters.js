@@ -46,7 +46,8 @@
 
     .filter('joinBy', function () {
         return function (input,delimiter,emptyValue) {
-            if(input.length) return input.join(delimiter || ', ');
+            if(input && typeof(input.push) !== 'undefined' && input.length) 
+                return input.join(delimiter || ', ');
             else             return emptyValue || '';
         };
     })

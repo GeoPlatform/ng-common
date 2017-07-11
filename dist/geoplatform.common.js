@@ -1568,7 +1568,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     }).filter('joinBy', function () {
         return function (input, delimiter, emptyValue) {
-            if (input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
         };
     }).filter('defaultValue', function () {
         return function (text, defVal) {
