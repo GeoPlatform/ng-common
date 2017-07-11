@@ -75,6 +75,26 @@
         };
     })
 
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function() {
+        return function(str) {
+            if(!str || typeof(str) !== 'string' || str.length === 0) 
+                return str;
+            
+            var name = str;
+            
+            var idx = str.indexOf(":");
+            if(~idx) name = str.substring(idx+1);
+
+            if('VCard' === name) return 'Contact';
+            return name;
+            
+        };
+    })
+
     ;
 
 })(jQuery, angular);

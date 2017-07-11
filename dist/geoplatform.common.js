@@ -566,6 +566,42 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
             }
         };
+    }]).directive('itemThumbnail', ['$q', function ($q) {
+        return {
+            restrict: "E",
+            replace: true,
+            scope: {
+                item: '=',
+                fallback: '@'
+            },
+            template: "\n                <div ng-show=\"hasThumbnail\" class=\"media embed-responsive embed-responsive-16by9\">\n                    <img class=\"embed-responsive-item\" on-img-error=\"{{fallback||'/img/img-404.jpg'}}\">\n                </div>\n            ",
+            link: function link($scope, $element, $attrs) {
+
+                var item = $scope.item;
+                (item.$promise || $q.resolve(item)).then(function (obj) {
+
+                    var url = $scope.fallback;
+
+                    if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;else if (obj.thumbnail && obj.thumbnail.contentData) {
+
+                        var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
+
+                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        // ignore thumbnail dimensions. Otherwise, use them
+                        if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
+                            style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
+                        }
+
+                        $element.find('img').attr('style', style);
+                    }
+
+                    $scope.hasThumbnail = !!url;
+                    $element.find('img').attr('src', url);
+                }).catch(function (e) {
+                    $element.find('img').attr('src', $scope.fallback);
+                });
+            }
+        };
     }]);
 })(angular, GeoPlatform);
 (function (angular) {
@@ -1453,6 +1489,44 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
+(function (angular) {
+
+    'use strict';
+
+    /** 
+     * directive used in conjunction with ng-model to map arrays of strings
+     * to form field controls for editing.
+     *
+     * Usage:  <input ng-model="arrOfStr" string-array-input></input>
+     *
+     */
+
+    angular.module('gp-common').directive('stringArrayInput', function () {
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            link: function link(scope, element, attr, ngModel) {
+
+                function fromInput(text) {
+                    var result = null;
+                    if (text && text.length) result = text.split(',').map(function (i) {
+                        return i.trim();
+                    });
+                    return result;
+                }
+
+                function toInput(arr) {
+                    var result = null;
+                    if (arr && typeof arr.push !== 'undefined') result = arr.join(', ');
+                    return result;
+                }
+
+                ngModel.$parsers.push(fromInput);
+                ngModel.$formatters.push(toInput);
+            }
+        };
+    });
+})(angular);
 (function (jQuery, angular) {
 
     "use strict";
@@ -1512,6 +1586,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 }
             }
             return 0;
+        };
+    })
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+
+            var name = str;
+
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+
+            if ('VCard' === name) return 'Contact';
+            return name;
         };
     });
 })(jQuery, angular);

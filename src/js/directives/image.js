@@ -92,6 +92,66 @@
             }
         };
 
-    }]);
+    }])
+
+
+    
+    .directive('itemThumbnail', ['$q', function($q) {
+        return {
+            restrict: "E",
+            replace: true,
+            scope: {
+                item    : '=',
+                fallback: '@'
+            },
+            template:
+            `
+                <div ng-show="hasThumbnail" class="media embed-responsive embed-responsive-16by9">
+                    <img class="embed-responsive-item" on-img-error="{{fallback||'/img/img-404.jpg'}}">
+                </div>
+            `,
+            link: function($scope, $element, $attrs) {
+
+                let item = $scope.item;
+                (item.$promise || $q.resolve(item)).then( (obj) => {
+
+                    let url = $scope.fallback;
+                
+                    if(obj.type && obj.type === 'Map')
+                        url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";
+                    else if(obj.thumbnail && obj.thumbnail.url)
+                        url = obj.thumbnail.url;
+                    else if(obj.thumbnail && obj.thumbnail.contentData) {
+                        
+                        var style = 
+                            'background-size:contain;' + 
+                            'background-repeat:no-repeat;' + 
+                            'background-image: url(data:' + 
+                                (obj.thumbnail.mediaType||'image/png') + ';base64,' + 
+                                obj.thumbnail.contentData + ');';
+
+                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        // ignore thumbnail dimensions. Otherwise, use them
+                        if($element.attr('class').indexOf('embed-responsive-item') < 0) {
+                            style += 'width:' + (obj.thumbnail.width||'32') + 'px;' +
+                                     'height:' + (obj.thumbnail.height||'32') + 'px;';
+                        }
+
+                        $element.find('img').attr('style', style);
+                    }
+                    
+                    $scope.hasThumbnail = !!url;
+                    $element.find('img').attr('src', url);
+            
+                })
+                .catch( (e) => { 
+                    $element.find('img').attr('src', $scope.fallback); 
+                });
+            }
+        };
+
+    }])
+
+    ;
 
 }) (angular, GeoPlatform);
