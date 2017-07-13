@@ -117,10 +117,16 @@
 
                     let url = $scope.fallback;
                 
+                    //maps
                     if(obj.type && obj.type === 'Map')
                         url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";
+                    //maps as gallery items
+                    else if(obj.assetType && obj.assetType === 'Map')
+                        url = Constants.ualUrl + "/api/maps/" + obj.assetId + "/thumbnail";
+                    //other thumbnail'ed items with URLs
                     else if(obj.thumbnail && obj.thumbnail.url)
                         url = obj.thumbnail.url;
+                    //other thumbnail'ed items with base64 content
                     else if(obj.thumbnail && obj.thumbnail.contentData) {
                         
                         var style = 

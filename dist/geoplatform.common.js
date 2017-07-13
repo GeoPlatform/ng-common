@@ -582,18 +582,25 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                     var url = $scope.fallback;
 
-                    if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;else if (obj.thumbnail && obj.thumbnail.contentData) {
+                    //maps
+                    if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";
+                    //maps as gallery items
+                    else if (obj.assetType && obj.assetType === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.assetId + "/thumbnail";
+                        //other thumbnail'ed items with URLs
+                        else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;
+                            //other thumbnail'ed items with base64 content
+                            else if (obj.thumbnail && obj.thumbnail.contentData) {
 
-                        var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
+                                    var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
 
-                        //if directive is on a responsive item (aka, in a gp-ui-card), 
-                        // ignore thumbnail dimensions. Otherwise, use them
-                        if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
-                            style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
-                        }
+                                    //if directive is on a responsive item (aka, in a gp-ui-card), 
+                                    // ignore thumbnail dimensions. Otherwise, use them
+                                    if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
+                                        style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
+                                    }
 
-                        $element.find('img').attr('style', style);
-                    }
+                                    $element.find('img').attr('style', style);
+                                }
 
                     $scope.hasThumbnail = !!url;
                     $element.find('img').attr('src', url);
@@ -2028,23 +2035,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             setExtent: function setExtent(bboxStr) {
                 setOption(VAR_EXTENT, bboxStr, true);
             },
-
-            // setAuthor: function(author) {
-            //     _options.author = author;
-            //     var delay = author === null || author === undefined || !author.length ? 0 : 500;
-            //     dirty(delay);
-            // }, 
-
-            // setBeginDate: function(beginDate) {
-            //     _options.beginDate = beginDate;
-            //     _doUpdate(true);
-            // }, 
-
-            // setEndDate: function(endDate) {
-            //     _options.endDate = endDate;
-            //     _doUpdate(true);
-            // }, 
-
 
             /**
              * @return {array} list of selected items from current search results

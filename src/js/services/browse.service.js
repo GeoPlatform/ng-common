@@ -423,25 +423,7 @@
              */
             setVisibility: function(visibility, fireUpdate) { setOption(VAR_VISIBILITY, visibility, fireUpdate); },
 
-            setExtent: function(bboxStr) { setOption(VAR_EXTENT, bboxStr, true); },         
-
-
-            // setAuthor: function(author) {
-            //     _options.author = author;
-            //     var delay = author === null || author === undefined || !author.length ? 0 : 500;
-            //     dirty(delay);
-            // }, 
-
-            // setBeginDate: function(beginDate) {
-            //     _options.beginDate = beginDate;
-            //     _doUpdate(true);
-            // }, 
-
-            // setEndDate: function(endDate) {
-            //     _options.endDate = endDate;
-            //     _doUpdate(true);
-            // }, 
-
+            setExtent: function(bboxStr) { setOption(VAR_EXTENT, bboxStr, true); },
 
             /**
              * @return {array} list of selected items from current search results
