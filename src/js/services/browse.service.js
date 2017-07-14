@@ -99,6 +99,10 @@
         //list of field names to request in response
         var _fields = options && options.fields ? options.fields : FIELDS.slice(0);  
 
+        //list of facet names to request
+        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
+        
+
         var _facets = [];
         var _selectedFacets = [];
         
@@ -214,11 +218,7 @@
 
 
             //request facets
-            let facets = FACETS.slice(0);
-            //not feasible yet because need both id and label to be useful
-            // if(~_options.types.indexOf("skos:Concept"))
-            //     facets.push("inScheme.label");
-            params.includeFacet=facets.join(',');
+            params.includeFacet=_requestFacets.join(',');
 
             //request fields
             params.fields=_fields.join(',');
@@ -338,6 +338,10 @@
                     return _facets.find(function(facet) {return facet.name===name;});
                 }
                 return null;
+            },
+
+            addFacet: function(name) {
+                _requestFacets.push(name);
             },
 
             applyConstraints: function(obj) {

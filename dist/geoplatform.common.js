@@ -1690,6 +1690,9 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         //list of field names to request in response
         var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
 
+        //list of facet names to request
+        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
+
         var _facets = [];
         var _selectedFacets = [];
 
@@ -1792,11 +1795,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             params.bust = new Date().getTime();
 
             //request facets
-            var facets = FACETS.slice(0);
-            //not feasible yet because need both id and label to be useful
-            // if(~_options.types.indexOf("skos:Concept"))
-            //     facets.push("inScheme.label");
-            params.includeFacet = facets.join(',');
+            params.includeFacet = _requestFacets.join(',');
 
             //request fields
             params.fields = _fields.join(',');
@@ -1917,6 +1916,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     });
                 }
                 return null;
+            },
+
+            addFacet: function addFacet(name) {
+                _requestFacets.push(name);
             },
 
             applyConstraints: function applyConstraints(obj) {
