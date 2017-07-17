@@ -55,7 +55,8 @@
                     username: this.username, 
                     name: this.name, 
                     email: this.email,
-                    org: this.org
+                    org: this.org,
+                    roles: this.roles
                 };
             };
             this.clone = function() {
@@ -71,9 +72,9 @@
                 return false;
             };
             this.isAuthorized = function(role) {
-                if(Config.env === 'dev' || Config.env === 'development')
-                    return true;
-                return user.roles && ~user.roles.indexOf(role);
+                let env = Config.env || Config.ENV || Config.NODE_ENV;
+                if(env === 'dev' || env === 'development') return true;
+                return this.roles && ~this.roles.indexOf(role);
             };
         }
 
