@@ -439,7 +439,7 @@
              */
             setSelected: function(arr) { 
                 _selected = arr; 
-                notify(eventKey + 'selected', _selected);
+                notify(this.events.SELECTED, _selected);
             },
 
             /**

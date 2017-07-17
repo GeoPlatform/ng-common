@@ -70,6 +70,11 @@
                 }
                 return false;
             };
+            this.isAuthorized = function(role) {
+                if(Config.env === 'dev' || Config.env === 'development')
+                    return true;
+                return user.roles && ~user.roles.indexOf(role);
+            };
         }
 
 
@@ -105,6 +110,38 @@
             INITIALIZING: -1,   //auth check in progress
             INITIALIZED: 1      //auth check completed
         };
+
+
+        /** 
+         * @param {string} cookie - a concatenated string of user info
+         * @return {object|null} user info
+         */
+        function parseCookie(cookie) {
+
+            // console.log(cookie);
+            if(!cookie || !cookie.length) return null;
+
+            var data = {};
+
+            var str = decodeURIComponent(cookie);            
+            var parts = str.split('+');
+            parts = parts.map(function(part) {
+                var kvp = part.split(':');
+                data[kvp[0]] = kvp.slice(1).join(':');
+            });
+
+            data.groups = (data.groups) ? data.groups.split(',') : [];
+            // console.log(data.groups);
+
+            return data;
+        }
+
+        function getRoles() {
+            var cookie = document.cookie.replace(/(?:(?:^|.*;\s*)AUTHENTICATEDGEOSAML\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+            var user = parseCookie(cookie);
+            return user ? user.groups : [];
+        }
+
 
 
         /**
@@ -226,7 +263,8 @@
                             username : content.name[0],
                             email    : content.mail[0],
                             name     : content.first_name[0] + ' ' + content.last_name[0],
-                            org      : content.organization[0]
+                            org      : content.organization[0],
+                            roles    : getRoles()
                         });
                         // console.log("Authenticated user: " + JSON.stringify(_user));
 
