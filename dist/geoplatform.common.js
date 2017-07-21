@@ -615,7 +615,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     $element.find('img').attr('src', url);
 
                     if ($scope.isLink) {
-                        $element.find('.media').attr('href', $scope.link).attr('target', '_blank');
+                        //$element is a.media because of 'replace:true'
+                        $element.attr('href', $scope.link).attr('target', '_blank');
                     }
                 }).catch(function (e) {
                     $element.find('img').attr('src', $scope.fallback);
