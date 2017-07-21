@@ -572,9 +572,18 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             replace: true,
             scope: {
                 item: '=',
-                fallback: '@'
+                fallback: '@',
+                link: '@'
             },
-            template: "\n                <div ng-show=\"hasThumbnail\" class=\"media embed-responsive embed-responsive-16by9\">\n                    <img class=\"embed-responsive-item\" on-img-error=\"{{fallback||'/img/img-404.jpg'}}\">\n                </div>\n            ",
+            template: "\n                <a ng-show=\"hasThumbnail\" class=\"media embed-responsive embed-responsive-16by9\">\n                    <img class=\"embed-responsive-item\" on-img-error=\"{{fallback||'/img/img-404.jpg'}}\">\n                </a>\n            ",
+            controller: ["$scope", function controller($scope) {
+                $scope.elName = 'div';
+
+                $scope.isLink = !!$scope.link;
+                if ($scope.isLink) {
+                    $scope.elName = 'a';
+                }
+            }],
             link: function link($scope, $element, $attrs) {
 
                 var item = $scope.item;
@@ -604,6 +613,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                     $scope.hasThumbnail = !!url;
                     $element.find('img').attr('src', url);
+
+                    if ($scope.isLink) {
+                        $element.find('.media').attr('href', $scope.link).attr('target', '_blank');
+                    }
                 }).catch(function (e) {
                     $element.find('img').attr('src', $scope.fallback);
                 });

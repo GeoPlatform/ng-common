@@ -102,14 +102,23 @@
             replace: true,
             scope: {
                 item    : '=',
-                fallback: '@'
+                fallback: '@',
+                link:     '@'
             },
             template:
             `
-                <div ng-show="hasThumbnail" class="media embed-responsive embed-responsive-16by9">
+                <a ng-show="hasThumbnail" class="media embed-responsive embed-responsive-16by9">
                     <img class="embed-responsive-item" on-img-error="{{fallback||'/img/img-404.jpg'}}">
-                </div>
+                </a>
             `,
+            controller: function($scope) {
+                $scope.elName = 'div';
+
+                $scope.isLink = !!$scope.link;
+                if($scope.isLink) {
+                    $scope.elName = 'a';
+                }
+            }, 
             link: function($scope, $element, $attrs) {
 
                 let item = $scope.item;
@@ -148,6 +157,10 @@
                     
                     $scope.hasThumbnail = !!url;
                     $element.find('img').attr('src', url);
+
+                    if($scope.isLink) {
+                        $element.find('.media').attr('href', $scope.link).attr('target', '_blank');
+                    }
             
                 })
                 .catch( (e) => { 
