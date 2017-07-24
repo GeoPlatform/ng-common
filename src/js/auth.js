@@ -251,7 +251,6 @@
             self.setAuth(window.localStorage.getObject('sub'), window.localStorage.at);
           } else {
             self.removeAuth();
-            self.logout();
           }
 
           //clean hosturl on redirect from oauth
