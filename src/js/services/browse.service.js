@@ -427,7 +427,16 @@
              */
             setVisibility: function(visibility, fireUpdate) { setOption(VAR_VISIBILITY, visibility, fireUpdate); },
 
+            /**
+             * @param {string} bboxStr - form of "minx,miny,maxx,maxy"
+             * @param {boolean} fireUpdate
+             */
             setExtent: function(bboxStr) { setOption(VAR_EXTENT, bboxStr, true); },
+
+            /**
+             * @return {string} bbox string or null if not set
+             */
+            getExtent: function() { return _options[VAR_EXTENT]; },
 
             /**
              * @return {array} list of selected items from current search results
