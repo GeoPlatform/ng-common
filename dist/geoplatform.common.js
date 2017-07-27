@@ -1806,10 +1806,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //apply remaining options to query
             // these are not keyed with specific parameters (ie, custom params)
             angular.forEach(opts, function (value, name) {
-                if (value && value.length) {
+                if (value !== null && typeof value !== 'undefined') {
                     var isArr = typeof value.push !== 'undefined';
                     params[name] = isArr ? value.join(',') : value;
                 } else {
+                    //make sure it doesn't get sent if no value provided
                     delete params[name];
                 }
             });
