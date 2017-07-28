@@ -1728,7 +1728,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             start: 0,
             size: _pageSizeBase[0],
             total: 0,
-            sort: "modified,desc", order: "asc",
+            sort: options && options.sort ? options.sort : "modified,desc",
             facets: {}
         };
 
@@ -2284,6 +2284,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              */
             getSortOptions: function getSortOptions() {
                 return SORT_OPTIONS.slice(0);
+            },
+
+            /**
+             * @return {string} sorting parameter (field,order)
+             */
+            getSortValue: function getSortValue() {
+                return _options.sort;
             },
 
             /**

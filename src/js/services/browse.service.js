@@ -92,7 +92,7 @@
             start: 0, 
             size: _pageSizeBase[0], 
             total: 0,
-            sort: "modified,desc", order: "asc", 
+            sort: (options && options.sort) ? options.sort : "modified,desc", 
             facets: {}
         };
 
@@ -626,16 +626,17 @@
             /**
              * @return {array} list of key-value pairs of sort options
              */
-            getSortOptions: function() {
-                return SORT_OPTIONS.slice(0);
-            },
+            getSortOptions: function() { return SORT_OPTIONS.slice(0); },
+
+            /**
+             * @return {string} sorting parameter (field,order)
+             */
+            getSortValue: function () { return _options.sort; },
 
             /**
              * @return {object} clone of the current set of query options
              */
-            getQueryOptions: function() {
-                return jQuery.extend({}, _options);
-            },
+            getQueryOptions: function() { return jQuery.extend({}, _options); },
 
             /**
              *
