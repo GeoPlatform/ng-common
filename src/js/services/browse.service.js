@@ -247,11 +247,24 @@
             })
             .catch( function(response) {
                 _isLoading = false;
-                //TODO if content-type is application/json
+                
+                //fallback
+                let obj = { error: "An Error Occurred", message: "No details provided" }
 
-                var error = {
-                    label: response.data.error,
-                    message: response.data.message
+                //http response error
+                if(response && response.data) obj = response.data;
+                //normal error
+                else if(response && response.message) obj = response;
+
+                //serialized json
+                if(typeof(obj) === 'string') {
+                    try      { obj = JSON.parse(obj);  } 
+                    catch(e) { obj.message = "Bad response from server"; }
+                }
+
+                var error = { 
+                    label: obj.error || "An Error Occurred", 
+                    message: obj.message || "No details provided"
                 };
                 notify(eventKey + 'error', error);
             });
