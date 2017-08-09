@@ -1799,8 +1799,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             angular.forEach(PARAM_OPTIONS, function (po) {
                 var name = po.parameter;
                 var value = opts[po.option];
-                if (value !== null && typeof value !== 'undefined') {
-                    var isArr = typeof value.push !== 'undefined';
+
+                var isSet = value !== null && typeof value !== 'undefined';
+                var isArr = isSet && typeof value.push !== 'undefined';
+
+                if (isSet && (!isArr || value.length)) {
                     params[name] = isArr ? value.join(',') : value;
                 } else {
                     delete params[name];

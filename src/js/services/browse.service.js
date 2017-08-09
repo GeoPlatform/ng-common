@@ -169,8 +169,11 @@
             angular.forEach(PARAM_OPTIONS, po => {
                 let name = po.parameter;
                 let value = opts[po.option];
-                if(value !== null && typeof(value) !== 'undefined') {
-                    let isArr = typeof(value.push) !== 'undefined';
+
+                let isSet = value !== null && typeof(value) !== 'undefined';
+                let isArr = isSet && typeof(value.push) !== 'undefined';
+                    
+                if(isSet && (!isArr||value.length)) {
                     params[name] = isArr ? value.join(',') : value;
                 } else {
                     delete params[name];
