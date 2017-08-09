@@ -5,33 +5,33 @@
 
 
     //fields list sent to MDR in order to have these properties for display in search results
-    const FIELDS            = ['created','modified','publishers','themes','description','extent'];
+    const FIELDS = [ 'created','modified','publishers','themes','description','extent' ];
 
     //facets list sent to MDR in order to get aggregation numbers
-    const FACETS            = [
-        'types','themes','publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy'
-    ];
+    const FACETS = [ 'types','themes','publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy' ];
 
-    const SORT_OPTIONS      = [
+    const SORT_OPTIONS = [
         { value:"label,asc",       label: "Name (A-Z)"              }, 
         { value:"label,desc",      label: "Name (Z-A)"              }, 
         { value:"type,asc",        label: "Type (A-Z)"              }, 
         { value:"type,desc",       label: "Type (Z-A)"              }, 
         { value:"modified,desc",   label: "Most recently modified"  }, 
-        { value:"modified,asc",    label: "Least recently modified" }, 
+        { value:"modified,asc",    label: "Least recently modified" } 
     ];
 
     //list of _options variables for mapping to parameters
-    const VAR_TYPES = 'types';
-    const VAR_THEMES = 'themes';
-    const VAR_PUBLISHERS = 'publishers';
-    const VAR_USER = 'user';
-    const VAR_CREATED_BY = 'createdBy';
-    const VAR_SERVICE_TYPES = 'svcTypes';
-    const VAR_SCHEMES = 'schemes';
-    const VAR_VISIBILITY = "visibility";
-    const VAR_QUERY = 'query';
-    const VAR_EXTENT = 'extent';
+    const VAR_TYPES                 = 'types';
+    const VAR_THEMES                = 'themes';
+    const VAR_PUBLISHERS            = 'publishers';
+    const VAR_USER                  = 'user';
+    const VAR_CREATED_BY            = 'createdBy';
+    const VAR_SERVICE_TYPES         = 'serviceTypes';
+    const VAR_SCHEMES               = 'schemes';
+    const VAR_VISIBILITY            = "visibility";
+    const VAR_QUERY                 = 'query';
+    const VAR_EXTENT                = 'extent';
+    const VAR_MODIFIED_BEFORE       = 'modified.max';
+    const VAR_MODIFIED_AFTER        = 'modified.min';
 
     //parameter names for various query constraints used in requests to MDR for results
     const PARAMETER_TYPE            = 'type';
@@ -45,19 +45,24 @@
     const PARAMETER_VISIBILITY      = 'visibility';
     const PARAMETER_QUERY           = 'q';
     const PARAMETER_EXTENT          = 'bbox';
+    const PARAMETER_MODIFIED_BEFORE = 'modified.max';
+    const PARAMETER_MODIFIED_AFTER  = 'modified.min';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
     
+
     const PARAM_OPTIONS = [
-        { option: VAR_TYPES,            parameter: PARAMETER_TYPE },
-        { option: VAR_THEMES,           parameter: PARAMETER_THEME },
-        { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER },
-        { option: VAR_USER,             parameter: PARAMETER_CREATOR },
-        { option: VAR_CREATED_BY,       parameter: PARAMETER_CREATED_BY },
-        { option: VAR_SERVICE_TYPES,    parameter: PARAMETER_SVC_TYPE },
-        { option: VAR_SCHEMES,          parameter: PARAMETER_IN_SCHEME },
-        { option: VAR_VISIBILITY,       parameter: PARAMETER_VISIBILITY },
-        { option: VAR_QUERY,            parameter: PARAMETER_QUERY },
-        { option: VAR_EXTENT,           parameter: PARAMETER_EXTENT }
+        { option: VAR_TYPES,            parameter: PARAMETER_TYPE           },
+        { option: VAR_THEMES,           parameter: PARAMETER_THEME          },
+        { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER      },
+        { option: VAR_USER,             parameter: PARAMETER_CREATOR        },
+        { option: VAR_CREATED_BY,       parameter: PARAMETER_CREATED_BY     },
+        { option: VAR_SERVICE_TYPES,    parameter: PARAMETER_SVC_TYPE       },
+        { option: VAR_SCHEMES,          parameter: PARAMETER_IN_SCHEME      },
+        { option: VAR_VISIBILITY,       parameter: PARAMETER_VISIBILITY     },
+        { option: VAR_QUERY,            parameter: PARAMETER_QUERY          },
+        { option: VAR_EXTENT,           parameter: PARAMETER_EXTENT         },
+        { option: VAR_MODIFIED_BEFORE,  parameter: PARAMETER_MODIFIED_BEFORE },
+        { option: VAR_MODIFIED_AFTER,   parameter: PARAMETER_MODIFIED_AFTER }
     ];
     
 
@@ -164,7 +169,7 @@
             angular.forEach(PARAM_OPTIONS, po => {
                 let name = po.parameter;
                 let value = opts[po.option];
-                if(value && value.length) {
+                if(value !== null && typeof(value) !== 'undefined') {
                     let isArr = typeof(value.push) !== 'undefined';
                     params[name] = isArr ? value.join(',') : value;
                 } else {
@@ -359,16 +364,23 @@
             },
 
             applyConstraints: function(obj) {
-                _options[VAR_QUERY] = obj.query;
-                _options[VAR_TYPES] = obj.types;
-                _options[VAR_THEMES] = obj.themes;
-                _options[VAR_PUBLISHERS] = obj.publishers;
-                _options[VAR_USER] = obj.user;
-                _options[VAR_CREATED_BY] = obj.createdBy;
-                _options[VAR_SERVICE_TYPES] = obj.serviceTypes;
-                _options[VAR_SCHEMES] = obj.schemes;
-                _options[VAR_VISIBILITY] = obj.visibility;
-                //do we need to set extent here too?
+                // _options[VAR_QUERY] = obj.query;
+                // _options[VAR_TYPES] = obj.types;
+                // _options[VAR_THEMES] = obj.themes;
+                // _options[VAR_PUBLISHERS] = obj.publishers;
+                // _options[VAR_USER] = obj.user;
+                // _options[VAR_CREATED_BY] = obj.createdBy;
+                // _options[VAR_SERVICE_TYPES] = obj.serviceTypes;
+                // _options[VAR_SCHEMES] = obj.schemes;
+                // _options[VAR_VISIBILITY] = obj.visibility;
+                // //do we need to set extent here too?
+
+                for(var p in obj) {
+                    if(obj.hasOwnProperty(p)) {
+                        _options[p] = obj[p];
+                    }
+                }
+
                 _doUpdate(true);
             },
 
@@ -440,6 +452,33 @@
              * @param {boolean} fireUpdate
              */
             setVisibility: function(visibility, fireUpdate) { setOption(VAR_VISIBILITY, visibility, fireUpdate); },
+
+            /** 
+             * @param {Date} date - date to compare against
+             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
+             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
+             */
+            setModified: function(date, beforeOrAfter, fireUpdate) {
+            
+                //if no date was supplied, consider it "unset" for both properties
+                if(!date) {
+                    setOption(VAR_MODIFIED_BEFORE, null, false);
+                    setOption(VAR_MODIFIED_AFTER, null, true);
+                    return;
+                }
+
+                let dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
+                let prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER;       //property being set
+                let oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE;    //unset opposite property
+                let arg = (date && date.getTime) ? date.getTime() : date;
+
+                setOption(oppProp, null, false);
+                setOption(prop, arg, true);
+            },
+            
+            getModified: function() {
+                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
+            },
 
             /**
              * @param {string} bboxStr - form of "minx,miny,maxx,maxy"

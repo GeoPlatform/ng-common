@@ -1548,6 +1548,116 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
+(function (jQuery, angular) {
+
+    "use strict";
+
+    angular.module("gp-common")
+
+    /**
+     * Custom filter to make label values visually helpful by 
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (input) {
+            input = input || '';
+            return input.replace(/_/g, ' ');
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+
+            var name = str;
+
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+
+        return function (arg) {
+
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+
+            if (!isNaN(o)) {
+
+                o = o * 1;
+
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
 
@@ -1568,11 +1678,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     var VAR_PUBLISHERS = 'publishers';
     var VAR_USER = 'user';
     var VAR_CREATED_BY = 'createdBy';
-    var VAR_SERVICE_TYPES = 'svcTypes';
+    var VAR_SERVICE_TYPES = 'serviceTypes';
     var VAR_SCHEMES = 'schemes';
     var VAR_VISIBILITY = "visibility";
     var VAR_QUERY = 'query';
     var VAR_EXTENT = 'extent';
+    var VAR_MODIFIED_BEFORE = 'modified.max';
+    var VAR_MODIFIED_AFTER = 'modified.min';
 
     //parameter names for various query constraints used in requests to MDR for results
     var PARAMETER_TYPE = 'type';
@@ -1586,9 +1698,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     var PARAMETER_VISIBILITY = 'visibility';
     var PARAMETER_QUERY = 'q';
     var PARAMETER_EXTENT = 'bbox';
+    var PARAMETER_MODIFIED_BEFORE = 'modified.max';
+    var PARAMETER_MODIFIED_AFTER = 'modified.min';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
 
-    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }];
+
+    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }, { option: VAR_MODIFIED_BEFORE, parameter: PARAMETER_MODIFIED_BEFORE }, { option: VAR_MODIFIED_AFTER, parameter: PARAMETER_MODIFIED_AFTER }];
 
     var PAGE_SIZE_BASE_10 = [10, 20, 50, 100];
     var PAGE_SIZE_BASE_12 = [12, 24, 48, 96];
@@ -1684,7 +1799,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             angular.forEach(PARAM_OPTIONS, function (po) {
                 var name = po.parameter;
                 var value = opts[po.option];
-                if (value && value.length) {
+                if (value !== null && typeof value !== 'undefined') {
                     var isArr = typeof value.push !== 'undefined';
                     params[name] = isArr ? value.join(',') : value;
                 } else {
@@ -1875,16 +1990,23 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             },
 
             applyConstraints: function applyConstraints(obj) {
-                _options[VAR_QUERY] = obj.query;
-                _options[VAR_TYPES] = obj.types;
-                _options[VAR_THEMES] = obj.themes;
-                _options[VAR_PUBLISHERS] = obj.publishers;
-                _options[VAR_USER] = obj.user;
-                _options[VAR_CREATED_BY] = obj.createdBy;
-                _options[VAR_SERVICE_TYPES] = obj.serviceTypes;
-                _options[VAR_SCHEMES] = obj.schemes;
-                _options[VAR_VISIBILITY] = obj.visibility;
-                //do we need to set extent here too?
+                // _options[VAR_QUERY] = obj.query;
+                // _options[VAR_TYPES] = obj.types;
+                // _options[VAR_THEMES] = obj.themes;
+                // _options[VAR_PUBLISHERS] = obj.publishers;
+                // _options[VAR_USER] = obj.user;
+                // _options[VAR_CREATED_BY] = obj.createdBy;
+                // _options[VAR_SERVICE_TYPES] = obj.serviceTypes;
+                // _options[VAR_SCHEMES] = obj.schemes;
+                // _options[VAR_VISIBILITY] = obj.visibility;
+                // //do we need to set extent here too?
+
+                for (var p in obj) {
+                    if (obj.hasOwnProperty(p)) {
+                        _options[p] = obj[p];
+                    }
+                }
+
                 _doUpdate(true);
             },
 
@@ -1985,6 +2107,33 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              */
             setVisibility: function setVisibility(visibility, fireUpdate) {
                 setOption(VAR_VISIBILITY, visibility, fireUpdate);
+            },
+
+            /** 
+             * @param {Date} date - date to compare against
+             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
+             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
+             */
+            setModified: function setModified(date, beforeOrAfter, fireUpdate) {
+
+                //if no date was supplied, consider it "unset" for both properties
+                if (!date) {
+                    setOption(VAR_MODIFIED_BEFORE, null, false);
+                    setOption(VAR_MODIFIED_AFTER, null, true);
+                    return;
+                }
+
+                var dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
+                var prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER; //property being set
+                var oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE; //unset opposite property
+                var arg = date && date.getTime ? date.getTime() : date;
+
+                setOption(oppProp, null, false);
+                setOption(prop, arg, true);
+            },
+
+            getModified: function getModified() {
+                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
             },
 
             /**
@@ -2659,116 +2808,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
-(function (jQuery, angular) {
-
-    "use strict";
-
-    angular.module("gp-common")
-
-    /**
-     * Custom filter to make label values visually helpful by 
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (input) {
-            input = input || '';
-            return input.replace(/_/g, ' ');
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-
-            var name = str;
-
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-
-        return function (arg) {
-
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-
-            if (!isNaN(o)) {
-
-                o = o * 1;
-
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-
-            return "X";
-        };
-    });
-})(jQuery, angular);
 (function (angular) {
 
     'use strict';
