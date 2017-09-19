@@ -198,7 +198,7 @@
           var Q = $q.defer();
           //check to make sure we can make called
           if (window.localStorage.at && window.localStorage.sub) {
-            var url = Config.IDP_BASE_URL + '/api/user';
+            var url = Config.IDP_BASE_URL + '/api/profile';
             $http.get(url)
               .then(function(response) {
                 //when we get it, save it so we don't have to hit the IDP so many times
