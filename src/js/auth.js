@@ -37,7 +37,8 @@
      * Inside "DEV", you should close and re-open any components' widgets
      * to get current auth status.
      */
-    .service('AuthenticationService', ['$q', '$http', '$location', '$route', '$rootScope', '$window', 'GPConfig', function($q, $http, $location, $route, $rootScope, $window, Config) {
+    .service('AuthenticationService', ['$q', '$http', '$location', '$route', '$rootScope', '$window', 'GPConfig', 'ngIdle',
+      function($q, $http, $location, $route, $rootScope, $window, Config, Idle) {
 
       //extend Storage prototype
       Storage.prototype.setObject = function(key, value) {
