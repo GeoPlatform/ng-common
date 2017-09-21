@@ -13,7 +13,7 @@
     // prior to this module being declared
     // (using 'value' since config might change)
     .value('GPConfig', GeoPlatform)
-
+    .value('ngIdle', ngIdle)
     ;
 
 })(jQuery, angular);
