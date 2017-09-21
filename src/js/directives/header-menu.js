@@ -165,6 +165,73 @@
 
             }
         };
+    }])
+
+
+
+
+    /**
+     *
+     * Usage: 
+     *
+     *    <div ng-cloak gp-flex-header show-home-link="true" brand="Application Name">
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *    </div>
+     *
+     */
+    .directive('gpFlexHeader', ['GPConfig', 'AuthenticationService', function(Config, AuthenticationService) {
+
+        return {
+
+            scope: {
+                brand: "@",
+                showHomeLink: "@"
+            },
+            restrict: "AE",
+            transclude: true,
+            replace: true,
+            template: 
+            `
+                <header>
+                    <h4 class="brand">
+                        <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">
+                            <span class="icon-gp"></span>
+                            <span class="hidden-xs">GeoPlatform</span>
+                        </a>
+                        {{brand}}
+                    </h4>
+                    <ul role="menu" class="header__menu" gp-header-menu>
+                        <li ng-if="showHomeLink">
+                            <a href="/">
+                                <span class="glyphicon glyphicon-home"></span> 
+                                <span class="hidden-xs hidden-sm">Home</span>
+                            </a>
+                        </li>
+                        <div class="transcluded"></div>
+                        <li><span gp-login-button></span></li>
+                    </ul>
+                </header>
+            `,
+
+            link: function($scope, $element, $attrs, ctrl, transcludeFn) {
+
+                $scope.showHomeLink = $scope.showHomeLink === 'true' || false;
+
+                $scope.portalUrl = Config.portalUrl;
+
+                AuthenticationService.getUserQ().then(function(user) {
+                    $scope.user = user;    
+                });
+                
+                $element.find('.transcluded').replaceWith(transcludeFn());
+            }            
+
+        };
+
     }]);
+
 
 })(jQuery, angular);

@@ -479,6 +479,47 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 });
             }
         };
+    }])
+
+    /**
+     *
+     * Usage: 
+     *
+     *    <div ng-cloak gp-flex-header show-home-link="true" brand="Application Name">
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *    </div>
+     *
+     */
+    .directive('gpFlexHeader', ['GPConfig', 'AuthenticationService', function (Config, AuthenticationService) {
+
+        return {
+
+            scope: {
+                brand: "@",
+                showHomeLink: "@"
+            },
+            restrict: "AE",
+            transclude: true,
+            replace: true,
+            template: "\n                <header>\n                    <h4 class=\"brand\">\n                        <a href=\"{{portalUrl}}\" title=\"Go to the GeoPlatform Home Page\">\n                            <span class=\"icon-gp\"></span>\n                            <span class=\"hidden-xs\">GeoPlatform</span>\n                        </a>\n                        {{brand}}\n                    </h4>\n                    <ul role=\"menu\" class=\"header__menu\" gp-header-menu>\n                        <li ng-if=\"showHomeLink\">\n                            <a href=\"/\">\n                                <span class=\"glyphicon glyphicon-home\"></span> \n                                <span class=\"hidden-xs hidden-sm\">Home</span>\n                            </a>\n                        </li>\n                        <div class=\"transcluded\"></div>\n                        <li><span gp-login-button></span></li>\n                    </ul>\n                </header>\n            ",
+
+            link: function link($scope, $element, $attrs, ctrl, transcludeFn) {
+
+                $scope.showHomeLink = $scope.showHomeLink === 'true' || false;
+
+                $scope.portalUrl = Config.portalUrl;
+
+                AuthenticationService.getUserQ().then(function (user) {
+                    $scope.user = user;
+                });
+
+                $element.find('.transcluded').replaceWith(transcludeFn());
+            }
+
+        };
     }]);
 })(jQuery, angular);
 
@@ -850,6 +891,42 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     });
 })(jQuery, angular);
+(function (angular) {
+
+    "use strict";
+
+    /**
+     * Usage: 
+     *  <gp-progress-circle ng-model="$ctrl.amount"></gp-progress-circle>
+     */
+
+    angular.module('gp-common').component('gpProgressCircle', {
+
+        bindings: {
+            ngModel: '<' //amount out of 100
+        },
+
+        controller: function controller() {
+
+            this.$onInit = function () {
+                this.dashArray = 2 * Math.PI * 45 /*radius*/;
+                if (!this.ngModel) this.ngModel = 0;
+                this.update();
+            };
+
+            this.$onChanges = function (changes) {
+                if (changes.ngModel) this.update();
+            };
+
+            this.update = function () {
+                var offset = 2 * Math.PI * 45 * (1 - this.ngModel / 100);
+                this.value = offset;
+            };
+        },
+
+        template: "\n            <svg class=\"c-progress--circle\" viewBox=\"0 0 100 100\">\n                <circle class=\"c-progress__meter\" cx=\"50\" cy=\"50\" r=\"45\" stroke-width=\"10\" />\n                <circle class=\"c-progress__value\" cx=\"50\" cy=\"50\" r=\"45\" stroke-width=\"10\" \n                    stroke-dasharray=\"{{$ctrl.dashArray}}\" stroke-dashoffset=\"{{$ctrl.value}}\"/>\n                <text class=\"c-progress__label\" x=\"50\" y=\"-40\" text-anchor=\"middle\">{{$ctrl.ngModel}}%</text>\n            </svg>\n        "
+    });
+})(angular);
 (function (jQuery, angular) {
 
     "use strict";

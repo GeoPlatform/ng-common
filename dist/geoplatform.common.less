@@ -97,47 +97,25 @@
 
 
 
-//This style has been moved to GeoPlatform Style repo 
 
-// .header__menu {
 
-//     float:  right;
-//     margin: 0;
-//     padding:0;
-//     list-style-type: none;
-    
-//     .open > .dropdown-menu {
-//         z-index: 2;
-//     }
+header[gp-flex-header] {
 
-//     & > li {
-//         display: inline-block;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 
-//         & > a {
-//             font-size: 1rem;
-//             color: @color-gray-md;
-//             // position: relative;
-//             display: inline-block;
-//             vertical-align: middle;
-//             padding: 1rem .5rem;
-//         }
+    .brand {
+        flex: 1;
+        float: none;
+        padding: 1em;
+    }
 
-//         &.active {
-//             background: transparent;
+    .header__menu {
+        float: none;
+    }
 
-//             & > a {
-//                 border-bottom: 0.25rem solid @color-accent;
-//                 padding-bottom: 0.75rem;
-//             }
-//         }
-//     }
-
-//     a, a:visited, .btn-link, a.btn-link {
-//         text-decoration: none;
-//         font-size:  1rem;
-//         color:      @color-gray-dk;
-//     }
-// }
+}
 /* ------------------------------------------------- *\
     Notifications
     ...
@@ -362,3 +340,46 @@
 
     }
 }
+
+
+
+/* -----------------------------------------
+    Progress Circle
+------------------------------------------ */
+.c-progress--circle {
+    font-size:  1em;
+    width:      80px;
+    height:     80px;
+    transform:  rotate(-90deg);
+}
+
+.c-progress__meter,
+.c-progress__value {
+    fill: none;
+}
+
+.c-progress__meter {
+    stroke: #f7f7f7;    //unfilled portion color
+}
+
+.c-progress__value {
+    stroke: #393;
+    stroke-linecap: round;
+    animation: progress 2s;
+}
+.c-progress__label {
+    font-size: 1.5em;
+    transform: rotate(90deg);   //compensate for parent rotation
+}
+
+.c-progress--circle--md .c-progress__meter {
+    stroke: @color-gray-xlt;
+}
+.c-progress--circle--dk .c-progress__meter {
+    stroke: @color-gray-lt;
+}
+.c-progress--circle--blue .c-progress__value {
+    stroke: @color-primary;
+}
+
+
