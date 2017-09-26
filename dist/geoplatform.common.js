@@ -1,8 +1,8 @@
 "use strict";
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -20,116 +20,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     // prior to this module being declared
     // (using 'value' since config might change)
     .value('GPConfig', GeoPlatform);
-})(jQuery, angular);
-(function (jQuery, angular) {
-
-    "use strict";
-
-    angular.module("gp-common")
-
-    /**
-     * Custom filter to make label values visually helpful by 
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (input) {
-            input = input || '';
-            return input.replace(/_/g, ' ');
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-
-            var name = str;
-
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-
-        return function (arg) {
-
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-
-            if (!isNaN(o)) {
-
-                o = o * 1;
-
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-
-            return "X";
-        };
-    });
 })(jQuery, angular);
 (function (angular) {
 
@@ -913,6 +803,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 this.options = this.service.getPagination();
 
+                //support using a traditional select instead of a uib dropdown menu
+                // in case the pagination control itself is wrapped in a dropdown menu.
+                //in this case, we use objects with labels and values in order to display
+                // the 'per page' text along with whatever the page size is.
+
+                this.pageSizeDropdown = true;
+                this.useSelect = typeof this.useSelect !== 'undefined' && (this.useSelect === true || this.useSelect === 'true' || this.useSelect === 1);
+                if (this.useSelect) {
+                    this.pageSizeDropdown = false;
+                    this.pageSize = this.options.size;
+                    this.pageSizeOptions = (this.options.sizeOptions || [5, 10, 20, 50]).map(function (o) {
+                        return { label: o + ' per page', value: o };
+                    });
+                }
+
                 var event = 'gp:browse:';
                 if (this.eventKey) event = 'gp:browse:' + this.eventKey + ":";else event = 'gp:browse:objects:';
 
@@ -992,12 +897,13 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         bindings: {
             service: '=',
-            eventKey: '@'
+            eventKey: '@',
+            useSelect: '@'
         },
 
         controller: PaginationController,
 
-        template: "\n            <div class=\"c-pagination\">\n                <div class=\"c-pagination__total\">{{$ctrl.options.total||0}} results</div>\n                <div class=\"c-pagination__page-size\">\n                    <span uib-dropdown>\n                        <a href=\"\" uib-dropdown-toggle title=\"Change the number of results returned\">\n                            {{$ctrl.options.size}} per page <span class=\"caret\"></span>\n                        </a>\n                        <ul class=\"dropdown-menu\" role=\"menu\">\n                            <li ng-repeat=\"size in $ctrl.options.sizeOptions track by $index\">\n                                <a ng-click=\"$ctrl.setPageSize(size)\">{{size}} per page</a>\n                            </li>\n                        </ul>\n                    </span>\n                </div>\n                <div class=\"c-pagination__pages\">\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\"\n                        ng-click=\"$ctrl.first()\">\n                        <span class=\"glyphicon glyphicon-fast-backward\"></span>\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\"\n                        ng-click=\"$ctrl.previous()\">\n                        <span class=\"glyphicon glyphicon-backward\"></span>\n                    </div>\n                    <div class=\"c-pagination__page\">\n                        {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasNext()}\"\n                        ng-click=\"$ctrl.next()\">\n                        <span class=\"glyphicon glyphicon-forward\"></span>\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasNext()}\"\n                        ng-click=\"$ctrl.last()\">\n                        <span class=\"glyphicon glyphicon-fast-forward\"></span>\n                    </div>\n                </div>\n            </div>\n        "
+        template: "\n            <div class=\"c-pagination\">\n                <div class=\"c-pagination__total\">{{$ctrl.options.total||0}} results</div>\n                <div class=\"c-pagination__page-size\" ng-if=\"$ctrl.pageSizeDropdown\">\n                    <span uib-dropdown>\n                        <a href=\"\" uib-dropdown-toggle title=\"Change the number of results returned\">\n                            {{$ctrl.options.size}} per page <span class=\"caret\"></span>\n                        </a>\n                        <ul class=\"dropdown-menu\" role=\"menu\">\n                            <li ng-repeat=\"size in $ctrl.options.sizeOptions track by $index\">\n                                <a ng-click=\"$ctrl.setPageSize(size)\">{{size}} per page</a>\n                            </li>\n                        </ul>\n                    </span>\n                </div>\n                <div class=\"c-pagination__page-size\" ng-if=\"!$ctrl.pageSizeDropdown\">\n                    <select class=\"form-control\" \n                        ng-model=\"$ctrl.pageSize\" ng-change=\"$ctrl.setPageSize($ctrl.pageSize)\"\n                        ng-options=\"opt.value as opt.label for opt in $ctrl.pageSizeOptions\">\n                    </select>\n                </div>\n                <div class=\"c-pagination__pages\">\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\"\n                        ng-click=\"$ctrl.first()\">\n                        <span class=\"glyphicon glyphicon-fast-backward\"></span>\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasPrevious()}\"\n                        ng-click=\"$ctrl.previous()\">\n                        <span class=\"glyphicon glyphicon-backward\"></span>\n                    </div>\n                    <div class=\"c-pagination__page\">\n                        {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasNext()}\"\n                        ng-click=\"$ctrl.next()\">\n                        <span class=\"glyphicon glyphicon-forward\"></span>\n                    </div>\n                    <div class=\"c-pagination__button\" \n                        ng-class=\"{'is-disabled':!$ctrl.hasNext()}\"\n                        ng-click=\"$ctrl.last()\">\n                        <span class=\"glyphicon glyphicon-fast-forward\"></span>\n                    </div>\n                </div>\n            </div>\n        "
 
     });
 })(jQuery, angular);
@@ -1735,6 +1641,116 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
+(function (jQuery, angular) {
+
+    "use strict";
+
+    angular.module("gp-common")
+
+    /**
+     * Custom filter to make label values visually helpful by 
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (input) {
+            input = input || '';
+            return input.replace(/_/g, ' ');
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+
+            var name = str;
+
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+
+        return function (arg) {
+
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+
+            if (!isNaN(o)) {
+
+                o = o * 1;
+
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
 

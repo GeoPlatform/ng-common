@@ -36,6 +36,22 @@
             if(!this.service) return;
 
             this.options = this.service.getPagination();
+            
+            //support using a traditional select instead of a uib dropdown menu
+            // in case the pagination control itself is wrapped in a dropdown menu.
+            //in this case, we use objects with labels and values in order to display
+            // the 'per page' text along with whatever the page size is.
+            
+            this.pageSizeDropdown = true;
+            this.useSelect = typeof(this.useSelect) !== 'undefined' && 
+                (this.useSelect === true || this.useSelect === 'true' || this.useSelect === 1);
+            if(this.useSelect) {
+                this.pageSizeDropdown = false;
+                this.pageSize = this.options.size;
+                this.pageSizeOptions = (this.options.sizeOptions||[5,10,20,50]).map(o=> {
+                    return { label: o +' per page', value: o };
+                });
+            } 
 
             let event = 'gp:browse:';
             if(this.eventKey)
@@ -57,6 +73,7 @@
             this.service = null;
         }
 
+        
         previous () { 
             if(this.service && this.hasPrevious()) {
                 this.service.start(Math.max(0, this.options.start*1 - this.options.size*1), true);
@@ -113,7 +130,8 @@
 
         bindings: {
             service: '=',
-            eventKey: '@'
+            eventKey: '@',
+            useSelect: '@'
         },
 
         controller: PaginationController,
@@ -122,7 +140,7 @@
         `
             <div class="c-pagination">
                 <div class="c-pagination__total">{{$ctrl.options.total||0}} results</div>
-                <div class="c-pagination__page-size">
+                <div class="c-pagination__page-size" ng-if="$ctrl.pageSizeDropdown">
                     <span uib-dropdown>
                         <a href="" uib-dropdown-toggle title="Change the number of results returned">
                             {{$ctrl.options.size}} per page <span class="caret"></span>
@@ -133,6 +151,12 @@
                             </li>
                         </ul>
                     </span>
+                </div>
+                <div class="c-pagination__page-size" ng-if="!$ctrl.pageSizeDropdown">
+                    <select class="form-control" 
+                        ng-model="$ctrl.pageSize" ng-change="$ctrl.setPageSize($ctrl.pageSize)"
+                        ng-options="opt.value as opt.label for opt in $ctrl.pageSizeOptions">
+                    </select>
                 </div>
                 <div class="c-pagination__pages">
                     <div class="c-pagination__button" 
