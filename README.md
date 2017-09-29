@@ -247,3 +247,31 @@ var date3 = date1.random('year');
 
 ```
 
+
+## Knowledge Graph Support
+
+Include the KG module as a dependency.
+
+```javascript
+angular.module('myModule', ['gp-common-kg']);
+```
+
+### Recommender Service
+
+Angular $resource-based service for communicating with UAL's recommender endpoints.
+
+### Section Editor
+
+The Section Editor is how you display and manipulate Knowledge Graph property values.
+
+```html
+<kg-section 
+    ng-model="$ctrl.item.knowledgeGraph.places"
+    on-change="$ctrl.onChange('places', values)"
+    type="Place" 
+    label="Places" 
+    description="The central place (location) associated with this item">
+</kg-section>
+```
+
+

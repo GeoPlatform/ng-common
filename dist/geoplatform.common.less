@@ -383,3 +383,65 @@ header[gp-flex-header] {
 }
 
 
+
+
+
+kg-section {
+    display:        block;
+    box-sizing:     border-box;
+    padding:        1em;
+    margin-bottom:  2em;
+    border-radius:  4px;
+    box-shadow:     0 0 2px rgba(0,0,0,0.2);
+    background-color:#fff;
+
+    .list-group-item {
+        display:         flex;
+        justify-content: space-between;
+        align-items:     stretch;
+
+        .btn:first-child {
+            background-color: lighten(@color-gray-xlt, 5%);
+            margin:           -0.5em 1em -0.5em -0.75em;
+        }
+
+        &.list-group-item-sm {
+            padding: 0.5em 0.75em;
+        }
+    }
+
+    .list-group-item .description {
+        font-size:  0.875em;
+        display:    inline-block;
+        line-height: 1.4;
+        height:     1.3em;
+        overflow:   hidden;
+        color:      @color-gray-md;
+    }
+
+
+    [uib-dropdown-menu].dropdown-menu {
+        font-size:    1em;          //override bootstrap default
+        left:         0;
+        right:        0;            //make span parent width
+        padding:      1.3em 1em 0;
+        top:          -1.5em;       //cover up triggering input when open
+        margin-left:  -1em;
+        margin-right: -1em;
+        display:      block;        //override bootstrap behavior for dd menu
+        z-index:      -1;           //sit behind triggering input until open
+        opacity:      0;            //animate using opacity
+        transition:   .2s linear opacity;
+
+        .list-group-item {
+            display: block;
+        }
+    }
+
+    .dropdown.open [uib-dropdown-menu].dropdown-menu {
+        opacity: 1;
+        z-index: 1;     //sit on top of triggering input when open
+    }
+
+}
+
