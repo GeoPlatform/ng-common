@@ -208,7 +208,7 @@
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
                         <span class="glyphicon glyphicon-remove-circle t-fg--danger"></span> 
                     </button>
-                    <div>
+                    <div class="flex-1">
                         {{item.prefLabel}}
                         <span class="description" ng-bind-html="item.description"></span>
                     </div>
