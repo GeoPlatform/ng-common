@@ -26,6 +26,15 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         .pipe(notify('Uglified JavaScript'));
 });
 
+gulp.task('concat', 'Concat only, do not minify', () => {
+    gulp.src(['src/js/module.js', 'src/js/**/*.js'])
+        .pipe(jshint())
+        .pipe(srcmaps.init())
+        .pipe(concat(pkg.name + '.js'))
+        .pipe(srcmaps.write('./'))
+        .pipe(gulp.dest('dist/'))
+});
+
 gulp.task('jshint', function() {
   return gulp.src(['src/js/module.js', 'src/js/**/*.js'])
   .pipe(jshint())
@@ -44,4 +53,4 @@ gulp.task('less', 'Compile less into a single app.css.', function() {
 });
 
 
-gulp.task('default', ['js', 'less']);
+gulp.task('default', ['concat', 'js', 'less']);
