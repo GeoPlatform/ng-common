@@ -56,7 +56,7 @@
      * Inside "DEV", you should close and re-open any components' widgets
      * to get current auth status.
      */
-    .service('AuthenticationService', ['$q', '$http', '$location', '$route', '$rootScope', '$window', 'GPConfig',
+    .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig',
       function($q, $http, $location, $route, $rootScope, $window, Config) {
 
       //extend Storage prototype
@@ -174,14 +174,16 @@
           var current = window.location.href;
           var redirect = (Config.CALLBACK) ? Config.CALLBACK : current;
 
-          window.location = Config.IDP_BASE_URL + '/auth/authorize?client_id=' +
-            Config.APP_ID + '&response_type=' +
-            Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect);
+          //check auth type to set login URL: Implicit -> to IDP, Grant -> Resource Provider Login URL
+          var loginUrl = (Config.AUTH_TYPE === 'implicit') ? Config.IDP_BASE_URL +
+            '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' +
+            Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect) : Config.LOGIN_URL;
+
+          window.location = loginUrl;
 
           //This could be writen to use an modal / pop-up for login so you don't have to lose your current page
           //Logout already executes using a background call
         };
-
 
         /**
          * Performs background logout and requests jwt revokation
@@ -244,7 +246,7 @@
           var regex = new RegExp('access_token=.*type=Bearer', 'g'),
             hashParams = $location.hash(),
             accessToken,
-            current = $location.url(),
+            current = ($window && $window.location && $window.location.hash)? $window.location.hash : $location.url(),
             getParams = current.match(regex);
 
           if (getParams) {
