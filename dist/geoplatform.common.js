@@ -170,8 +170,14 @@
           var current = window.location.href;
           var redirect = (Config.CALLBACK) ? Config.CALLBACK : current;
 
+          if(Config.AUTH_TYPE !== 'grant' || Config.AUTH_TYPE !== 'token' )
+          {
+             //fail this request
+             throw new Error("Invalid authentication request type.  Must be 'token' or 'grant'.");
+           }
+
           //check auth type to set login URL: Implicit -> to IDP, Grant -> Resource Provider Login URL
-          var loginUrl = (Config.AUTH_TYPE === 'implicit') ? Config.IDP_BASE_URL +
+          var loginUrl = (Config.AUTH_TYPE === 'token') ? Config.IDP_BASE_URL +
             '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' +
             Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect) : Config.LOGIN_URL;
 
