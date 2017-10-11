@@ -38,8 +38,9 @@
      * to get current auth status.
      */
     .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig',
-      function($q, $http, $location, $route, $rootScope, $window, Config) {
-
+      function($q, $http, $location, $rootScope, $window, Config) {
+       
+      console.log("Loading auth service", Config);
       //extend Storage prototype
       Storage.prototype.setObject = function(key, value) {
         this.setItem(key, btoa(JSON.stringify(value)));
