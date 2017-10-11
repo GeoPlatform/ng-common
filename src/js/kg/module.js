@@ -56,7 +56,58 @@
 
     })
 
-    
+
+
+    /** 
+     * Component for rendering a brief % of completion
+     *
+     */
+    .component('kgCompletionDisplay', {
+
+        bindings: {
+            ngModel: '<'
+        },
+
+        controller: function($rootScope, KGHelper) {
+
+            this.$onInit = function() {
+
+                this.update();
+
+                this.listener = $rootScope.$on('gp:kg:updated', (event, item) => {
+                    if(item && item.id === this.id) {
+                        //in case kg didn't exist, 
+                        if(!this.ngModel.knowledgeGraph)
+                            this.ngModel.knowledgeGraph = item.knowledgeGraph;
+                        this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+                    }
+                });
+
+            };
+
+            this.$onChanges = function() {
+                this.update();
+            };
+
+            this.$onDestroy = function() {
+                this.listener();
+                this.listener = null;
+            };
+
+            this.update = function() {
+                this.id = this.ngModel ? this.ngModel.id : null;
+                this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+            };
+
+        },
+
+        template: 
+        `
+            <span>{{$ctrl.value||0}}%</span>
+            <span class="glyphicon glyphicon-dashboard"></span>
+        `
+
+    })
     ;
 
 

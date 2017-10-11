@@ -9,9 +9,10 @@
      * replacing bad characters with spaces or meaningful equivalents
      */
     .filter('fixLabel', function() {
-        return function(input) {
-            input = input || '';
-            return input.replace(/_/g,' ');
+        return function(value) {
+            if(!value || typeof(value) !== 'string' || !value.length) return 'Untitled';
+            let result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
         };
     })
 

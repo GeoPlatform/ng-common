@@ -1652,9 +1652,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
      * replacing bad characters with spaces or meaningful equivalents
      */
     .filter('fixLabel', function () {
-        return function (input) {
-            input = input || '';
-            return input.replace(/_/g, ' ');
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
         };
     }).filter('pluralize', function () {
         return function (text) {
@@ -1794,7 +1795,52 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
 
         });
-    }]);
+    }])
+
+    /** 
+     * Component for rendering a brief % of completion
+     *
+     */
+    .component('kgCompletionDisplay', {
+
+        bindings: {
+            ngModel: '<'
+        },
+
+        controller: ["$rootScope", "KGHelper", function controller($rootScope, KGHelper) {
+
+            this.$onInit = function () {
+                var _this2 = this;
+
+                this.update();
+
+                this.listener = $rootScope.$on('gp:kg:updated', function (event, item) {
+                    if (item && item.id === _this2.id) {
+                        //in case kg didn't exist, 
+                        if (!_this2.ngModel.knowledgeGraph) _this2.ngModel.knowledgeGraph = item.knowledgeGraph;
+                        _this2.value = KGHelper.calculate(_this2.ngModel.knowledgeGraph);
+                    }
+                });
+            };
+
+            this.$onChanges = function () {
+                this.update();
+            };
+
+            this.$onDestroy = function () {
+                this.listener();
+                this.listener = null;
+            };
+
+            this.update = function () {
+                this.id = this.ngModel ? this.ngModel.id : null;
+                this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+            };
+        }],
+
+        template: "\n            <span>{{$ctrl.value||0}}%</span>\n            <span class=\"glyphicon glyphicon-dashboard\"></span>\n        "
+
+    });
 })(jQuery, angular, GeoPlatform);
 
 (function (angular, Constants) {
@@ -1873,12 +1919,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "fetchOptions",
             value: function fetchOptions(query) {
-                var _this2 = this;
+                var _this3 = this;
 
                 //need this timeout or else 'this.query' isn't being 
                 // seen as having the same value as 'query'
                 this.$timeout(function () {
-                    _this2.query = query;
+                    _this3.query = query;
                 }, 10);
 
                 this.displayOptions.fetching = true;
@@ -1890,21 +1936,21 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 };
 
                 return this.service.query(params).$promise.then(function (response) {
-                    _this2.paging.total = response.totalResults;
-                    _this2.notify('gp:browse:suggestions:pagination', _this2.paging);
-                    _this2.suggested = response.results.map(function (result) {
-                        result._selected = _this2.isSelected(result);
+                    _this3.paging.total = response.totalResults;
+                    _this3.notify('gp:browse:suggestions:pagination', _this3.paging);
+                    _this3.suggested = response.results.map(function (result) {
+                        result._selected = _this3.isSelected(result);
                         return result;
                     });
-                    _this2.displayOptions.showSuggested = true;
-                    return _this2.suggested;
+                    _this3.displayOptions.showSuggested = true;
+                    return _this3.suggested;
                 }).catch(function (e) {
-                    _this2.paging.total = 0;
-                    _this2.notify('gp:browse:suggestions:pagination', _this2.paging);
-                    _this2.suggested = [];
-                    return _this2.suggested;
+                    _this3.paging.total = 0;
+                    _this3.notify('gp:browse:suggestions:pagination', _this3.paging);
+                    _this3.suggested = [];
+                    return _this3.suggested;
                 }).finally(function () {
-                    return _this2.displayOptions.fetching = false;
+                    return _this3.displayOptions.fetching = false;
                 });
             }
         }, {
@@ -2597,10 +2643,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * select all items in current page of results
              */
             selectAll: function selectAll() {
-                var _this3 = this;
+                var _this4 = this;
 
                 angular.forEach(_results, function (obj) {
-                    if (!_this3.isSelected(obj.id)) _selected.unshift(obj);
+                    if (!_this4.isSelected(obj.id)) _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
             },
@@ -2858,7 +2904,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function SocketService(url, options) {
             'ngInject';
 
-            var _this4 = this;
+            var _this5 = this;
 
             _classCallCheck(this, SocketService);
 
@@ -2901,7 +2947,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", function (evt) {
-                _this4.socketId = evt.id;
+                _this5.socketId = evt.id;
             });
 
             //if unable to connect
@@ -2930,14 +2976,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "on",
             value: function on(eventName, callback) {
-                var _this5 = this;
+                var _this6 = this;
 
                 if (!this.socket) return function () {};
                 //add the listener to the socket
                 this.socket.on(eventName, callback);
                 //return an 'off' function to remove the listener
                 return function () {
-                    _this5.socket.off(eventName, callback);
+                    _this6.socket.off(eventName, callback);
                 };
             }
 
@@ -2959,7 +3005,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "close",
             value: function close() {
-                var _this6 = this;
+                var _this7 = this;
 
                 //if this app was tracking an obj, 
                 // notify listeners that it is no longer
@@ -2969,7 +3015,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         if (tracks && tracks.length) {
                             /* jshint ignore:start */
                             angular.forEach(tracks, function (id) {
-                                _this6.end(event, id);
+                                _this7.end(event, id);
                             });
                             /* jshint ignore:end */
                         }
@@ -2992,7 +3038,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "begin",
             value: function begin(event, objId) {
-                var _this7 = this;
+                var _this8 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 this.tracking[event].push(objId);
@@ -3000,7 +3046,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var room = objId + "_" + event.toLowerCase();
 
                 this.join(room, function () {
-                    _this7.socket.emit(event, room, _this7.socketId, true);
+                    _this8.socket.emit(event, room, _this8.socketId, true);
                 });
             }
 
@@ -3012,7 +3058,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "end",
             value: function end(event, objId) {
-                var _this8 = this;
+                var _this9 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 if (!this.tracking[event].length) return; //empty, ignore request
@@ -3026,7 +3072,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 //send event to server about client stopping it's tracking
                 var room = objId + "_" + event.toLowerCase();
                 this.socket.emit(event, room, this.socketId, false, function () {
-                    _this8.leave(room);
+                    _this9.leave(room);
                 });
             }
 
