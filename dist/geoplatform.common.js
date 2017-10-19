@@ -1753,349 +1753,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 })(jQuery, angular);
 
-/**
- * 
- * KnowledgeGraph property on RIM Asset renamed to Classifiers
- *
- */
-
-(function (jQuery, angular, Constants) {
-    'use strict';
-
-    angular.module('gp-common-kg', []).constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places']).service('KGHelper', ['KGFields', function (KGFields) {
-
-        return {
-            calculate: function calculate(kg) {
-                if (!kg) return 0;
-                var result = 0;
-                angular.forEach(KGFields, function (prop) {
-                    if (kg[prop] && kg[prop].length) result += 10 + (kg[prop].length - 1);
-                    // result += kg[prop] ? kg[prop].length*5 : 0;
-                });
-                return result;
-            }
-
-        };
-    }])
-
-    /**
-     * Service that queries the recommendation service endpoint 
-     * exposed by UAL 
-     */
-    .service("RecommenderService", ["$resource", function ($resource) {
-
-        var baseUrl = Constants.ualUrl + '/api/recommender';
-        return $resource(baseUrl, {}, {
-
-            query: {
-                url: baseUrl + '/suggest',
-                isArray: false
-            },
-            queryTypes: {
-                url: baseUrl + '/types',
-                isArray: false
-            },
-            querySources: {
-                url: baseUrl + '/sources',
-                isArray: false
-            }
-
-        });
-    }])
-
-    /** 
-     * Component for rendering a brief % of completion
-     *
-     */
-    .component('kgCompletionDisplay', {
-
-        bindings: {
-            ngModel: '<' // the Asset containing the knowledge graph ('classifiers') property
-        },
-
-        controller: ["$rootScope", "KGHelper", function controller($rootScope, KGHelper) {
-
-            this.$onInit = function () {
-                var _this2 = this;
-
-                this.update();
-
-                this.listener = $rootScope.$on('gp:kg:updated', function (event, item) {
-                    if (item && item.id === _this2.id) {
-                        //in case kg didn't exist, 
-                        if (!_this2.ngModel.classifiers) _this2.ngModel.classifiers = item.classifiers;
-                        _this2.value = KGHelper.calculate(_this2.ngModel.classifiers);
-                    }
-                });
-            };
-
-            this.$onChanges = function () {
-                this.update();
-            };
-
-            this.$onDestroy = function () {
-                this.listener();
-                this.listener = null;
-            };
-
-            this.update = function () {
-                this.id = this.ngModel ? this.ngModel.id : null;
-                this.value = KGHelper.calculate(this.ngModel.classifiers);
-            };
-        }],
-
-        template: "\n            <span>{{$ctrl.value||0}}%</span>\n            <span class=\"glyphicon glyphicon-dashboard\"></span>\n        "
-
-    });
-})(jQuery, angular, GeoPlatform);
-
-(function (angular, Constants) {
-
-    'use strict';
-
-    var SectionController = function () {
-        SectionController.$inject = ["$timeout", "RecommenderService"];
-        function SectionController($timeout, RecommenderService) {
-            'ngInject';
-
-            _classCallCheck(this, SectionController);
-
-            this.$timeout = $timeout;
-            this.service = RecommenderService;
-        }
-
-        _createClass(SectionController, [{
-            key: "$onInit",
-            value: function $onInit() {
-                this.noResults = false;
-                this.query = '';
-                this.displayOptions = {
-                    fetching: false,
-                    showSuggested: false
-                };
-                this.paging = {
-                    start: 0,
-                    size: 5,
-                    sizeOptions: [5, 10, 20]
-                };
-                this.updateCache();
-            }
-
-            /**
-             * Update cache when bound 'ngModel' is actually assigned in the component lifecycle
-             */
-
-        }, {
-            key: "$onChanges",
-            value: function $onChanges() {
-                this.updateCache();
-            }
-        }, {
-            key: "$onDestroy",
-            value: function $onDestroy() {
-                this.eventHandlers = null;
-                this.clearOptions();
-                this.selected = null;
-                this.service = null;
-                this.$timeout = null;
-            }
-
-            /**
-             * 
-             * @param {object} item - selected value being activated (clicked on for navigation)
-             */
-
-        }, {
-            key: "activate",
-            value: function activate(item) {
-                if (this.onActivate) this.onActivate({ value: item });
-            }
-        }, {
-            key: "on",
-            value: function on(event, callback) {
-                this.eventHandlers = this.eventHandlers || {};
-                this.eventHandlers[event] = this.eventHandlers[event] || [];
-                this.eventHandlers[event].push(callback);
-            }
-        }, {
-            key: "notify",
-            value: function notify(event, data) {
-                if (!this.eventHandlers || !this.eventHandlers[event]) return;
-                angular.forEach(this.eventHandlers[event], function (handler) {
-                    try {
-                        handler(data);
-                    } catch (e) {}
-                });
-            }
-
-            /**
-             * @param {string} query - keywords provided by user input
-             * @return {Promise} resolving an array of results
-             */
-
-        }, {
-            key: "fetchOptions",
-            value: function fetchOptions(query) {
-                var _this3 = this;
-
-                //need this timeout or else 'this.query' isn't being 
-                // seen as having the same value as 'query'
-                this.$timeout(function () {
-                    _this3.query = query;
-                }, 10);
-
-                this.displayOptions.fetching = true;
-                var params = {
-                    type: this.type,
-                    q: query,
-                    page: Math.floor(this.paging.start / this.paging.size),
-                    size: this.paging.size
-                };
-
-                return this.service.query(params).$promise.then(function (response) {
-                    _this3.paging.total = response.totalResults;
-                    _this3.notify('gp:browse:suggestions:pagination', _this3.paging);
-                    _this3.suggested = response.results.map(function (result) {
-                        result._selected = _this3.isSelected(result);
-                        return result;
-                    });
-                    _this3.displayOptions.showSuggested = true;
-                    return _this3.suggested;
-                }).catch(function (e) {
-                    _this3.paging.total = 0;
-                    _this3.notify('gp:browse:suggestions:pagination', _this3.paging);
-                    _this3.suggested = [];
-                    return _this3.suggested;
-                }).finally(function () {
-                    return _this3.displayOptions.fetching = false;
-                });
-            }
-        }, {
-            key: "clearQuery",
-            value: function clearQuery() {
-                this.query = '';
-                this.fetchOptions(this.query);
-            }
-        }, {
-            key: "clearOptions",
-            value: function clearOptions() {
-
-                //clear query and available options
-                this.query = '';
-                this.suggested = null;
-
-                //reset paging
-                this.paging.start = 0;
-                this.paging.total = 0;
-                // this.notify('gp:browse:suggestions:pagination', this.paging);
-
-                //hide available options
-                this.displayOptions.showSuggested = false;
-            }
-
-            /**
-             * @param {integer} index - position in selected array of item removed
-             */
-
-        }, {
-            key: "remove",
-            value: function remove(index) {
-
-                var removed = this.ngModel[index].uri;
-                this.ngModel.splice(index, 1);
-
-                //remove from suggested list if one is populated (being shown)
-                if (this.suggested && this.suggested.length) {
-                    var found = this.suggested.find(function (it) {
-                        return it.uri === removed;
-                    });
-                    if (found) found._selected = false;
-                }
-                this.updateCache(); //update cache of selected ids
-                this.onChange({ values: this.ngModel }); //notify others of change
-            }
-
-            /**
-             * @param {object} value - item being checked for selection
-             * @return {boolean}
-             */
-
-        }, {
-            key: "isSelected",
-            value: function isSelected(value) {
-                return value._selected || ~this.selected.indexOf(value.uri);
-            }
-
-            /**
-             * @param {object} value - item being selected
-             */
-
-        }, {
-            key: "selectValue",
-            value: function selectValue(value) {
-                if (value._selected) return; //already selected
-
-                value._selected = true;
-
-                this.ngModel = this.ngModel || [];
-                this.ngModel.push(value);
-                this.updateCache();
-                this.onChange({ values: this.ngModel });
-            }
-        }, {
-            key: "updateCache",
-            value: function updateCache() {
-                this.selected = (this.ngModel || []).map(function (o) {
-                    return o.uri;
-                });
-            }
-        }, {
-            key: "onDropdownToggled",
-            value: function onDropdownToggled(open) {
-                if (!open) this.clearOptions();
-            }
-
-            /* -------- pagination methods ----------- */
-
-        }, {
-            key: "getPagination",
-            value: function getPagination() {
-                return this.paging;
-            }
-        }, {
-            key: "start",
-            value: function start(index) {
-                this.paging.start = index;
-                this.fetchOptions(this.query);
-            }
-        }, {
-            key: "size",
-            value: function size(value) {
-                this.paging.size = value;
-                this.fetchOptions(this.query);
-            }
-        }]);
-
-        return SectionController;
-    }();
-
-    angular.module('gp-common-kg').component('kgSection', {
-
-        bindings: {
-            ngModel: '<',
-            label: '@',
-            description: '@',
-            type: '@',
-            onChange: '&',
-            onActivate: '&'
-        },
-
-        controller: SectionController,
-
-        template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p>{{$ctrl.description}}</p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1\">\n                        <div class=\"u-pd-bottom--sm\">\n                            <a ng-click=\"$ctrl.activate(item)\">{{item.label}}</a>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\">\n                                {{item.uri}}\n                                <span class=\"glyphicon glyphicon-new-window\"></span>\n                            </a>\n                        </div>\n                        <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <a ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\"\n                            ng-class=\"{disabled:item._selected}\" \n                            ng-click=\"$ctrl.selectValue(item)\">\n                            <div class=\"u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                            <div class=\"u-text--sm t-text--italic\">{{item.uri}}</div>\n                            <span class=\"description\">{{item.description||\"No description provided\"}}</span>\n                        </a>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
 (function (angular, Constants) {
 
     "use strict";
@@ -2661,10 +2318,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * select all items in current page of results
              */
             selectAll: function selectAll() {
-                var _this4 = this;
+                var _this2 = this;
 
                 angular.forEach(_results, function (obj) {
-                    if (!_this4.isSelected(obj.id)) _selected.unshift(obj);
+                    if (!_this2.isSelected(obj.id)) _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
             },
@@ -2922,7 +2579,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function SocketService(url, options) {
             'ngInject';
 
-            var _this5 = this;
+            var _this3 = this;
 
             _classCallCheck(this, SocketService);
 
@@ -2965,7 +2622,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", function (evt) {
-                _this5.socketId = evt.id;
+                _this3.socketId = evt.id;
             });
 
             //if unable to connect
@@ -2994,14 +2651,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "on",
             value: function on(eventName, callback) {
-                var _this6 = this;
+                var _this4 = this;
 
                 if (!this.socket) return function () {};
                 //add the listener to the socket
                 this.socket.on(eventName, callback);
                 //return an 'off' function to remove the listener
                 return function () {
-                    _this6.socket.off(eventName, callback);
+                    _this4.socket.off(eventName, callback);
                 };
             }
 
@@ -3023,7 +2680,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "close",
             value: function close() {
-                var _this7 = this;
+                var _this5 = this;
 
                 //if this app was tracking an obj, 
                 // notify listeners that it is no longer
@@ -3033,7 +2690,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         if (tracks && tracks.length) {
                             /* jshint ignore:start */
                             angular.forEach(tracks, function (id) {
-                                _this7.end(event, id);
+                                _this5.end(event, id);
                             });
                             /* jshint ignore:end */
                         }
@@ -3056,7 +2713,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "begin",
             value: function begin(event, objId) {
-                var _this8 = this;
+                var _this6 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 this.tracking[event].push(objId);
@@ -3064,7 +2721,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var room = objId + "_" + event.toLowerCase();
 
                 this.join(room, function () {
-                    _this8.socket.emit(event, room, _this8.socketId, true);
+                    _this6.socket.emit(event, room, _this6.socketId, true);
                 });
             }
 
@@ -3076,7 +2733,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "end",
             value: function end(event, objId) {
-                var _this9 = this;
+                var _this7 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 if (!this.tracking[event].length) return; //empty, ignore request
@@ -3090,7 +2747,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 //send event to server about client stopping it's tracking
                 var room = objId + "_" + event.toLowerCase();
                 this.socket.emit(event, room, this.socketId, false, function () {
-                    _this9.leave(room);
+                    _this7.leave(room);
                 });
             }
 
@@ -3248,6 +2905,350 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
+
+/**
+ * 
+ * KnowledgeGraph property on RIM Asset renamed to Classifiers
+ *
+ */
+
+(function (jQuery, angular, Constants) {
+    'use strict';
+
+    angular.module('gp-common-kg', []).constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places']).service('KGHelper', ['KGFields', function (KGFields) {
+
+        return {
+            calculate: function calculate(kg) {
+                if (!kg) return 0;
+                var result = 0;
+                angular.forEach(KGFields, function (prop) {
+                    if (kg[prop] && kg[prop].length) result += 10 + (kg[prop].length - 1);
+                    // result += kg[prop] ? kg[prop].length*5 : 0;
+                });
+                return result;
+            }
+
+        };
+    }])
+
+    /**
+     * Service that queries the recommendation service endpoint 
+     * exposed by UAL 
+     */
+    .service("RecommenderService", ["$resource", function ($resource) {
+
+        var baseUrl = Constants.ualUrl + '/api/recommender';
+        return $resource(baseUrl, {}, {
+
+            query: {
+                url: baseUrl + '/suggest',
+                isArray: false
+            },
+            queryTypes: {
+                url: baseUrl + '/types',
+                isArray: false
+            },
+            querySources: {
+                url: baseUrl + '/sources',
+                isArray: false
+            }
+
+        });
+    }])
+
+    /** 
+     * Component for rendering a brief % of completion
+     *
+     */
+    .component('kgCompletionDisplay', {
+
+        bindings: {
+            ngModel: '<' // the Asset containing the knowledge graph ('classifiers') property
+        },
+
+        controller: ["$rootScope", "KGHelper", function controller($rootScope, KGHelper) {
+
+            this.$onInit = function () {
+                var _this8 = this;
+
+                this.update();
+
+                this.listener = $rootScope.$on('gp:kg:updated', function (event, item) {
+                    if (item && item.id === _this8.id) {
+                        //in case kg didn't exist, 
+                        if (!_this8.ngModel.classifiers) _this8.ngModel.classifiers = item.classifiers;
+                        _this8.value = KGHelper.calculate(_this8.ngModel.classifiers);
+                    }
+                });
+            };
+
+            this.$onChanges = function () {
+                this.update();
+            };
+
+            this.$onDestroy = function () {
+                this.listener();
+                this.listener = null;
+            };
+
+            this.update = function () {
+                this.id = this.ngModel ? this.ngModel.id : null;
+                this.value = KGHelper.calculate(this.ngModel.classifiers);
+            };
+        }],
+
+        template: "\n            <span>{{$ctrl.value||0}}%</span>\n            <span class=\"glyphicon glyphicon-dashboard\"></span>\n        "
+
+    });
+})(jQuery, angular, GeoPlatform);
+
+(function (angular, Constants) {
+
+    'use strict';
+
+    var SectionController = function () {
+        SectionController.$inject = ["$timeout", "RecommenderService"];
+        function SectionController($timeout, RecommenderService) {
+            'ngInject';
+
+            _classCallCheck(this, SectionController);
+
+            this.$timeout = $timeout;
+            this.service = RecommenderService;
+        }
+
+        _createClass(SectionController, [{
+            key: "$onInit",
+            value: function $onInit() {
+                this.noResults = false;
+                this.query = '';
+                this.displayOptions = {
+                    fetching: false,
+                    showSuggested: false
+                };
+                this.paging = {
+                    start: 0,
+                    size: 5,
+                    sizeOptions: [5, 10, 20]
+                };
+                this.updateCache();
+            }
+
+            /**
+             * Update cache when bound 'ngModel' is actually assigned in the component lifecycle
+             */
+
+        }, {
+            key: "$onChanges",
+            value: function $onChanges() {
+                this.updateCache();
+            }
+        }, {
+            key: "$onDestroy",
+            value: function $onDestroy() {
+                this.eventHandlers = null;
+                this.clearOptions();
+                this.selected = null;
+                this.service = null;
+                this.$timeout = null;
+            }
+
+            /**
+             * 
+             * @param {object} item - selected value being activated (clicked on for navigation)
+             */
+
+        }, {
+            key: "activate",
+            value: function activate(item) {
+                if (this.onActivate) this.onActivate({ value: item });
+            }
+        }, {
+            key: "on",
+            value: function on(event, callback) {
+                this.eventHandlers = this.eventHandlers || {};
+                this.eventHandlers[event] = this.eventHandlers[event] || [];
+                this.eventHandlers[event].push(callback);
+            }
+        }, {
+            key: "notify",
+            value: function notify(event, data) {
+                if (!this.eventHandlers || !this.eventHandlers[event]) return;
+                angular.forEach(this.eventHandlers[event], function (handler) {
+                    try {
+                        handler(data);
+                    } catch (e) {}
+                });
+            }
+
+            /**
+             * @param {string} query - keywords provided by user input
+             * @return {Promise} resolving an array of results
+             */
+
+        }, {
+            key: "fetchOptions",
+            value: function fetchOptions(query) {
+                var _this9 = this;
+
+                //need this timeout or else 'this.query' isn't being 
+                // seen as having the same value as 'query'
+                this.$timeout(function () {
+                    _this9.query = query;
+                }, 10);
+
+                this.displayOptions.fetching = true;
+                var params = {
+                    type: this.type,
+                    q: query,
+                    page: Math.floor(this.paging.start / this.paging.size),
+                    size: this.paging.size
+                };
+
+                return this.service.query(params).$promise.then(function (response) {
+                    _this9.paging.total = response.totalResults;
+                    _this9.notify('gp:browse:suggestions:pagination', _this9.paging);
+                    _this9.suggested = response.results.map(function (result) {
+                        result._selected = _this9.isSelected(result);
+                        return result;
+                    });
+                    _this9.displayOptions.showSuggested = true;
+                    return _this9.suggested;
+                }).catch(function (e) {
+                    _this9.paging.total = 0;
+                    _this9.notify('gp:browse:suggestions:pagination', _this9.paging);
+                    _this9.suggested = [];
+                    return _this9.suggested;
+                }).finally(function () {
+                    return _this9.displayOptions.fetching = false;
+                });
+            }
+        }, {
+            key: "clearQuery",
+            value: function clearQuery() {
+                this.query = '';
+                this.fetchOptions(this.query);
+            }
+        }, {
+            key: "clearOptions",
+            value: function clearOptions() {
+
+                //clear query and available options
+                this.query = '';
+                this.suggested = null;
+
+                //reset paging
+                this.paging.start = 0;
+                this.paging.total = 0;
+                // this.notify('gp:browse:suggestions:pagination', this.paging);
+
+                //hide available options
+                this.displayOptions.showSuggested = false;
+            }
+
+            /**
+             * @param {integer} index - position in selected array of item removed
+             */
+
+        }, {
+            key: "remove",
+            value: function remove(index) {
+
+                var removed = this.ngModel[index].uri;
+                this.ngModel.splice(index, 1);
+
+                //remove from suggested list if one is populated (being shown)
+                if (this.suggested && this.suggested.length) {
+                    var found = this.suggested.find(function (it) {
+                        return it.uri === removed;
+                    });
+                    if (found) found._selected = false;
+                }
+                this.updateCache(); //update cache of selected ids
+                this.onChange({ values: this.ngModel }); //notify others of change
+            }
+
+            /**
+             * @param {object} value - item being checked for selection
+             * @return {boolean}
+             */
+
+        }, {
+            key: "isSelected",
+            value: function isSelected(value) {
+                return value._selected || ~this.selected.indexOf(value.uri);
+            }
+
+            /**
+             * @param {object} value - item being selected
+             */
+
+        }, {
+            key: "selectValue",
+            value: function selectValue(value) {
+                if (value._selected) return; //already selected
+
+                value._selected = true;
+
+                this.ngModel = this.ngModel || [];
+                this.ngModel.push(value);
+                this.updateCache();
+                this.onChange({ values: this.ngModel });
+            }
+        }, {
+            key: "updateCache",
+            value: function updateCache() {
+                this.selected = (this.ngModel || []).map(function (o) {
+                    return o.uri;
+                });
+            }
+        }, {
+            key: "onDropdownToggled",
+            value: function onDropdownToggled(open) {
+                if (!open) this.clearOptions();
+            }
+
+            /* -------- pagination methods ----------- */
+
+        }, {
+            key: "getPagination",
+            value: function getPagination() {
+                return this.paging;
+            }
+        }, {
+            key: "start",
+            value: function start(index) {
+                this.paging.start = index;
+                this.fetchOptions(this.query);
+            }
+        }, {
+            key: "size",
+            value: function size(value) {
+                this.paging.size = value;
+                this.fetchOptions(this.query);
+            }
+        }]);
+
+        return SectionController;
+    }();
+
+    angular.module('gp-common-kg').component('kgSection', {
+
+        bindings: {
+            ngModel: '<',
+            label: '@',
+            description: '@',
+            type: '@',
+            onChange: '&',
+            onActivate: '&'
+        },
+
+        controller: SectionController,
+
+        template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p>{{$ctrl.description}}</p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1\">\n                        <div class=\"u-pd-bottom--sm\">\n                            <a ng-click=\"$ctrl.activate(item)\">{{item.label}}</a>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\">\n                                {{item.uri}}\n                                <span class=\"glyphicon glyphicon-new-window\"></span>\n                            </a>\n                        </div>\n                        <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <a ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\"\n                            ng-class=\"{disabled:item._selected}\" \n                            ng-click=\"$ctrl.selectValue(item)\">\n                            <div class=\"u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                            <div class=\"u-text--sm t-text--italic\">{{item.uri}}</div>\n                            <span class=\"description\">{{item.description||\"No description provided\"}}</span>\n                        </a>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
+    });
+})(angular, GeoPlatform);
+
 (function (angular) {
 
     'use strict';

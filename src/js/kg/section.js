@@ -220,7 +220,8 @@
                     </button>
                     <div class="flex-1">
                         <div class="u-pd-bottom--sm">
-                            <a ng-click="$ctrl.activate(item)">{{item.label}}</a>
+                            <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate">{{item.label}}</a>
+                            <span ng-if="!$ctrl.onActivate">{{item.label}}</span>
                         </div>
                         <div class="u-text--sm t-text--italic">
                             <a href="{{item.uri}}" target="_blank">
