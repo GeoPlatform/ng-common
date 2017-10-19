@@ -209,8 +209,16 @@
                         <span class="glyphicon glyphicon-remove-circle t-fg--danger"></span> 
                     </button>
                     <div class="flex-1">
-                        {{item.prefLabel}}
-                        <span class="description" ng-bind-html="item.description"></span>
+                        <div class="u-pd-bottom--sm">
+                            <a ui-sref="viewerById({id: '{{item.id}}'})">{{item.label}}</a>
+                        </div>
+                        <div class="u-text--sm t-text--italic">
+                            <a href="{{item.uri}}" target="_blank">
+                                {{item.uri}}
+                                <span class="glyphicon glyphicon-new-window"></span>
+                            </a>
+                        </div>
+                        <div class="description">{{item.description||"No description provided"}}</div>
                     </div>
                 </div>
             </div>
@@ -261,8 +269,9 @@
                         <a ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item"
                             ng-class="{disabled:item._selected}" 
                             ng-click="$ctrl.selectValue(item)">
-                            {{item.prefLabel}}
-                            <span class="description" ng-bind-html="item.description"></span>
+                            <div class="u-pd-bottom--sm">{{item.prefLabel}}</div>
+                            <div class="u-text--sm t-text--italic">{{item.uri}}</div>
+                            <span class="description">{{item.description||"No description provided"}}</span>
                         </a>
                         <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled">
                             No results match your query
