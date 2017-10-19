@@ -44,6 +44,15 @@
             this.$timeout = null;
         }
 
+        /**
+         * 
+         * @param {object} item - selected value being activated (clicked on for navigation)
+         */
+        activate(item) {
+            if(this.onActivate)
+                this.onActivate({value: item});
+        }
+
         on (event, callback) {
             this.eventHandlers = this.eventHandlers || {};
             this.eventHandlers[event] = this.eventHandlers[event] || [];
@@ -193,7 +202,8 @@
             label: '@',
             description: '@',
             type: '@',
-            onChange: '&'
+            onChange: '&',
+            onActivate: '&'
         },
 
         controller: SectionController,
@@ -210,7 +220,7 @@
                     </button>
                     <div class="flex-1">
                         <div class="u-pd-bottom--sm">
-                            <a ui-sref="viewerById({id: '{{item.id}}'})">{{item.label}}</a>
+                            <a ng-click="$ctrl.activate(item)">{{item.label}}</a>
                         </div>
                         <div class="u-text--sm t-text--italic">
                             <a href="{{item.uri}}" target="_blank">
