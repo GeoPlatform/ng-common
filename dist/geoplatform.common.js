@@ -1753,6 +1753,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 })(jQuery, angular);
 
+/**
+ * 
+ * KnowledgeGraph property on RIM Asset renamed to Classifiers
+ *
+ */
+
 (function (jQuery, angular, Constants) {
     'use strict';
 
@@ -1817,8 +1823,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 this.listener = $rootScope.$on('gp:kg:updated', function (event, item) {
                     if (item && item.id === _this2.id) {
                         //in case kg didn't exist, 
-                        if (!_this2.ngModel.knowledgeGraph) _this2.ngModel.knowledgeGraph = item.knowledgeGraph;
-                        _this2.value = KGHelper.calculate(_this2.ngModel.knowledgeGraph);
+                        if (!_this2.ngModel.classifiers) _this2.ngModel.classifiers = item.classifiers;
+                        _this2.value = KGHelper.calculate(_this2.ngModel.classifiers);
                     }
                 });
             };
@@ -1834,7 +1840,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
             this.update = function () {
                 this.id = this.ngModel ? this.ngModel.id : null;
-                this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+                this.value = KGHelper.calculate(this.ngModel.classifiers);
             };
         }],
 

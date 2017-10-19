@@ -1,4 +1,11 @@
 
+/**
+ * 
+ * KnowledgeGraph property on RIM Asset renamed to Classifiers
+ *
+ */
+
+
 (function(jQuery, angular, Constants) {
     'use strict';
 
@@ -65,7 +72,7 @@
     .component('kgCompletionDisplay', {
 
         bindings: {
-            ngModel: '<'
+            ngModel: '<' // the Asset containing the knowledge graph ('classifiers') property
         },
 
         controller: function($rootScope, KGHelper) {
@@ -77,9 +84,9 @@
                 this.listener = $rootScope.$on('gp:kg:updated', (event, item) => {
                     if(item && item.id === this.id) {
                         //in case kg didn't exist, 
-                        if(!this.ngModel.knowledgeGraph)
-                            this.ngModel.knowledgeGraph = item.knowledgeGraph;
-                        this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+                        if(!this.ngModel.classifiers)
+                            this.ngModel.classifiers = item.classifiers;
+                        this.value = KGHelper.calculate(this.ngModel.classifiers);
                     }
                 });
 
@@ -96,7 +103,7 @@
 
             this.update = function() {
                 this.id = this.ngModel ? this.ngModel.id : null;
-                this.value = KGHelper.calculate(this.ngModel.knowledgeGraph);
+                this.value = KGHelper.calculate(this.ngModel.classifiers);
             };
 
         },
