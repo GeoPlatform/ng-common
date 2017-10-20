@@ -14,7 +14,8 @@
 
     .constant('KGFields', [
         'purposes', 'functions', 'primaryTopics', 'secondaryTopics', 
-        'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places'
+        'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 
+        'places', 'categories'
     ])
 
 
@@ -26,7 +27,7 @@
                 let result = 0;
                 angular.forEach(KGFields, prop => {
                     if(kg[prop] && kg[prop].length)
-                        result += 10 + (kg[prop].length-1);
+                        result += 7 + Math.floor( (kg[prop].length-1) / 2 );
                     // result += kg[prop] ? kg[prop].length*5 : 0;
                 });
                 return result;
