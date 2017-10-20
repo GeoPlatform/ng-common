@@ -290,7 +290,7 @@
                                     title="Open source info in new window">
                                     {{item.uri}}
                                 </a>
-                                <span class="description">{{item.description||"No description provided"}}</span>
+                                <div class="description">{{item.description||"No description provided"}}</div>
                             </div>
                         </div>
                         <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled u-pd--md">
