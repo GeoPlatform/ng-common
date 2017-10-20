@@ -139,7 +139,9 @@
                 if(found) found._selected = false;
             }
             this.updateCache();                       //update cache of selected ids
-            this.onChange({values: this.ngModel});  //notify others of change
+            
+            if(this.onChange)
+                this.onChange({values: this.ngModel});  //notify others of change
         }
 
         /**
@@ -161,7 +163,9 @@
             this.ngModel = this.ngModel || [];
             this.ngModel.push(value);
             this.updateCache();
-            this.onChange({values: this.ngModel});
+
+            if(this.onChange)
+                this.onChange({values: this.ngModel});
 
         }
 
@@ -202,8 +206,8 @@
             label: '@',
             description: '@',
             type: '@',
-            onChange: '&',
-            onActivate: '&'
+            onChange: '&?',
+            onActivate: '&?'
         },
 
         controller: SectionController,
@@ -218,16 +222,13 @@
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
                         <span class="glyphicon glyphicon-remove-circle t-fg--danger"></span> 
                     </button>
-                    <div class="flex-1">
-                        <div class="u-pd-bottom--sm">
+                    <div class="flex-1 u-pd--md">
+                        <div class="u-pd-bottom--sm t-text--strong">
                             <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate">{{item.label}}</a>
                             <span ng-if="!$ctrl.onActivate">{{item.label}}</span>
                         </div>
                         <div class="u-text--sm t-text--italic">
-                            <a href="{{item.uri}}" target="_blank">
-                                {{item.uri}}
-                                <span class="glyphicon glyphicon-new-window"></span>
-                            </a>
+                            <a href="{{item.uri}}" target="_blank" title="Open source info in new window">{{item.uri}}</a>
                         </div>
                         <div class="description">{{item.description||"No description provided"}}</div>
                     </div>
@@ -277,14 +278,22 @@
                     <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"></gp-pagination>
 
                     <div class="list-group list-group-sm u-text--sm">
-                        <a ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item"
-                            ng-class="{disabled:item._selected}" 
-                            ng-click="$ctrl.selectValue(item)">
-                            <div class="u-pd-bottom--sm">{{item.prefLabel}}</div>
-                            <div class="u-text--sm t-text--italic">{{item.uri}}</div>
-                            <span class="description">{{item.description||"No description provided"}}</span>
-                        </a>
-                        <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled">
+                        <div ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item">
+                            <button type="button" class="btn btn-link" ng-click="$ctrl.selectValue(item)"
+                                ng-class="{disabled:item._selected}">
+                                <span class="glyphicon glyphicon-ok t-fg--gray-md" ng-show="item._selected"></span> 
+                                <span class="glyphicon glyphicon-plus-sign t-fg--success" ng-show="!item._selected"></span> 
+                            </button>
+                            <div class="flex-1 u-pd--md">
+                                <div class="t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</div>
+                                <a href="{{item.uri}}" target="_blank" class="u-text--sm t-text--italic"
+                                    title="Open source info in new window">
+                                    {{item.uri}}
+                                </a>
+                                <span class="description">{{item.description||"No description provided"}}</span>
+                            </div>
+                        </div>
+                        <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled u-pd--md">
                             No results match your query
                         </div>
                     </div>
