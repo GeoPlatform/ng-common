@@ -19,7 +19,8 @@
     ])
 
 
-    .service('KGHelper', [ 'KGFields', function(KGFields) {
+    .service('KGHelper', [ 'KGFields', 'RecommenderServiceFactory', 
+        function(KGFields, RecommenderServiceFactory) {
 
         return {
             calculate: function(kg) {
@@ -31,6 +32,10 @@
                     // result += kg[prop] ? kg[prop].length*5 : 0;
                 });
                 return result;
+            },
+
+            getService: function(type) {
+                return RecommenderServiceFactory(type);
             }
 
         };
@@ -61,6 +66,39 @@
             }
 
         });
+
+    })
+
+
+
+    /**
+     * Factory for creating services that query the recommendation 
+     * service endpoint exposed by UAL and includes object type
+     * parameter based upon owner of KG
+     */
+    .factory("RecommenderServiceFactory", function($resource) {
+
+        return function(type) {
+        
+            let baseUrl = Constants.ualUrl + '/api/recommender';
+            return $resource(baseUrl, { 'for': type }, {
+
+                query: {
+                    url: baseUrl + '/suggest',
+                    isArray: false
+                },
+                queryTypes: {
+                    url: baseUrl + '/types',
+                    isArray: false
+                },
+                querySources: {
+                    url: baseUrl + '/sources',
+                    isArray: false
+                }
+
+            });
+
+        };
 
     })
 

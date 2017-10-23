@@ -1762,7 +1762,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 (function (jQuery, angular, Constants) {
     'use strict';
 
-    angular.module('gp-common-kg', []).constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places', 'categories']).service('KGHelper', ['KGFields', function (KGFields) {
+    angular.module('gp-common-kg', []).constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places', 'categories']).service('KGHelper', ['KGFields', 'RecommenderServiceFactory', function (KGFields, RecommenderServiceFactory) {
 
         return {
             calculate: function calculate(kg) {
@@ -1773,6 +1773,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     // result += kg[prop] ? kg[prop].length*5 : 0;
                 });
                 return result;
+            },
+
+            getService: function getService(type) {
+                return RecommenderServiceFactory(type);
             }
 
         };
@@ -1801,6 +1805,35 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             }
 
         });
+    }])
+
+    /**
+     * Factory for creating services that query the recommendation 
+     * service endpoint exposed by UAL and includes object type
+     * parameter based upon owner of KG
+     */
+    .factory("RecommenderServiceFactory", ["$resource", function ($resource) {
+
+        return function (type) {
+
+            var baseUrl = Constants.ualUrl + '/api/recommender';
+            return $resource(baseUrl, { 'for': type }, {
+
+                query: {
+                    url: baseUrl + '/suggest',
+                    isArray: false
+                },
+                queryTypes: {
+                    url: baseUrl + '/types',
+                    isArray: false
+                },
+                querySources: {
+                    url: baseUrl + '/sources',
+                    isArray: false
+                }
+
+            });
+        };
     }])
 
     /** 
@@ -1861,7 +1894,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             _classCallCheck(this, SectionController);
 
             this.$timeout = $timeout;
-            this.service = RecommenderService;
+            // this.service = RecommenderService;
         }
 
         _createClass(SectionController, [{
@@ -1951,6 +1984,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     page: Math.floor(this.paging.start / this.paging.size),
                     size: this.paging.size
                 };
+                // if(this.forType)
+                //     params['for'] = this.forType;
 
                 return this.service.query(params).$promise.then(function (response) {
                     _this3.paging.total = response.totalResults;
@@ -2085,11 +2120,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         bindings: {
             ngModel: '<',
+            service: '<', //recommender service instance to use
             label: '@',
             description: '@',
-            type: '@',
-            onChange: '&?',
-            onActivate: '&?'
+            type: '@', //type of KG property
+            onChange: '&?', //fire when value(s) change
+            onActivate: '&?' //fire when selected value link is clicked
         },
 
         controller: SectionController,

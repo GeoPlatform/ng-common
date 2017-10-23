@@ -11,7 +11,7 @@
             'ngInject';
             
             this.$timeout = $timeout;
-            this.service = RecommenderService;
+            // this.service = RecommenderService;
         }
 
         $onInit () {
@@ -84,6 +84,8 @@
                 page:   Math.floor(this.paging.start/this.paging.size),
                 size:   this.paging.size
             };
+            // if(this.forType)
+            //     params['for'] = this.forType;
 
             return this.service.query(params).$promise
             .then(  response => {
@@ -203,11 +205,12 @@
 
         bindings: {
             ngModel: '<',
+            service: '<',       //recommender service instance to use
             label: '@',
             description: '@',
-            type: '@',
-            onChange: '&?',
-            onActivate: '&?'
+            type: '@',          //type of KG property
+            onChange: '&?',     //fire when value(s) change
+            onActivate: '&?'    //fire when selected value link is clicked
         },
 
         controller: SectionController,
