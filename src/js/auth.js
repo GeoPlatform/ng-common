@@ -26,6 +26,7 @@
    */
   angular.module('gp-common')
 
+
     /**
      * Authentication Service
      *
@@ -135,7 +136,7 @@
                 callback(_user);
               }
               //if not in process of checking, check
-              else if (self.status !== STATUS.INITIALIZING) {
+              else if (self.status === STATUS.INITIALIZING) {
                 //if hasn't been checked for auth yet, do that now
                 self.check().then(function(_user) {
                   self.status = STATUS.INITIALIZED;
