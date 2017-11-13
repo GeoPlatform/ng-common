@@ -3475,27 +3475,80 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             };
 
             /**
+             * @return {string} current HREF of the application
+             */
+            this.getCurrentLocation = function () {
+                return window.location.href;
+            };
+
+            /**
+             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
+             */
+            this.onBeforeLogin = function (callback) {
+                if (callback) {
+                    this.beforeLoginFn = function () {
+                        var deferred = $q.defer();
+                        callback(function () {
+                            deferred.resolve();
+                        });
+                        return deferred.promise;
+                    };
+                } else {
+                    this.beforeLoginFn = null;
+                }
+            };
+
+            /**
              * Redirects the page to the login site
              */
             this.login = function () {
-                if (isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
-                    _user = TEST_USER.clone();
-                    return _user;
+                var _this10 = this;
+
+                var promise = this.beforeLoginFn ? this.beforeLoginFn() : $q.resolve();
+                promise.then(function () {
+
+                    if (isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
+                        _user = TEST_USER.clone();
+                        return _user;
+                    }
+                    var current = _this10.getCurrentLocation();
+                    window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+                });
+            };
+
+            /**
+             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
+             */
+            this.onBeforeLogout = function (callback) {
+                if (callback) {
+                    this.beforeLogoutFn = function () {
+                        var promise = $q.defer();
+                        callback(function () {
+                            promise.resolve();
+                        });
+                        return promise;
+                    };
+                } else {
+                    this.beforeLogoutFn = null;
                 }
-                var current = window.location.href;
-                window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
             };
 
             /**
              * Redirects the page to the logout site
              */
             this.logout = function () {
-                if (isDEV()) {
-                    _user = null;
-                    return _user;
-                }
-                var current = window.location.href;
-                window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+                var _this11 = this;
+
+                var promise = this.beforeLogoutFn ? this.beforeLogoutFn() : $q.resolve();
+                promise.then(function () {
+
+                    if (isDEV()) {
+                        _user = null;
+                        return _user;
+                    }
+                    var current = _this11.getCurrentLocation();
+                    window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(curfalse);
+                });
             };
 
             /**

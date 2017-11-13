@@ -151,9 +151,9 @@
         var Service = function() {
 
             var self = this;
-            
 
             this.status = STATUS.NONE;
+
 
             //$q version of getUser
             this.getUserQ = function() {
@@ -200,27 +200,75 @@
             };
 
             /**
+             * @return {string} current HREF of the application
+             */
+            this.getCurrentLocation = function() {
+                return window.location.href;
+            };
+
+            /**
+             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
+             */
+            this.onBeforeLogin = function(callback) {
+                if(callback) {
+                    this.beforeLoginFn = () => {
+                        let deferred = $q.defer();
+                        callback( () => { deferred.resolve(); });
+                        return deferred.promise;
+                    };
+                } else {
+                    this.beforeLoginFn = null;
+                }
+            };
+
+            /**
              * Redirects the page to the login site
              */
             this.login = function () {
-                if(isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
-                    _user = TEST_USER.clone();
-                    return _user;
+
+                let promise = this.beforeLoginFn ? this.beforeLoginFn() : $q.resolve();
+                promise.then( () => {
+                
+                    if(isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
+                        _user = TEST_USER.clone();
+                        return _user;
+                    }
+                    var current = this.getCurrentLocation();
+                    window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+
+                });
+            };
+
+            /**
+             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
+             */
+            this.onBeforeLogout = function(callback) {
+                if(callback) {
+                    this.beforeLogoutFn = () => {
+                        let promise = $q.defer();
+                        callback( () => { promise.resolve(); });
+                        return promise;
+                    };
+                } else {
+                    this.beforeLogoutFn = null;
                 }
-                var current = window.location.href;
-                window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
             };
 
             /**
              * Redirects the page to the logout site
              */
             this.logout = function() {
-                if(isDEV()) {
-                    _user = null;
-                    return _user;
-                }
-                var current = window.location.href;
-                window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
+                let promise = this.beforeLogoutFn ? this.beforeLogoutFn() : $q.resolve();
+                promise.then( () => {
+                
+                    if(isDEV()) {
+                        _user = null;
+                        return _user;
+                    }
+                    var current = this.getCurrentLocation();
+                    window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(curfalse);
+
+                });
             };
 
 
