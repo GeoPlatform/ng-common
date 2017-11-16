@@ -1894,7 +1894,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             _classCallCheck(this, SectionController);
 
             this.$timeout = $timeout;
-            this.service = RecommenderService;
+            // this.service = RecommenderService;
         }
 
         _createClass(SectionController, [{

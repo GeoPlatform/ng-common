@@ -11,7 +11,7 @@
             'ngInject';
             
             this.$timeout = $timeout;
-            this.service = RecommenderService;
+            // this.service = RecommenderService;
         }
 
         $onInit () {
