@@ -74,7 +74,9 @@
             this.isAuthorized = function(role) {
                 let env = Config.env || Config.ENV || Config.NODE_ENV;
                 if(env === 'dev' || env === 'development') return true;
-                return this.roles && ~this.roles.indexOf(role);
+                if(!this.roles || !this.roles.length || typeof(this.roles.push) === 'undefined')
+                    return false;
+                return this.roles.indexOf(role)>=0;
             };
         }
 
@@ -84,7 +86,8 @@
             username: "tester", 
             email: "tester@geoplatform.us",
             name: "John Test", 
-            org: "Other"
+            org: "Other",
+            roles: ['tester']
         });
 
 
