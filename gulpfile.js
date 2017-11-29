@@ -29,7 +29,7 @@ gulp.task('jshint', function () {
 gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', function() {
 
     //include module first, then other src files which depend on module
-    gulp.src(['src/js/module.js', 'src/js/**/*.js'])
+    gulp.src(['src/js/module.js', 'src/js/kg/module.js', 'src/js/**/*.js'])
         .pipe(srcmaps.init())
         .pipe(concat(pkg.name + '.js'))
         .pipe(babel({presets: ["es2015"]}))

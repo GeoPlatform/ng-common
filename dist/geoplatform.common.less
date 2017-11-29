@@ -386,6 +386,53 @@ header[gp-flex-header] {
 
 
 
+
+.c-kg-editor__header {
+    background: #fff;
+    margin:     1em 1%;
+    padding:    .5em 1em;
+    border:     1px solid @color-gray-xlt;
+    border-radius: 4px;
+}
+
+.c-kg-editor__content {
+    display: block;
+}
+
+.c-kg-editor .c-kg-editor__section {
+    padding: 1em;
+    border-bottom: 1px solid @color-gray-xlt;
+}
+
+@media(min-width: 1200px) {
+
+    .c-kg-editor .c-kg-editor__header {
+        padding: .5em 1.5em;
+    }
+
+    .c-kg-editor .c-kg-editor__section {
+        display:         flex;
+        justify-content: flex-start;
+        align-items:     flex-start;
+        flex-wrap:       wrap;
+        padding:         1em 2em 0;
+
+        & > h3, & > h4, & > h5, & > h6 { flex: 1 0 100%; }
+
+        kg-section {
+            flex: 0 0 48%;
+            &:nth-child(2n+2) { margin-right: 2%; }
+        }
+    }
+}
+
+
+
+
+
+
+
+
 kg-section {
     display:        block;
     box-sizing:     border-box;

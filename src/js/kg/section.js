@@ -27,6 +27,10 @@
                 sizeOptions: [5, 10, 20]
             };
             this.updateCache();
+
+            //default section description if one was not provided
+            if(!this.description)
+                this.description = '<em>No description provided</em>';
         }
 
         /**
@@ -218,7 +222,7 @@
         template: 
         `
             <h5>{{$ctrl.label}}</h5>
-            <p>{{$ctrl.description}}</p>
+            <p class="u-text--sm" ng-bind-html="$ctrl.description"></p>
 
             <div class="list-group list-group-sm">
                 <div ng-repeat="item in $ctrl.ngModel track by $index" class="list-group-item">
@@ -227,13 +231,15 @@
                     </button>
                     <div class="flex-1 u-pd--md">
                         <div class="u-pd-bottom--sm t-text--strong">
-                            <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate">{{item.label}}</a>
+                            <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate"
+                                 class="u-break--all">{{item.label}}</a>
                             <span ng-if="!$ctrl.onActivate">{{item.label}}</span>
                         </div>
                         <div class="u-text--sm t-text--italic">
-                            <a href="{{item.uri}}" target="_blank" title="Open source info in new window">{{item.uri}}</a>
+                            <a href="{{item.uri}}" target="_blank" class="u-break--all"
+                                title="Open source info in new window">{{item.uri}}</a>
                         </div>
-                        <div class="description">{{item.description||"No description provided"}}</div>
+                        <div class="description" ng-if="item.description" ng-bind-html="item.description"></div>
                     </div>
                 </div>
             </div>
@@ -288,8 +294,9 @@
                                 <span class="glyphicon glyphicon-plus-sign t-fg--success" ng-show="!item._selected"></span> 
                             </button>
                             <div class="flex-1 u-pd--md">
-                                <div class="t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</div>
-                                <a href="{{item.uri}}" target="_blank" class="u-text--sm t-text--italic"
+                                <div class="u-break--all t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</div>
+                                <a href="{{item.uri}}" target="_blank" 
+                                    class="u-break--all u-text--sm t-text--italic"
                                     title="Open source info in new window">
                                     {{item.uri}}
                                 </a>

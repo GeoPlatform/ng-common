@@ -141,6 +141,12 @@
             };
 
             this.update = function() {
+
+                if(this.ngModel.$promise && !this.ngModel.$resolved) {
+                    this.ngModel.$promise.then( model => { this.update(); });
+                    return;
+                }
+
                 this.id = this.ngModel ? this.ngModel.id : null;
                 this.value = KGHelper.calculate(this.ngModel.classifiers);
             };
