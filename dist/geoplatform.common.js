@@ -31,7 +31,72 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 (function (jQuery, angular, Constants) {
     'use strict';
 
-    angular.module('gp-common-kg', []).constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places', 'categories']).service('KGHelper', ['KGFields', 'RecommenderServiceFactory', function (KGFields, RecommenderServiceFactory) {
+    angular.module('gp-common-kg', [])
+
+    // .constant('KGClassifiers', [
+    //     { 
+    //         label: 'purpose', 
+    //         description: 'The intended use or reason for the Object (i.e., layer, map, gallery) e.g., environmental impact of an oil spill.',
+    //         property: 'purposes',
+    //         section: 'Purpose' 
+    //     },
+    //     { 
+    //         label: 'primarySubject', 
+    //         description: 'The selected things, events, or concepts forming part of or represented by the Object. e.g., Deep Water Horizon oil rig, oil slick extent, oil slick movement over time, predicted oil slick movement, impacted sites, impact severity.',
+    //         property: 'primarySubjects',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'secondarySubject', 
+    //         description: 'Second-order subjects derived by machine processing/ analysis of the target Object',
+    //         property: 'secondarySubjects',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'primaryTopic', 
+    //         description: 'The central branch of knowledge or theme pertaining to the thing, concept, situation, issue, or event of interest. e.g., environmental impact of oil spill.',
+    //         property: 'primaryTopics',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'secondaryTopic', 
+    //         description: 'Second-order topics derived by machine processing/ analysis of the target Object',
+    //         property: 'secondaryTopics',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'category', 
+    //         description: 'The type or category of the Object.  e.g., topographic map, elevation layer',
+    //         property: 'categories',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'community', 
+    //         description: 'The GeoPlatform community this Object was produced for. e.g., "Ecosystems and Biodiversity" community',
+    //         property: 'communities',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'place', 
+    //         description: 'The central locale or common names for the place where the Subjects of the Object occur. e.g.,  USA/Gulf Coast',
+    //         property: 'places',
+    //         section: 'Scope' 
+    //     },
+    //     { 
+    //         label: 'function', 
+    //         description: 'The business actions, activities, or tasks this Object is intended to support (i.e., the role it plays in supporting an activity).  e.g., environmental impact assessment.',
+    //         property: 'functions',
+    //         section: 'Fitness for Use' 
+    //     },
+    //     { 
+    //         label: 'audience', 
+    //         description: 'The group of people for which this Object was intended to be used. e.g., general public, disaster recovery personnel, Congress.',
+    //         property: 'audiences',
+    //         section: 'Social Context' 
+    //     }
+    // ])
+
+    .constant('KGFields', ['purposes', 'functions', 'primaryTopics', 'secondaryTopics', 'primarySubjects', 'secondarySubjects', 'communities', 'audiences', 'places', 'categories']).service('KGHelper', ['KGFields', 'RecommenderServiceFactory', function (KGFields, RecommenderServiceFactory) {
 
         return {
             calculate: function calculate(kg) {
@@ -1780,6 +1845,117 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
+(function (jQuery, angular) {
+
+    "use strict";
+
+    angular.module("gp-common")
+
+    /**
+     * Custom filter to make label values visually helpful by 
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+
+            var name = str;
+
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+
+        return function (arg) {
+
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+
+            if (!isNaN(o)) {
+
+                o = o * 1;
+
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
 
@@ -1883,7 +2059,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             onActivate: '&' //function to invoke on KG item activation (click)
         },
         controller: KGEditor,
-        template: "\n            <div class=\"c-kg-editor\">\n                <div class=\"c-kg-editor__header l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"flex-1\">\n                        <h4>Knowledge Graph</h4>\n                        <div class=\"u-text--sm\">\n                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items \n                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>, \n                            <em>Fitness for Use</em>, and <em>Social Context</em>. \n                            <br>\n                            <br>\n                            Knowledge graphs are used to answer questions about items, such as:\n                            <ul>\n                            <li>Why was the item created?</li>\n                            <li>Why is it useful for others?</li>\n                            <li>Why is it appropriate to be used?</li>\n                            </ul>\n                        </div>\n                    </div>\n                    <gp-progress-circle ng-model=\"$ctrl.completion\" class=\"u-mg-left--xlg u-mg-right--xlg\"></gp-progress-circle>\n                </div>\n\n                <div class=\"c-kg-editor__content\">\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Purpose</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.purposes\"\n                            on-change=\"$ctrl.onChange('purposes', values)\"\n                            on-activate=\"$ctrl.onValueClick('purposes', value)\"\n                            type=\"Purpose\"\n                            label=\"Purpose\" \n                            description=\"{{$ctrl.descriptions.purpose}}\">\n                        </kg-section>\n                    </div>\n\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Scope</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primaryTopics\"\n                            on-change=\"$ctrl.onChange('primaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('primaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Primary Topics\" \n                            description=\"{{$ctrl.descriptions.primaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondaryTopics\"\n                            on-change=\"$ctrl.onChange('secondaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Secondary Topics\" \n                            description=\"{{$ctrl.descriptions.secondaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primarySubjects\"\n                            on-change=\"$ctrl.onChange('primarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('primarySubjects', value)\"\n                            type=\"Person\" \n                            label=\"Primary Subjects\" \n                            description=\"{{$ctrl.descriptions.primarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondarySubjects\"\n                            on-change=\"$ctrl.onChange('secondarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondarySubjects', value)\"\n                            type=\"Person\" \n                            label=\"Secondary Subjects\" \n                            description=\"{{$ctrl.descriptions.secondarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.categories\"\n                            on-change=\"$ctrl.onChange('categories', values)\"\n                            on-activate=\"$ctrl.onValueClick('categories', value)\"\n                            type=\"Category\" \n                            label=\"Categories\" \n                            description=\"{{$ctrl.descriptions.category}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.communities\"\n                            on-change=\"$ctrl.onChange('communities', values)\"\n                            on-activate=\"$ctrl.onValueClick('communities', value)\"\n                            type=\"Community\" \n                            label=\"Communities\" \n                            description=\"{{$ctrl.descriptions.community}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.places\"\n                            on-change=\"$ctrl.onChange('places', values)\"\n                            on-activate=\"$ctrl.onValueClick('places', value)\"\n                            type=\"Place\" \n                            label=\"Places\" \n                            description=\"{{$ctrl.descriptions.place}}\">\n                        </kg-section> \n                    </div> \n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Fitness for Use</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.functions\"\n                            on-change=\"$ctrl.onChange('functions', values)\"\n                            on-activate=\"$ctrl.onValueClick('functions', value)\"\n                            type=\"Function\" \n                            label=\"Function\" \n                            description=\"{{$ctrl.descriptions.function}}\">\n                        </kg-section>\n                    </div>\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Social Context</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.audiences\"\n                            on-change=\"$ctrl.onChange('audiences', values)\"\n                            on-activate=\"$ctrl.onValueClick('audiences', value)\"\n                            type=\"Audience\" \n                            label=\"Audiences\" \n                            description=\"{{$ctrl.descriptions.audience}}\">\n                        </kg-section>\n                    </div>\n\n                </div>\n            </div>\n        "
+        template: "\n            <div class=\"c-kg-editor\">\n                <div class=\"c-kg-editor__header l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"flex-1\">\n                        <h4>Knowledge Graph</h4>\n                        <div class=\"u-text--sm\">\n                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items \n                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>, \n                            <em>Fitness for Use</em>, and <em>Social Context</em>. \n                            <br>\n                            <br>\n                            Knowledge graphs are used to answer questions about items, such as:\n                            <ul>\n                            <li>Why was the item created?</li>\n                            <li>Why is it useful for others?</li>\n                            <li>Why is it appropriate to be used?</li>\n                            </ul>\n                        </div>\n                    </div>\n                    <gp-progress-circle ng-model=\"$ctrl.completion\" class=\"u-mg-left--xlg u-mg-right--xlg\"></gp-progress-circle>\n                </div>\n\n                <div class=\"c-kg-editor__content\">\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Purpose</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.purposes\"\n                            on-change=\"$ctrl.onChange('purposes', values)\"\n                            on-activate=\"$ctrl.onValueClick('purposes', value)\"\n                            type=\"Purpose\"\n                            label=\"Purpose\" \n                            description=\"{{$ctrl.descriptions.purpose}}\">\n                        </kg-section>\n                    </div>\n\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Scope</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primaryTopics\"\n                            on-change=\"$ctrl.onChange('primaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('primaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Primary Topics\" \n                            description=\"{{$ctrl.descriptions.primaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondaryTopics\"\n                            on-change=\"$ctrl.onChange('secondaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Secondary Topics\" \n                            description=\"{{$ctrl.descriptions.secondaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primarySubjects\"\n                            on-change=\"$ctrl.onChange('primarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('primarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Primary Subjects\" \n                            description=\"{{$ctrl.descriptions.primarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondarySubjects\"\n                            on-change=\"$ctrl.onChange('secondarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Secondary Subjects\" \n                            description=\"{{$ctrl.descriptions.secondarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.categories\"\n                            on-change=\"$ctrl.onChange('categories', values)\"\n                            on-activate=\"$ctrl.onValueClick('categories', value)\"\n                            type=\"Category\" \n                            label=\"Categories\" \n                            description=\"{{$ctrl.descriptions.category}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.communities\"\n                            on-change=\"$ctrl.onChange('communities', values)\"\n                            on-activate=\"$ctrl.onValueClick('communities', value)\"\n                            type=\"Community\" \n                            label=\"Communities\" \n                            description=\"{{$ctrl.descriptions.community}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.places\"\n                            on-change=\"$ctrl.onChange('places', values)\"\n                            on-activate=\"$ctrl.onValueClick('places', value)\"\n                            type=\"Place\" \n                            label=\"Places\" \n                            description=\"{{$ctrl.descriptions.place}}\">\n                        </kg-section> \n                    </div> \n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Fitness for Use</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.functions\"\n                            on-change=\"$ctrl.onChange('functions', values)\"\n                            on-activate=\"$ctrl.onValueClick('functions', value)\"\n                            type=\"Function\" \n                            label=\"Function\" \n                            description=\"{{$ctrl.descriptions.function}}\">\n                        </kg-section>\n                    </div>\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Social Context</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.audiences\"\n                            on-change=\"$ctrl.onChange('audiences', values)\"\n                            on-activate=\"$ctrl.onValueClick('audiences', value)\"\n                            type=\"Audience\" \n                            label=\"Audiences\" \n                            description=\"{{$ctrl.descriptions.audience}}\">\n                        </kg-section>\n                    </div>\n\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
 
@@ -2141,118 +2317,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
-
-(function (jQuery, angular) {
-
-    "use strict";
-
-    angular.module("gp-common")
-
-    /**
-     * Custom filter to make label values visually helpful by 
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-
-            var name = str;
-
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-
-        return function (arg) {
-
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-
-            if (!isNaN(o)) {
-
-                o = o * 1;
-
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-
-            return "X";
-        };
-    });
-})(jQuery, angular);
 
 (function (angular, Constants) {
 

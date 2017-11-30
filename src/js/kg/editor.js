@@ -155,7 +155,7 @@
                             ng-model="$ctrl.ngModel.classifiers.primarySubjects"
                             on-change="$ctrl.onChange('primarySubjects', values)"
                             on-activate="$ctrl.onValueClick('primarySubjects', value)"
-                            type="Person" 
+                            type="Subject" 
                             label="Primary Subjects" 
                             description="{{$ctrl.descriptions.primarySubject}}">
                         </kg-section>
@@ -164,7 +164,7 @@
                             ng-model="$ctrl.ngModel.classifiers.secondarySubjects"
                             on-change="$ctrl.onChange('secondarySubjects', values)"
                             on-activate="$ctrl.onValueClick('secondarySubjects', value)"
-                            type="Person" 
+                            type="Subject" 
                             label="Secondary Subjects" 
                             description="{{$ctrl.descriptions.secondarySubject}}">
                         </kg-section>
