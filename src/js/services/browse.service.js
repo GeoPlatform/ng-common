@@ -1,6 +1,6 @@
 
 (function(angular, Constants) {
-    
+
     "use strict";
 
 
@@ -11,12 +11,12 @@
     const FACETS = [ 'types','themes','publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy' ];
 
     const SORT_OPTIONS = [
-        { value:"label,asc",       label: "Name (A-Z)"              }, 
-        { value:"label,desc",      label: "Name (Z-A)"              }, 
-        { value:"type,asc",        label: "Type (A-Z)"              }, 
-        { value:"type,desc",       label: "Type (Z-A)"              }, 
-        { value:"modified,desc",   label: "Most recently modified"  }, 
-        { value:"modified,asc",    label: "Least recently modified" } 
+        { value:"label,asc",       label: "Name (A-Z)"              },
+        { value:"label,desc",      label: "Name (Z-A)"              },
+        { value:"type,asc",        label: "Type (A-Z)"              },
+        { value:"type,desc",       label: "Type (Z-A)"              },
+        { value:"modified,desc",   label: "Most recently modified"  },
+        { value:"modified,asc",    label: "Least recently modified" }
     ];
 
     //list of _options variables for mapping to parameters
@@ -48,7 +48,7 @@
     const PARAMETER_MODIFIED_BEFORE = 'modified.max';
     const PARAMETER_MODIFIED_AFTER  = 'modified.min';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
-    
+
 
     const PARAM_OPTIONS = [
         { option: VAR_TYPES,            parameter: PARAMETER_TYPE           },
@@ -64,7 +64,7 @@
         { option: VAR_MODIFIED_BEFORE,  parameter: PARAMETER_MODIFIED_BEFORE },
         { option: VAR_MODIFIED_AFTER,   parameter: PARAMETER_MODIFIED_AFTER }
     ];
-    
+
 
     const PAGE_SIZE_BASE_10 = [ 10, 20, 50, 100 ];
     const PAGE_SIZE_BASE_12 = [ 12, 24, 48, 96 ];
@@ -75,7 +75,7 @@
      *
      */
     function BrowseObjectsService($rootScope, $timeout, $resource, options) {
-            
+
 
         /* -------- private data ----------- */
 
@@ -91,28 +91,28 @@
 
         var _pageSizeBase = PAGE_SIZE_BASE_10.slice(0);
         if(options && options.pageSizeBase && options.pageSizeBase === 12)
-            _pageSizeBase = PAGE_SIZE_BASE_12.slice(0); 
+            _pageSizeBase = PAGE_SIZE_BASE_12.slice(0);
 
         var _options = {
-            start: 0, 
-            size: _pageSizeBase[0], 
+            start: 0,
+            size: _pageSizeBase[0],
             total: 0,
-            sort: (options && options.sort) ? options.sort : "modified,desc", 
+            sort: (options && options.sort) ? options.sort : "modified,desc",
             facets: {}
         };
 
         //list of field names to request in response
-        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);  
+        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
 
         //list of facet names to request
         var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
-        
+
 
         var _facets = [];
         var _selectedFacets = [];
-        
+
         var _results = [];
-        
+
         var _dirtyPromise = null;
 
         var _isLoading = false;
@@ -120,7 +120,7 @@
         var _selected = [];
 
         var _onSelectFn = options && options.onSelect ? options.onSelect : null;
-        
+
 
         /**
          *
@@ -137,11 +137,11 @@
 
             var doReset = typeof(resetStart) === 'undefined' || resetStart === true;
 
-            if(_dirtyPromise) 
+            if(_dirtyPromise)
                 $timeout.cancel(_dirtyPromise);
-            _dirtyPromise = $timeout(function() { 
+            _dirtyPromise = $timeout(function() {
                 _dirtyPromise = null;
-                _doUpdate(doReset); 
+                _doUpdate(doReset);
             }, delay || 100);
 
         }
@@ -172,7 +172,7 @@
 
                 let isSet = value !== null && typeof(value) !== 'undefined';
                 let isArr = isSet && typeof(value.push) !== 'undefined';
-                    
+
                 if(isSet && (!isArr||value.length)) {
                     params[name] = isArr ? value.join(',') : value;
                 } else {
@@ -192,7 +192,7 @@
                     delete params[name];
                 }
             });
-            
+
             // -------- QUERY FILTERS --------
 
 
@@ -201,7 +201,7 @@
             let arr = [];
             for(let k in _options.facets) {
                 if(_options.facets.hasOwnProperty(k)) {
-                    //encode commas in facet name since it's used to separate multiple 
+                    //encode commas in facet name since it's used to separate multiple
                     // facet values
                     arr.push(k+":"+_options.facets[k].replace(/,/g, '%2C'));
                 }
@@ -216,10 +216,10 @@
             params.page = Math.floor(start/_options.size);
             params.size = _options.size;
             params.sort = _options.sort;
-            
+
             if(arr.length)
                 params.facets = arr.join(',');
-            
+
 
 
             //prevent CORS cache bug in Chrome
@@ -234,7 +234,7 @@
 
             svc.query(params).$promise.
             then( function(response) {
-                
+
                 _results = response.results;
                 _facets = response.facets || [];
 
@@ -247,7 +247,7 @@
 
                 //will trigger update on pagination directive
                 _options.total = response.totalResults;
-                
+
                 _isLoading = false;
                 notify(eventKey + 'results');
                 notify(eventKey + 'pagination');
@@ -255,7 +255,7 @@
             })
             .catch( function(response) {
                 _isLoading = false;
-                
+
                 //fallback
                 let obj = { error: "An Error Occurred", message: "No details provided" }
 
@@ -266,17 +266,17 @@
 
                 //serialized json
                 if(typeof(obj) === 'string') {
-                    try      { obj = JSON.parse(obj);  } 
+                    try      { obj = JSON.parse(obj);  }
                     catch(e) { obj.message = "Bad response from server"; }
                 }
 
-                var error = { 
-                    label: obj.error || "An Error Occurred", 
+                var error = {
+                    label: obj.error || "An Error Occurred",
                     message: obj.message || "No details provided"
                 };
                 notify(eventKey + 'error', error);
             });
-            
+
         }
 
 
@@ -285,18 +285,18 @@
             _options[name] = value;
             if(typeof(fire) === 'undefined' || !!fire) {
                 let delay = 500;
-                if(value === null || value === undefined) 
+                if(value === null || value === undefined)
                     delay = 0;
-                if(value && typeof(value.push) !== 'undefined' && value.length) 
+                if(value && typeof(value.push) !== 'undefined' && value.length)
                     delay = 0;  //arrays
-                else if(value && value.length) 
+                else if(value && value.length)
                     delay = 0;   //strings
                 dirty(delay);
             }
         }
 
 
-    
+
         /* ------------ public api ------------- */
 
         return {
@@ -308,7 +308,8 @@
                 SELECTED:           eventKey + 'selected',
                 ERROR:              eventKey + 'error',
                 SELECTED_ADDED:     eventKey + 'selected:added',
-                SELECTED_REMOVED:   eventKey + 'selected:removed'
+                SELECTED_REMOVED:   eventKey + 'selected:removed',
+                SIMILARITY:         eventKey + 'similarTo'
             },
 
             /**
@@ -341,7 +342,7 @@
              */
             getResults: function() { return _results; },
 
-            /** 
+            /**
              * @return {array[string]} list of facet names
              */
             getFacetNames: function() { return FACETS.slice(0); },
@@ -408,7 +409,7 @@
 
             getTypes: function() { return _options[VAR_TYPES]; },
 
-            /** 
+            /**
              * @param {string} userId - identifier of user
              * @param {boolean} fireUpdate -
              */
@@ -416,7 +417,7 @@
 
             /**
              * @param {array[string]} creators - ids of creators
-             * @param {boolean} fireUpdate - 
+             * @param {boolean} fireUpdate -
              */
             setCreatedBy: function(creators, fireUpdate) { setOption(VAR_CREATED_BY, creators, fireUpdate); },
 
@@ -456,13 +457,13 @@
              */
             setVisibility: function(visibility, fireUpdate) { setOption(VAR_VISIBILITY, visibility, fireUpdate); },
 
-            /** 
+            /**
              * @param {Date} date - date to compare against
              * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
              * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
              */
             setModified: function(date, beforeOrAfter, fireUpdate) {
-            
+
                 //if no date was supplied, consider it "unset" for both properties
                 if(!date) {
                     setOption(VAR_MODIFIED_BEFORE, null, false);
@@ -478,7 +479,7 @@
                 setOption(oppProp, null, false);
                 setOption(prop, arg, true);
             },
-            
+
             getModified: function() {
                 return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
             },
@@ -502,8 +503,8 @@
             /**
              * @param {array} arr - list of items to select in current search results
              */
-            setSelected: function(arr) { 
-                _selected = arr; 
+            setSelected: function(arr) {
+                _selected = arr;
                 notify(this.events.SELECTED, _selected);
             },
 
@@ -511,7 +512,7 @@
              * @param {string} id - identifier of item in current search results to add to selected list
              */
             select: function(id) {
-                
+
                 var finder = function(l){ return l.id === id; };
 
                 var existing = _selected.find(finder);
@@ -524,7 +525,7 @@
                     }
 
                 } else {        //not selected, select it
-                    
+
                     let obj = _results.find(finder);
                     if(obj) {
 
@@ -540,13 +541,13 @@
                             notify(eventKey + 'selected:added', obj);
                         }
                     }
-                    
+
                 }
 
                 notify(this.events.SELECTED, _selected);
             },
 
-            /** 
+            /**
              * @param {string} id - identifier of item to check
              * @return {boolean} true if selected, false otherwise
              */
@@ -563,7 +564,7 @@
                         _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
-            }, 
+            },
 
             /**
              * empty list of selected items
@@ -637,7 +638,7 @@
              * @param {bool} andUpdate - trigger update (default is true)
              */
             size: function(size, andUpdate) {
-                
+
                 _options.size = size;
 
                 //find out which page in the new scheme the current first-result of current page
@@ -705,7 +706,7 @@
                             'sort' === k || 'order' === k || 'within' === k ||
                             'facets' === k) continue;
 
-                        if(_selectedFacets.length) 
+                        if(_selectedFacets.length)
                             result = true;
 
                         if(typeof(_options[k]) !== 'undefined' && _options[k] !== null) {
@@ -716,7 +717,7 @@
                 return result;
             },
 
-            /** 
+            /**
              * Triggers a refresh of current search results
              * @param {boolean} resetStart - reset 'start' to 0 flag
              */
@@ -724,34 +725,34 @@
                 dirty(0, resetStart);
             },
 
-            
+
             reset: function() {
                 _options = {
-                    start: 0, 
-                    size: _pageSizeBase[0], 
+                    start: 0,
+                    size: _pageSizeBase[0],
                     total: 0,
-                    sort: "modified,desc", order: "asc", 
+                    sort: "modified,desc", order: "asc",
                     facets: {}
                 };
 
                 _facets = [];
-                _selectedFacets = [];                
+                _selectedFacets = [];
                 _results = [];
                 _isLoading = false;
                 _selected = [];
 
-                if(_dirtyPromise) 
+                if(_dirtyPromise)
                     $timeout.cancel(_dirtyPromise);
-                _dirtyPromise = null;                
+                _dirtyPromise = null;
             },
 
             destroy: function() {
-                if(_dirtyPromise) 
+                if(_dirtyPromise)
                     $timeout.cancel(_dirtyPromise);
             }
         };
     }
-    
+
 
 
 
@@ -762,7 +763,7 @@
     /**
      * Factory for creating instances of BrowseObjectsService
      */
-    function BrowseServiceFactory($rootScope, $timeout, $resource) { 
+    function BrowseServiceFactory($rootScope, $timeout, $resource) {
 
         return function(options) {
             let svc = BrowseObjectsService($rootScope, $timeout, $resource, options);
@@ -778,28 +779,28 @@
     angular.module('gp-common')
 
     //generic browse service
-    .service("BrowseObjectsService", 
+    .service("BrowseObjectsService",
         ['$rootScope', '$timeout', '$resource', BrowseObjectsService])
 
     //factory for creating specific browse services
-    .factory("BrowseServiceFactory", 
+    .factory("BrowseServiceFactory",
         ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
 
-/* 
+/*
     Example of how to use the factory to customize a service
 
     //layer-specific browse service
     .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
-        let service = BrowseServiceFactory({ 
+        let service = BrowseServiceFactory({
             key: 'layers',
-            url: Constants.ualUrl + '/api/layers' 
+            url: Constants.ualUrl + '/api/layers'
         });
-        
+
         //add custom methods here
 
         return service;
     }])
-*/  
-    
+*/
+
 
 })(angular, GeoPlatform);
