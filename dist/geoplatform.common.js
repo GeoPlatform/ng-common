@@ -321,7 +321,7 @@
           this.isExpired = function(jwt){
             const exp = jwt && self.parseJwt(jwt).exp;
             const now = (new Date()).getTime() / 1000;
-            return exp > now;
+            return now > exp;
           };
 
           /**
@@ -443,10 +443,6 @@
             $scope.logout = function() {
               $scope.user = AuthenticationService.logout();
             };
-
-            $scope.$on('$destroy', function() {
-              watcher(); //destroy watcher
-            });
           }
         };
       }
@@ -507,10 +503,6 @@
             $scope.logout = function() {
               $scope.user = AuthenticationService.logout();
             };
-
-            $scope.$on('$destroy', function() {
-              watcher(); //destroy watcher
-            });
 
           }
         };
