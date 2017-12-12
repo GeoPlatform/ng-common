@@ -85,13 +85,6 @@
 
         var _user = null;
 
-        var STATUS = {
-          NONE: 0,
-          INITIALIZING: -1, //auth check in progress
-          INITIALIZED: 1 //auth check completed
-        };
-
-
         /**
          * Authentication Service
          */
@@ -100,66 +93,11 @@
           var self = this;
 
 
-          this.status = STATUS.NONE;
+          // this.status = STATUS.NONE;
 
           //$q version of getUser
           this.getUserQ = function() {
-            var deferred = $q.defer();
-            this.getUser(function(user) {
-              deferred.resolve(user);
-            });
-            return deferred.promise;
-          };
-
-          /**
-           * If the callback parameter is specified, this method
-           * will return undefined. Otherwise, it returns the user (or null).
-           *
-           * @param callback optional function to invoke with the user
-           * @return object representing current user
-           */
-          this.getUser = function(callback) {
-            if (callback && typeof(callback) === 'function') {
-
-              // console.log("Getting user info: " + self.status + ", " + JSON.stringify(_user||{empty:true}));
-
-              //if already checked, return what we have
-              if (self.status === STATUS.INITIALIZED)
-                //if we have a user and it is not expired return that user to the callback
-                if (_user && _user.exp * 1000 > Date.now()) {
-                  callback(_user);
-                } else if (Config.FORCE_LOGIN) {
-                //force login
-                self.forceLogin();
-              } else {
-                //return null user
-                callback(_user);
-              }
-              //if not in process of checking, check
-              else if (self.status === STATUS.INITIALIZING) {
-                //if hasn't been checked for auth yet, do that now
-                self.check().then(function(_user) {
-                  self.status = STATUS.INITIALIZED;
-                  callback(_user);
-                }, function() {
-                  self.status = STATUS.INITIALIZED;
-                  callback(null);
-                });
-              }
-              //if in process of checking, wait until it finishes
-              else {
-                setTimeout(function() {
-                  self.getUser(callback);
-                }, 500);
-              }
-              return;
-            }
-            //callback is not a function, chk for force login if user is null and redirect if necessary
-            // if(_user && _user.expired() && Config.FORCE_LOGIN || !_user && Config.FORCE_LOGIN){
-            //   self.forceLogin();
-            // }else{
-            return _user; //return null user
-            // }
+            return $q.when(self.getUser())
           };
 
           /**
@@ -192,11 +130,10 @@
            */
           this.logout = function() {
             //implicitly remove incase the idp is down and the revoke call does not work
-            delete window.localStorage.sub;
-            delete window.localStorage.at;
             _user = null;
-            var url = Config.IDP_BASE_URL + '/auth/revoke';
-            $http.get(url)
+            self.clearLocalStorageJWT();
+
+            $http.get(Config.IDP_BASE_URL + '/auth/revoke')
               .then(function(response) {
                 self.removeAuth();
                 //goto logout page
@@ -215,7 +152,7 @@
            * Optional force redirect for non-public services
            */
           this.forceLogin = function() {
-            this.login();
+            self.login();
           };
 
           /**
@@ -224,7 +161,7 @@
           this.getOauthProfile = function() {
             var Q = $q.defer();
             //check to make sure we can make called
-            if (window.localStorage.at && window.localStorage.sub) {
+            if (self.getJWTfromLocalStorage()) {
               var url = Config.IDP_BASE_URL + '/api/profile';
               $http.get(url)
                 .then(function(response) {
@@ -238,62 +175,148 @@
             return Q.promise;
           };
 
+          /*
+           * Set the _user property in this scope
+           */ 
+          this.setUser = function(user){ _user = user }
+
           /**
-           * Queries oauth if the current session is authenticated
-           * @return promise - then(function(user) {}, function(response){})
+           * Unpacks JWT to see if session is valid.
+           * 
+           * Side Effects: 
+           *  - Sets the _user property
+           *  - Sets the Authorize header if valid user found (this.setAuth)
+           *  - Will redirect user to login url if FORCE_LOGIN is set an no valid user is found
+           * 
+           * @return {User} - the authenticated user or undefined
            */
           this.check = function() {
+            // Pull user from either LocalStorage or the JWT (or the URL)
+            const jwt = self.getJWT();
 
-            var deferred = $q.defer();
-
-            self.status = STATUS.INITIALIZING;
-
-            var regex = new RegExp('access_token=.*type=Bearer', 'g'),
-              hashParams = $location.hash(),
-              accessToken,
-              current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url(),
-              getParams = current.match(regex);
-
-            if (getParams) {
-              var tokenString = getParams[0];
-              accessToken = tokenString.split('&')[0]
-                .split('=')[1];
-            }
-
-            var user = self.parseJwt(accessToken);
-            _user = (user) ?
-              new User({
+            // Save JWT in Auhorization Header
+            if(jwt && !self.isExpired(jwt)){
+              self.setAuth(jwt); 
+              const user = self.parseJwt(jwt);
+              // slightly differnet mapping ;)
+              self.setUser(new User({
                 id: user.sub,
                 username: user.username,
                 email: user.email,
                 name: user.name,
                 org: user.org,
                 exp: user.exp
-              }) :
-              null;
+              }))
 
-            if (_user) {
-              self.setAuth(_user, accessToken);
-            } else if (window.localStorage.sub && window.localStorage.at && self.validateJwt(window.localStorage.at)) {
-              self.setAuth(window.localStorage.getObject('sub'), window.localStorage.at);
-            } else {
-              self.removeAuth();
+              //clean hosturl on redirect from oauth
+              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
+              if (self.getJWTFromUrl()) {
+                var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
+                $window.location = cleanUrl;
+              }
+
+            // No valid userdata found
+            } else { 
+              self.removeAuth(); 
+              // Redirect if settings set
+              if(Config.FORCE_LOGIN === true) self.forceLogin();
             }
 
-            //clean hosturl on redirect from oauth
-            if (regex.test(current)) {
-              var cleanUrl = current.replace(regex, '');
-              $window.location = cleanUrl;
-            }
-
-            deferred.resolve(_user);
-            return deferred.promise;
-
+            // return the user
+            return _user
           };
+
+          /**
+           * If the callback parameter is specified, this method
+           * will return undefined. Otherwise, it returns the user (or null).
+           * 
+           * Side Effects: 
+           *  - This property sets the _user property for the enclosing scope
+           *  - Will redirect users if no valid JWT was found
+           *
+           * @param callback optional function to invoke with the user
+           * @return object representing current user
+           */
+          this.getUser = function(callback) {
+            // better check 'em first
+            self.check(); // Sideffects will redirect browser if JWT invalid
+
+            return callback && typeof(callback) === 'function' ?
+              callback(_user) :
+              _user;
+          }
 
           //=====================================================
 
-          //unpack jwt
+          /**
+           * Extract token from current URL
+           * 
+           * @method getJWTFromUrl
+           * 
+           * @return {String | undefined} - JWT Token (raw string)
+           */
+          this.getJWTFromUrl = function(){
+            const queryString = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url();
+            const res = queryString.match(/access_token=([^\&]*)/);
+            return res && res[1];
+          };
+
+          /**
+           * Load the JWT stored in local storage.
+           * 
+           * @method getJWTfromLocalStorage
+           * 
+           * @return {JWT | undefined} An object wih the following format:
+           */
+          this.getJWTfromLocalStorage = function(){
+            return window.localStorage.gpoauthJWT
+          };
+
+          /**
+           * Attempt and pull JWT from the following locations (in order):
+           *  - URL query parameter 'access_token' (returned from IDP)
+           *  - Browser local storage (saved from previous request)
+           * 
+           * @method getJWT 
+           * 
+           * @return {JWT | undefined} 
+           */
+          this.getJWT = function(){
+            return self.getJWTFromUrl() || self.getJWTfromLocalStorage()
+          };
+
+          /**
+           * Remove the JWT saved in local storge.
+           * 
+           * @method clearLocalStorageJWT
+           * 
+           * @return  {undefined}
+           */
+          this.clearLocalStorageJWT = function(){
+            delete window.localStorage.gpoauthJWT;
+          };
+
+          /**
+           * Is a token expired.
+           * 
+           * @method isExpired
+           * @param {JWT} jwt - A JWT
+           * 
+           * @return {boolean}
+           */
+          this.isExpired = function(jwt){
+            const exp = jwt && self.parseJwt(jwt).exp;
+            const now = (new Date()).getTime() / 1000;
+            return now > exp;
+          };
+
+          /**
+           * Unsafe (signature not checked) unpacking of JWT.
+           * 
+           * @param {string} token - Access Token (JWT)
+           * 
+           * @return {Object} the parsed payload in the JWT
+           */
           this.parseJwt = function(token) {
             var parsed;
             if (token) {
@@ -304,6 +327,9 @@
             return parsed;
           };
 
+          /**
+           * 
+           */
           this.validateJwt = function(token) {
             var parsed = self.parseJwt(token);
             var valid = (parsed && parsed.exp && parsed.exp * 1000 > Date.now()) ? true : false;
@@ -311,32 +337,23 @@
             return valid;
           };
 
-          this.setAuth = function(user, accessToken) {
-            _user = user;
-            window.localStorage.setObject('sub', user);
-            window.localStorage.at = accessToken;
-            $http.defaults.headers.common.Authorization = 'Bearer ' + accessToken;
+          this.setAuth = function(jwt) {
+            window.localStorage.gpoauthJWT = jwt;
+            $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $http.defaults.useXDomain = true;
             return;
           };
 
           this.removeAuth = function() {
-            delete window.localStorage.sub;
-            delete window.localStorage.at;
             _user = null;
-            $http.defaults.useXDomain = false;
+            delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
+            $http.defaults.useXDomain = false;
             return;
           };
 
           //initialize with auth check
-          this.check().then(function(user) {
-            self.status = STATUS.INITIALIZED;
-          }, function(err) {
-            self.status = STATUS.INITIALIZED;
-          }).catch(function(e) {
-            // console.log("Initial auth check errored");
-          });
+          this.check()
 
         };
 
@@ -412,17 +429,6 @@
             $scope.logout = function() {
               $scope.user = AuthenticationService.logout();
             };
-
-            //watch user for changes (timeouts)
-            var watcher = $scope.$watch(function() {
-              return AuthenticationService.getUser();
-            }, function(newUser) {
-              $scope.user = newUser;
-            });
-
-            $scope.$on('$destroy', function() {
-              watcher(); //destroy watcher
-            });
           }
         };
       }
@@ -483,17 +489,6 @@
             $scope.logout = function() {
               $scope.user = AuthenticationService.logout();
             };
-
-            //watch user for changes (timeouts)
-            var watcher = $scope.$watch(function() {
-              return AuthenticationService.getUser();
-            }, function(newUser) {
-              $scope.user = newUser;
-            });
-
-            $scope.$on('$destroy', function() {
-              watcher(); //destroy watcher
-            });
 
           }
         };
