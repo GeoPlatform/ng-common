@@ -2318,6 +2318,64 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 })(angular, GeoPlatform);
 
+(function (angular) {
+
+    'use strict';
+
+    angular.module('gp-common').component('createdByFilter', {
+
+        bindings: {
+            service: '<' //service filtering by
+        },
+
+        controller: ["AuthenticationService", function controller(AuthenticationService) {
+
+            this.$onInit = function () {
+                var _this5 = this;
+
+                this.value = null; //input from user for "created by" value
+                this.collapse = true; //hide show controls
+                this.limitToUser = false; //filter using current user
+                this.modelOptions = {
+                    'updateOn': 'default blur',
+                    'debounce': {
+                        'default': 250,
+                        'blur': 0
+                    }
+                };
+
+                AuthenticationService.getUserQ().then(function (user) {
+                    _this5.username = user ? user.username : null;
+                });
+            };
+
+            this.$onDestroy = function () {
+                this.value = null;
+                this.collapse = null;
+                this.limitToUser = null;
+                this.username = null;
+            };
+
+            this.filter = function () {
+                var value = this.limitToUser ? this.username : this.value;
+                if (typeof value !== 'undefined' && value !== null && value.trim().length === 0) value = null; //don't accept empty strings
+                this.service.setCreatedBy(value, true);
+            };
+
+            this.toggleLimitToUser = function () {
+                this.limitToUser = !this.limitToUser;
+                this.filter();
+            };
+
+            this.clear = function () {
+                this.value = null;
+                this.filter();
+            };
+        }],
+        template: "\n            <div class=\"card\">\n                <h5 class=\"card-title l-flex-container flex-justify-between flex-align-center\">\n                    <span class=\"flex-1\">Filter by Author</span>\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-chevron-up':!$ctrl.collapse,'glyphicon-chevron-down':$ctrl.collapse}\"></span>\n                    </button>\n                </h5>\n                <div class=\"card-content\" ng-hide=\"$ctrl.collapse\">\n\n                    <div class=\"input-group-slick\">\n                        <span class=\"glyphicon glyphicon-user\"></span>\n                        <input type=\"text\" class=\"form-control\" placeholder=\"Specify author username\"\n                            ng-disabled=\"$ctrl.limitToUser\"\n                            ng-model=\"$ctrl.value\"\n                            ng-model-options=\"$ctrl.modelOptions\"\n                            ng-change=\"$ctrl.filter()\">\n                        <span class=\"glyphicon glyphicon-remove\" title=\"Clear author\"\n                            ng-if=\"$ctrl.value.length&&!$ctrl.limitToUser\" ng-click=\"$ctrl.clear()\"></span>\n                    </div>\n\n                    <label class=\"control-label u-text--sm text-muted u-pd-top--sm\" ng-if=\"$ctrl.username\">\n                        <input type=\"checkbox\" ng-model=\"$ctrl.limitToUser\" ng-change=\"$ctrl.filter()\">\n                        Only show my maps\n                    </label>\n                </div>\n            </div>\n        "
+    });
+})(angular);
+
 (function (angular, Constants) {
 
     'use strict';
@@ -2373,7 +2431,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             };
 
             this.updateValues = function (query) {
-                var _this5 = this;
+                var _this6 = this;
 
                 return $http.get(Constants.ualUrl + '/api/items', {
                     params: {
@@ -2387,11 +2445,11 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                     var total = response.data.totalResults;
                     var newValues = response.data.results.slice(0);
-                    _this5.additionalValueCount = total - newValues.length;
+                    _this6.additionalValueCount = total - newValues.length;
 
-                    var selections = _this5.service.getAgencies();
-                    if (selections && selections.length && _this5.values && _this5.values.length) {
-                        var existing = _this5.values.filter(function (v) {
+                    var selections = _this6.service.getAgencies();
+                    if (selections && selections.length && _this6.values && _this6.values.length) {
+                        var existing = _this6.values.filter(function (v) {
                             //find existing values that are selected
                             return ~selections.indexOf(v.id) &&
                             // but not in new set of values
@@ -2402,7 +2460,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         newValues = existing.concat(newValues);
                     }
 
-                    _this5.values = newValues;
+                    _this6.values = newValues;
                 }, function (response) {
                     console.log("(" + response.status + ") " + response.statusText);
                 });
@@ -2431,7 +2489,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         controller: function controller() {
 
             this.$onInit = function () {
-                var _this6 = this;
+                var _this7 = this;
 
                 this.collapse = true;
                 this.value = null;
@@ -2439,8 +2497,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 var evtName = this.service.events.SIMILARITY;
                 this.listener = this.service.on(evtName, function (event, layer) {
-                    _this6.value = layer;
-                    _this6.service.applyOption('similarTo', _this6.value.id, true);
+                    _this7.value = layer;
+                    _this7.service.applyOption('similarTo', _this7.value.id, true);
                 });
 
                 if (!this.type) this.type = "item";
@@ -2548,7 +2606,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             };
 
             this.updateValues = function (query) {
-                var _this7 = this;
+                var _this8 = this;
 
                 return $http.get(Constants.ualUrl + '/api/items', {
                     params: {
@@ -2561,7 +2619,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     }
                 }).then(function (response) {
                     // let total = response.data.totalResults;
-                    _this7.values = response.data.results.slice(0);
+                    _this8.values = response.data.results.slice(0);
                 }, function (response) {
                     console.log("(" + response.status + ") " + response.statusText);
                 }).catch(function (e) {
@@ -3139,10 +3197,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * select all items in current page of results
              */
             selectAll: function selectAll() {
-                var _this8 = this;
+                var _this9 = this;
 
                 angular.forEach(_results, function (obj) {
-                    if (!_this8.isSelected(obj.id)) _selected.unshift(obj);
+                    if (!_this9.isSelected(obj.id)) _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
             },
@@ -3401,7 +3459,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function SocketService(url, options) {
             'ngInject';
 
-            var _this9 = this;
+            var _this10 = this;
 
             _classCallCheck(this, SocketService);
 
@@ -3444,7 +3502,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", function (evt) {
-                _this9.socketId = evt.id;
+                _this10.socketId = evt.id;
             });
 
             //if unable to connect
@@ -3473,14 +3531,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "on",
             value: function on(eventName, callback) {
-                var _this10 = this;
+                var _this11 = this;
 
                 if (!this.socket) return function () {};
                 //add the listener to the socket
                 this.socket.on(eventName, callback);
                 //return an 'off' function to remove the listener
                 return function () {
-                    _this10.socket.off(eventName, callback);
+                    _this11.socket.off(eventName, callback);
                 };
             }
 
@@ -3502,7 +3560,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "close",
             value: function close() {
-                var _this11 = this;
+                var _this12 = this;
 
                 //if this app was tracking an obj, 
                 // notify listeners that it is no longer
@@ -3512,7 +3570,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         if (tracks && tracks.length) {
                             /* jshint ignore:start */
                             angular.forEach(tracks, function (id) {
-                                _this11.end(event, id);
+                                _this12.end(event, id);
                             });
                             /* jshint ignore:end */
                         }
@@ -3535,7 +3593,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "begin",
             value: function begin(event, objId) {
-                var _this12 = this;
+                var _this13 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 this.tracking[event].push(objId);
@@ -3543,7 +3601,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var room = objId + "_" + event.toLowerCase();
 
                 this.join(room, function () {
-                    _this12.socket.emit(event, room, _this12.socketId, true);
+                    _this13.socket.emit(event, room, _this13.socketId, true);
                 });
             }
 
@@ -3555,7 +3613,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "end",
             value: function end(event, objId) {
-                var _this13 = this;
+                var _this14 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 if (!this.tracking[event].length) return; //empty, ignore request
@@ -3569,7 +3627,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 //send event to server about client stopping it's tracking
                 var room = objId + "_" + event.toLowerCase();
                 this.socket.emit(event, room, this.socketId, false, function () {
-                    _this13.leave(room);
+                    _this14.leave(room);
                 });
             }
 
@@ -3945,7 +4003,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * Redirects the page to the login site
              */
             this.login = function () {
-                var _this14 = this;
+                var _this15 = this;
 
                 var promise = this.beforeLoginFn ? this.beforeLoginFn() : $q.resolve();
                 promise.then(function () {
@@ -3954,7 +4012,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         _user = TEST_USER.clone();
                         return _user;
                     }
-                    var current = _this14.getCurrentLocation();
+                    var current = _this15.getCurrentLocation();
                     window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
                 });
             };
@@ -3980,7 +4038,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * Redirects the page to the logout site
              */
             this.logout = function () {
-                var _this15 = this;
+                var _this16 = this;
 
                 var promise = this.beforeLogoutFn ? this.beforeLogoutFn() : $q.resolve();
                 promise.then(function () {
@@ -3989,7 +4047,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         _user = null;
                         return _user;
                     }
-                    var current = _this15.getCurrentLocation();
+                    var current = _this16.getCurrentLocation();
                     window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(curfalse);
                 });
             };
