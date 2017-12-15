@@ -16,7 +16,8 @@
         { value:"type,asc",        label: "Type (A-Z)"              },
         { value:"type,desc",       label: "Type (Z-A)"              },
         { value:"modified,desc",   label: "Most recently modified"  },
-        { value:"modified,asc",    label: "Least recently modified" }
+        { value:"modified,asc",    label: "Least recently modified" },
+        { value:"_score,desc",     label: "Relevance"               },
     ];
 
     //list of _options variables for mapping to parameters
