@@ -105,10 +105,8 @@
 }
 
 .c-facets > .c-facet__value.active {
-
     background: @color-active;
     color: @color-white;
-
 }
 
 // for list groups in browse filters
@@ -134,6 +132,17 @@
         .t-fg--gray-dk;
         background-color: transparent;
     }
+}
+
+
+//override selected value styles when expanded for specific filters
+.c-filter__recommended-terms .c-facets > .c-facet__value.active {
+    background: transparent;
+    color: @color-gray-dk;
+}
+
+.c-facets > .c-facet__value .form-control {
+    font-size: 1rem;    //override smaller size from parent
 }
 
 
