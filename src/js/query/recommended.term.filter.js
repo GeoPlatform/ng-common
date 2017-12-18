@@ -234,14 +234,14 @@
                     Filter using Semantic Concepts
 
                     <button type="button" class="btn btn-sm btn-link"
-                        title="{{$ctrl.collapse?'Expand':'Collapse'}}"
-                        ng-click="$ctrl.collapse = !$ctrl.collapse">
+                        title="{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}"
+                        ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
                         <span class="glyphicon"
-                            ng-class="{'glyphicon-chevron-up':!$ctrl.collapse,'glyphicon-chevron-down':$ctrl.collapse}"></span>
+                            ng-class="{'glyphicon-chevron-up':!$ctrl.displayOpts.collapse,'glyphicon-chevron-down':$ctrl.displayOpts.collapse}"></span>
                     </button>
                 </h5>
 
-                <div class="c-facets" ng-hide="$ctrl.collapse">
+                <div class="c-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">
 
                     <!--
                     <div class="c-facet__value">
@@ -265,48 +265,56 @@
                     </div>
                     -->
 
-                    <div class="input-group-slick">
-                        <span class="glyphicon"
-                            ng-class="{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}"></span>
-                        <input type="text" class="form-control"
-                            ng-model="$ctrl.termQuery"
-                            ng-model-options="{ debounce: 250 }"
-                            ng-change="$ctrl.getOptions()"
-                            placeholder="Find concepts">
-                        <span class="glyphicon glyphicon-remove" ng-if="$ctrl.displayOpts.suggest"
-                            ng-click="$ctrl.hideSuggested()"></span>
-                    </div>
+                    <div ng-hide="$ctrl.displayOpts.collapse">
 
-                    <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"
-                        ng-if="$ctrl.displayOpts.suggest">
-                    </gp-pagination>
+                        <div class="input-group-slick">
+                            <span class="glyphicon"
+                                ng-class="{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}"></span>
+                            <input type="text" class="form-control"
+                                ng-model="$ctrl.termQuery"
+                                ng-model-options="{ debounce: 250 }"
+                                ng-change="$ctrl.getOptions()"
+                                placeholder="Find concepts">
+                            <span class="glyphicon glyphicon-remove" ng-if="$ctrl.displayOpts.suggest"
+                                ng-click="$ctrl.hideSuggested()"></span>
+                        </div>
 
-                    <div class="list-group list-group-sm u-text--sm"
-                        ng-if="$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching">
+                        <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"
+                            ng-if="$ctrl.displayOpts.suggest">
+                        </gp-pagination>
 
-                        <a ng-repeat="item in $ctrl.suggested track by $index"
-                            class="list-group-item"
-                            ng-class="{disabled:item._selected}"
-                            ng-click="$ctrl.select(item)">
-                            <span class="u-break--all t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</span>
-                            <br>
-                            <span class="u-break--all u-text--sm t-text--italic">{{item.uri}}</span>
-                        </a>
+                        <div class="list-group list-group-sm u-text--sm"
+                            ng-if="$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching">
 
-                        <div ng-if="$ctrl.displayOpts.empty" class="list-group-item disabled u-pd--md">
-                            No concepts found
+                            <a ng-repeat="item in $ctrl.suggested track by $index"
+                                class="list-group-item"
+                                ng-class="{disabled:item._selected}"
+                                ng-click="$ctrl.select(item)">
+                                <span class="u-break--all t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</span>
+                                <br>
+                                <span class="u-break--all u-text--sm t-text--italic">{{item.uri}}</span>
+                            </a>
+
+                            <div ng-if="$ctrl.displayOpts.empty" class="list-group-item disabled u-pd--md">
+                                No concepts found
+                            </div>
+
                         </div>
 
                     </div>
 
-                
+
                     <!-- selected terms -->
-                    <a ng-repeat="term in $ctrl.values" class="c-facet__value active"
+                    <div ng-repeat="term in $ctrl.values" class="c-facet__value active"
                         title="Remove this term from the query"
                         ng-click="$ctrl.removeValue($index)">
-                        <span class="glyphicon glyphicon-check"></span>
-                        {{term.context}} {{term.label}}
-                    </a>
+
+                        <div class="u-break--all t-text--strong u-pd-bottom--sm">
+                            <span class="glyphicon glyphicon-check"></span>
+                            {{term.prefLabel}}
+                        </div>
+                        <div class="u-break--all u-text--sm t-text--italic">{{term.uri}}</div>
+                    </div>
 
                 </div>
 
