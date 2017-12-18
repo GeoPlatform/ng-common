@@ -1845,117 +1845,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
-(function (jQuery, angular) {
-
-    "use strict";
-
-    angular.module("gp-common")
-
-    /**
-     * Custom filter to make label values visually helpful by 
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-
-            var name = str;
-
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-
-        return function (arg) {
-
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-
-            if (!isNaN(o)) {
-
-                o = o * 1;
-
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-
-            return "X";
-        };
-    });
-})(jQuery, angular);
 
 (function (angular, Constants) {
 
@@ -2318,6 +2207,118 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 })(angular, GeoPlatform);
 
+(function (jQuery, angular) {
+
+    "use strict";
+
+    angular.module("gp-common")
+
+    /**
+     * Custom filter to make label values visually helpful by 
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+
+            var name = str;
+
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+
+        return function (arg) {
+
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+
+            if (!isNaN(o)) {
+
+                o = o * 1;
+
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+
+            return "X";
+        };
+    });
+})(jQuery, angular);
+
 (function (angular) {
 
     'use strict';
@@ -2474,71 +2475,151 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
     'use strict';
 
-    var PARAMETER = "terms";
+    var PARAMETER = "concepts";
 
     var RecommendedTermFilter = function () {
-        RecommendedTermFilter.$inject = ["RecommenderService"];
-        function RecommendedTermFilter(RecommenderService) {
+        RecommendedTermFilter.$inject = ["$timeout", "RecommenderService"];
+        function RecommendedTermFilter($timeout, RecommenderService) {
             'ngInject';
 
             _classCallCheck(this, RecommendedTermFilter);
 
             this.termService = RecommenderService;
+            this.$timeout = $timeout;
         }
 
         _createClass(RecommendedTermFilter, [{
             key: "$onInit",
             value: function $onInit() {
-                this.isFetching = false;
-                this.isEmpty = false;
-                this.collapse = false;
+                this.displayOpts = {
+                    fetching: false,
+                    empty: false,
+                    collapse: false,
+                    suggest: false
+                };
                 this.values = [];
+                this.suggested = [];
                 this.termQuery = null;
+                this.paging = {
+                    start: 0,
+                    size: 5,
+                    sizeOptions: [5, 10, 20]
+                };
             }
         }, {
             key: "$onDestroy",
             value: function $onDestroy() {
-                this.collapse = null;
+                this.$timeout = null;
+                this.displayOpts = null;
                 this.values = null;
+                this.suggested = null;
                 this.service = null;
                 this.termService = null;
                 this.termQuery = null;
-                this.isFetching = false;
-                this.isEmpty = false;
+                this.paging = null;
+                this.eventHandlers = null;
+            }
+
+            /* ----------------- typeahead methods ------------------ */
+            // onSelection ($item, $model, $label, $event) {
+            //     this.values.push($model);   //append selection to list
+            //     this.termQuery = null;      //clear the typeahead field
+            //     this.update();
+            // }
+            //
+            // getOptions (text) {
+            //
+            //     this.displayOpts.fetching = true;
+            //     this.displayOpts.empty = false;
+            //
+            //     let params = {
+            //         q:text,
+            //         size:12
+            //     };
+            //     if(this.type)
+            //         params['for'] = this.type;
+            //
+            //     return this.termService.query(params).$promise
+            //     .then( response => {
+            //         let results = response.results;
+            //         this.displayOpts.empty = !results.length;
+            //         return results;
+            //     })
+            //     .catch( e => {
+            //         this.displayOpts.empty = true;
+            //         console.log("Error finding semantic terms: " + e.message);
+            //     })
+            //     .finally( () => {
+            //         this.displayOpts.fetching = false;
+            //     });
+            // }
+
+
+        }, {
+            key: "hideSuggested",
+            value: function hideSuggested() {
+                this.displayOpts.suggest = this.displayOpts.fetching = this.displayOpts.empty = false;
+                this.termQuery = null;
+                this.suggested = [];
+                this.paging.start = this.paging.total = 0;
             }
         }, {
-            key: "onKeyUp",
-            value: function onKeyUp(keyCode) {}
-        }, {
-            key: "onSelection",
-            value: function onSelection($item, $model, $label, $event) {
-                this.values.push($model); //append selection to list
-                this.termQuery = null; //clear the typeahead field
-                this.update();
+            key: "select",
+            value: function select(item) {
+                item._selected = true; //update status to show it's already _selected
+                this.values.push(item); //append selection to list
+                this.update(); //update overall browse query with new selection
             }
         }, {
             key: "getOptions",
-            value: function getOptions(text) {
+            value: function getOptions() {
                 var _this7 = this;
 
-                this.isFetching = true;
-                this.isEmpty = false;
+                var text = this.termQuery;
+                // console.log("Querying using '" + text + "'");
+
+                //if empty value was provided, don't search.
+                if (!text || !text.length) {
+                    this.suggested = [];
+                    // this.suggestedTotal = this.suggestedCount = 0;
+                    this.paging.start = this.paging.total = 0;
+                    this.notify('gp:browse:suggestions:pagination', this.paging);
+                    // this.displayOpts.suggest = false;
+                    return;
+                }
+
+                //reset variables
+                this.suggested = [];
+                // this.suggestedTotal = this.suggestedCount = 0;
+                this.displayOpts.suggest = true;
+                this.displayOpts.fetching = true;
+                this.displayOpts.empty = false;
 
                 var params = {
                     q: text,
-                    size: 12
+                    page: Math.floor(this.paging.start / this.paging.size),
+                    size: this.paging.size
                 };
                 if (this.type) params['for'] = this.type;
 
-                return this.termService.query(params).$promise.then(function (response) {
+                this.termService.query(params).$promise.then(function (response) {
                     var results = response.results;
-                    _this7.isEmpty = !results.length;
-                    return results;
+                    _this7.displayOpts.empty = !results.length;
+                    _this7.suggested = results.map(function (result) {
+                        result._selected = _this7.isSelected(result);
+                        return result;
+                    });
+                    _this7.paging.total = response.totalResults;
+                    _this7.notify('gp:browse:suggestions:pagination', _this7.paging);
                 }).catch(function (e) {
-                    _this7.isEmpty = true;
+                    _this7.displayOpts.empty = true;
+                    _this7.suggested = [];
+                    _this7.paging.total = 0;
+                    _this7.notify('gp:browse:suggestions:pagination', _this7.paging);
                     console.log("Error finding semantic terms: " + e.message);
                 }).finally(function () {
-                    _this7.isFetching = false;
+                    _this7.displayOpts.fetching = false;
+                    // this.displayOpts.suggest = true;
                 });
             }
         }, {
@@ -2547,11 +2628,26 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 return this.values.length;
             }
         }, {
+            key: "isSelected",
+            value: function isSelected(item) {
+                return this.values.filter(function (v) {
+                    return v.uri === item.uri;
+                }).length;
+            }
+        }, {
             key: "removeValue",
             value: function removeValue(index) {
                 if (this.values.length >= index) {
-                    this.values.splice(index, 1);
-                    this.update();
+                    var removed = this.values.splice(index, 1)[0]; //remove from selected
+                    this.update(); //update overall browse query
+
+                    //update associated item in suggested list (if visible)
+                    if (this.suggested.length) {
+                        var match = this.suggested.find(function (i) {
+                            return i.uri === removed.uri;
+                        });
+                        if (match) match._selected = false;
+                    }
                 }
             }
         }, {
@@ -2567,6 +2663,47 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     return v.uri;
                 }) : null;
                 this.service.applyOption(PARAMETER, value, true);
+            }
+
+            /* -------- pagination methods ----------- */
+
+        }, {
+            key: "on",
+            value: function on(event, callback) {
+                this.eventHandlers = this.eventHandlers || {};
+                this.eventHandlers[event] = this.eventHandlers[event] || [];
+                this.eventHandlers[event].push(callback);
+            }
+        }, {
+            key: "notify",
+            value: function notify(event, data) {
+                var _this8 = this;
+
+                if (!this.$timeout || !this.eventHandlers || !this.eventHandlers[event]) return;
+                this.$timeout(function () {
+                    angular.forEach(_this8.eventHandlers[event], function (handler) {
+                        try {
+                            handler(data);
+                        } catch (e) {}
+                    });
+                }, 100);
+            }
+        }, {
+            key: "getPagination",
+            value: function getPagination() {
+                return this.paging;
+            }
+        }, {
+            key: "start",
+            value: function start(index) {
+                this.paging.start = index;
+                this.getOptions();
+            }
+        }, {
+            key: "size",
+            value: function size(value) {
+                this.paging.size = value;
+                this.getOptions();
             }
         }]);
 
@@ -2585,7 +2722,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
         controller: RecommendedTermFilter,
 
-        template: "\n            <div class=\"card c-filter__recommended-terms\">\n\n                <h5 class=\"card-title l-flex-container flex-justify-between flex-align-center\">\n\n                    Filter using Semantic Concepts\n\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-chevron-up':!$ctrl.collapse,'glyphicon-chevron-down':$ctrl.collapse}\"></span>\n                    </button>\n                </h5>\n\n                <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                    <div class=\"c-facet__value\">\n\n                        <div class=\"input-group-slick\">\n                            <input name=\"termQuery\" type=\"text\" class=\"form-control\"\n                              ng-model=\"$ctrl.termQuery\"\n                              typeahead-on-select=\"$ctrl.onSelection($item, $model, $label, $event)\"\n                              uib-typeahead=\"opt as opt.label for opt in $ctrl.getOptions($viewValue)\"\n                              typeahead-loading=\"$ctrl.isFetching\"\n                              typeahead-no-results=\"$ctrl.isEmpty\"\n                              ng-model-options=\"{ debounce: 250 }\"\n                              typeahead-min-length=\"2\"\n                              typeahead-editable=\"false\"\n                              placeholder=\"Find a concept\">\n                            <span class=\"glyphicon glyphicon-hourglass spin\" ng-if=\"$ctrl.isFetching\"></span>\n                        </div>\n\n                        <div ng-show=\"$ctrl.isEmpty\">No Results Found</div>\n\n                    </div>\n\n                    <a ng-repeat=\"term in $ctrl.values\" class=\"c-facet__value active\"\n                        title=\"Remove this term from the query\"\n                        ng-click=\"$ctrl.removeValue($index)\">\n                        <span class=\"glyphicon glyphicon-check\"></span>\n                        {{term.label}}\n                    </a>\n\n                </div>\n\n            </div>\n        "
+        template: "\n            <div class=\"card c-filter__recommended-terms\">\n\n                <h5 class=\"card-title l-flex-container flex-justify-between flex-align-center\">\n\n                    Filter using Semantic Concepts\n\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-chevron-up':!$ctrl.collapse,'glyphicon-chevron-down':$ctrl.collapse}\"></span>\n                    </button>\n                </h5>\n\n                <div class=\"c-facets\" ng-hide=\"$ctrl.collapse\">\n\n                    <!--\n                    <div class=\"c-facet__value\">\n\n                        <div class=\"input-group-slick\">\n                            <input name=\"termQuery\" type=\"text\" class=\"form-control\"\n                              ng-model=\"$ctrl.termQuery\"\n                              typeahead-on-select=\"$ctrl.onSelection($item, $model, $label, $event)\"\n                              uib-typeahead=\"opt as ' (' + opt.context + ') ' + opt.label for opt in $ctrl.getOptions($viewValue)\"\n                              typeahead-loading=\"$ctrl.displayOpts.fetching\"\n                              typeahead-no-results=\"$ctrl.displayOpts.empty\"\n                              ng-model-options=\"{ debounce: 250 }\"\n                              typeahead-min-length=\"2\"\n                              typeahead-editable=\"false\"\n                              placeholder=\"Find a concept\">\n                            <span class=\"glyphicon glyphicon-hourglass spin\" ng-if=\"$ctrl.displayOpts.fetching\"></span>\n                        </div>\n\n                        <div ng-show=\"$ctrl.displayOpts.empty\">No Results Found</div>\n\n                    </div>\n                    -->\n\n                    <div class=\"input-group-slick\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\"\n                            ng-model=\"$ctrl.termQuery\"\n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.getOptions()\"\n                            placeholder=\"Find concepts\">\n                        <span class=\"glyphicon glyphicon-remove\" ng-if=\"$ctrl.displayOpts.suggest\"\n                            ng-click=\"$ctrl.hideSuggested()\"></span>\n                    </div>\n\n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"\n                        ng-if=\"$ctrl.displayOpts.suggest\">\n                    </gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\"\n                        ng-if=\"$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching\">\n\n                        <a ng-repeat=\"item in $ctrl.suggested track by $index\"\n                            class=\"list-group-item\"\n                            ng-class=\"{disabled:item._selected}\"\n                            ng-click=\"$ctrl.select(item)\">\n                            <span class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</span>\n                            <br>\n                            <span class=\"u-break--all u-text--sm t-text--italic\">{{item.uri}}</span>\n                        </a>\n\n                        <div ng-if=\"$ctrl.displayOpts.empty\" class=\"list-group-item disabled u-pd--md\">\n                            No concepts found\n                        </div>\n\n                    </div>\n\n                \n                    <!-- selected terms -->\n                    <a ng-repeat=\"term in $ctrl.values\" class=\"c-facet__value active\"\n                        title=\"Remove this term from the query\"\n                        ng-click=\"$ctrl.removeValue($index)\">\n                        <span class=\"glyphicon glyphicon-check\"></span>\n                        {{term.context}} {{term.label}}\n                    </a>\n\n                </div>\n\n            </div>\n        "
     });
 })(angular);
 
@@ -2608,7 +2745,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         controller: function controller() {
 
             this.$onInit = function () {
-                var _this8 = this;
+                var _this9 = this;
 
                 this.collapse = true;
                 this.value = null;
@@ -2616,8 +2753,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
                 var evtName = this.service.events.SIMILARITY;
                 this.listener = this.service.on(evtName, function (event, layer) {
-                    _this8.value = layer;
-                    _this8.service.applyOption('similarTo', _this8.value.id, true);
+                    _this9.value = layer;
+                    _this9.service.applyOption('similarTo', _this9.value.id, true);
                 });
 
                 if (!this.type) this.type = "item";
@@ -2725,7 +2862,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             };
 
             this.updateValues = function (query) {
-                var _this9 = this;
+                var _this10 = this;
 
                 return $http.get(Constants.ualUrl + '/api/items', {
                     params: {
@@ -2738,7 +2875,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                     }
                 }).then(function (response) {
                     // let total = response.data.totalResults;
-                    _this9.values = response.data.results.slice(0);
+                    _this10.values = response.data.results.slice(0);
                 }, function (response) {
                     console.log("(" + response.status + ") " + response.statusText);
                 }).catch(function (e) {
@@ -3316,10 +3453,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * select all items in current page of results
              */
             selectAll: function selectAll() {
-                var _this10 = this;
+                var _this11 = this;
 
                 angular.forEach(_results, function (obj) {
-                    if (!_this10.isSelected(obj.id)) _selected.unshift(obj);
+                    if (!_this11.isSelected(obj.id)) _selected.unshift(obj);
                 });
                 notify(this.events.SELECTED, _selected);
             },
@@ -3578,7 +3715,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         function SocketService(url, options) {
             'ngInject';
 
-            var _this11 = this;
+            var _this12 = this;
 
             _classCallCheck(this, SocketService);
 
@@ -3621,7 +3758,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             //listen for the init event indicating connection has been made
             // and to get the socket's id from the server
             this.socket.on("init", function (evt) {
-                _this11.socketId = evt.id;
+                _this12.socketId = evt.id;
             });
 
             //if unable to connect
@@ -3650,14 +3787,14 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "on",
             value: function on(eventName, callback) {
-                var _this12 = this;
+                var _this13 = this;
 
                 if (!this.socket) return function () {};
                 //add the listener to the socket
                 this.socket.on(eventName, callback);
                 //return an 'off' function to remove the listener
                 return function () {
-                    _this12.socket.off(eventName, callback);
+                    _this13.socket.off(eventName, callback);
                 };
             }
 
@@ -3679,7 +3816,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "close",
             value: function close() {
-                var _this13 = this;
+                var _this14 = this;
 
                 //if this app was tracking an obj, 
                 // notify listeners that it is no longer
@@ -3689,7 +3826,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         if (tracks && tracks.length) {
                             /* jshint ignore:start */
                             angular.forEach(tracks, function (id) {
-                                _this13.end(event, id);
+                                _this14.end(event, id);
                             });
                             /* jshint ignore:end */
                         }
@@ -3712,7 +3849,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "begin",
             value: function begin(event, objId) {
-                var _this14 = this;
+                var _this15 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 this.tracking[event].push(objId);
@@ -3720,7 +3857,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 var room = objId + "_" + event.toLowerCase();
 
                 this.join(room, function () {
-                    _this14.socket.emit(event, room, _this14.socketId, true);
+                    _this15.socket.emit(event, room, _this15.socketId, true);
                 });
             }
 
@@ -3732,7 +3869,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         }, {
             key: "end",
             value: function end(event, objId) {
-                var _this15 = this;
+                var _this16 = this;
 
                 this.tracking[event] = this.tracking[event] || [];
                 if (!this.tracking[event].length) return; //empty, ignore request
@@ -3746,7 +3883,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 //send event to server about client stopping it's tracking
                 var room = objId + "_" + event.toLowerCase();
                 this.socket.emit(event, room, this.socketId, false, function () {
-                    _this15.leave(room);
+                    _this16.leave(room);
                 });
             }
 
@@ -4122,7 +4259,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * Redirects the page to the login site
              */
             this.login = function () {
-                var _this16 = this;
+                var _this17 = this;
 
                 var promise = this.beforeLoginFn ? this.beforeLoginFn() : $q.resolve();
                 promise.then(function () {
@@ -4131,7 +4268,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         _user = TEST_USER.clone();
                         return _user;
                     }
-                    var current = _this16.getCurrentLocation();
+                    var current = _this17.getCurrentLocation();
                     window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
                 });
             };
@@ -4157,7 +4294,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
              * Redirects the page to the logout site
              */
             this.logout = function () {
-                var _this17 = this;
+                var _this18 = this;
 
                 var promise = this.beforeLogoutFn ? this.beforeLogoutFn() : $q.resolve();
                 promise.then(function () {
@@ -4166,7 +4303,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         _user = null;
                         return _user;
                     }
-                    var current = _this17.getCurrentLocation();
+                    var current = _this18.getCurrentLocation();
                     window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(curfalse);
                 });
             };
