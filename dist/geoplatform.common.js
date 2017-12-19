@@ -25,6 +25,21 @@
   // }
 
   /**
+   * Get token from query string
+   * 
+   * Note:
+   *  Lifted outside of any Angular service to prevent cyclical service dependencies.
+   * 
+   * @method getJWTFromUrl
+   * @returns {String} token - token in query string or undefined
+   */
+  function getJWTFromUrl() {
+    var queryString = window.location.hash ? window.location.hash : window.location.href;
+    var res = queryString.match(/access_token=([^\&]*)/);
+    return res && res[1];
+  };
+
+  /**
    * GeoPlatform Common Module Authentication Support
    *
    * Contains re-usable services, directives, and other angular components
@@ -106,9 +121,6 @@
 
           var self = this;
 
-
-          // this.status = STATUS.NONE;
-
           //$q version of getUser
           this.getUserQ = function() {
             return $q.when(self.getUser())
@@ -155,7 +167,8 @@
                   Config.FORCE_LOGIN = false;
                   window.location = Config.LOGOUT_URL;
                 } else {
-                  window.location = Config.PORTAL_URL || "https://www.geoplatform.gov";
+                  window.location.hash = '';
+                  window.location = Config.PORTAL_URL || window.location.host;
                 }
               }, function(err) {
                 console.log(err);
@@ -224,7 +237,7 @@
 
               //clean hosturl on redirect from oauth
               const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              if (self.getJWTFromUrl()) {
+              if (getJWTFromUrl()) {
                 var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
                 $window.location = cleanUrl;
               }
@@ -375,6 +388,36 @@
 
       }
     ])
+
+    /**
+     * Interceptor that check for an updaed AccessToken coming from any request
+     * and will take it and set it as the token to use in future outgoing
+     * requests
+     */
+    .factory('ng-common-AuthenticationInterceptor', function($injector, $window){
+      // Interceptor
+      return {
+        response: function(resp) {
+          const jwt = getJWTFromUrl();
+          const authHeader = resp.headers('Authorization');
+
+          if(jwt){
+            const AuthenticationService = $injector.get('AuthenticationService')
+            AuthenticationService.setAuth(jwt);
+          } else if (authHeader) {
+            const AuthenticationService = $injector.get('AuthenticationService')
+            AuthenticationService.setAuth(authHeader.replace('Bearer ',''));
+          }
+
+          return resp;
+        }
+      };
+    })
+
+    .config(function myAppConfig ($httpProvider) {
+      $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
+    })
+
 
     .directive('gpLoginButton', ['$timeout', 'AuthenticationService', 'GPConfig',
       function($timeout, AuthenticationService, Config) {
