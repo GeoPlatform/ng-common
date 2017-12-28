@@ -87,6 +87,7 @@
           this.clone = function() {
             return new User(this.toJSON());
           };
+
           this.compare = function(arg) {
             if (arg instanceof User) {
               return this.id === arg.id;
@@ -95,6 +96,14 @@
                 arg.id === this.id;
             }
             return false;
+          };
+
+          this.isAuthorized = function(role) {
+            let env = Config.env || Config.ENV || Config.NODE_ENV;
+            if(env === 'dev' || env === 'development') return true;
+            if(!this.roles || !this.roles.length || typeof(this.roles.push) === 'undefined')
+                return false;
+            return this.roles.indexOf(role)>=0;exp: this.exp
           };
         }
 
