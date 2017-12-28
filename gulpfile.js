@@ -1,13 +1,14 @@
-var pkg         = require('./package.json'), 
-    gulp        = require('gulp'),
-    jshint      = require('gulp-jshint'),
-    concat      = require('gulp-concat'),
-    babel       = require('gulp-babel'),
-    ngAnnotate  = require('gulp-ng-annotate'),
-    uglify      = require('gulp-uglify'),
-    rename      = require('gulp-rename'),
-    notify      = require('gulp-notify')
-    srcmaps     = require('gulp-sourcemaps');
+const pkg         = require('./package.json'),
+      gulp        = require('gulp'),
+      jshint      = require('gulp-jshint');
+      concat      = require('gulp-concat'),
+      ngAnnotate  = require('gulp-ng-annotate'),
+      babel       = require('gulp-babel'),
+      uglify      = require('gulp-uglify'),
+      rename      = require('gulp-rename'),
+      notify      = require('gulp-notify'),
+      del         = require('del'),
+      srcmaps     = require('gulp-sourcemaps'),
 
 require('gulp-help')(gulp, { description: 'Help listing.' });
 
@@ -40,6 +41,25 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         .pipe(srcmaps.write('./'))
         .pipe(gulp.dest('dist/'))
         .pipe(notify('Uglified JavaScript'));
+});
+
+gulp.task('concat', 'Concat only, do not minify', () => {
+    gulp.src(['src/js/module.js', 'src/js/**/*.js'])
+        .pipe(jshint())
+        .pipe(srcmaps.init())
+        .pipe(concat(pkg.name + '.js'))
+        .pipe(srcmaps.write('./'))
+        .pipe(gulp.dest('dist/'))
+});
+
+gulp.task('jshint', function() {
+  return gulp.src(['src/js/module.js', 'src/js/**/*.js'])
+  .pipe(jshint())
+  .pipe(jshint.reporter('jshint-stylish'));
+});
+
+gulp.task('clean', function() {
+  return del('dist');
 });
 
 gulp.task('less', 'Compile less into a single app.css.', function() {

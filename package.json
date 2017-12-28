@@ -6,9 +6,6 @@
     "type": "git",
     "url": "https://github.com/GeoPlatform/ng-common.git"
   },
-  "peerDependencies": {
-    "grunt-cli": "~0.1.13"
-  },
   "devDependencies": {
     "babel": "^6.5.2",
     "babel-preset-es2015": "^6.16.0",
@@ -31,7 +28,9 @@
     "matchdep": "^0.3.0",
     "pre-commit": "^1.1.3"
   },
-  "pre-commit": [ "distro" ],
+  "pre-commit": [
+    "distro"
+  ],
   "scripts": {
     "distro": "gulp"
   }

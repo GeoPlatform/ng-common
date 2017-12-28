@@ -1,8 +1,8 @@
 "use strict";
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -11,10 +11,6 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     "use strict";
 
     angular.module("gp-common", [])
-
-    //Assumes a global has been set
-    // Don't use these... deprecated
-    .constant('idspBaseUrl', GeoPlatform.idspUrl).constant('idmBaseUrl', GeoPlatform.idmUrl)
 
     //Assumes a global object containing configuration values for GeoPlatform exists 
     // prior to this module being declared
@@ -225,6 +221,584 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     });
 })(jQuery, angular, GeoPlatform);
 
+(function (angular) {
+
+    'use strict';
+
+    //flag on whether we're in dev env
+    // function isDEV() {
+    //     return "localhost" === window.location.hostname ||
+    //         ~window.location.hostname.indexOf("192.168")||
+    //         ~window.location.hostname.indexOf("localhost")||
+    //         ~window.location.hostname.indexOf("10.0");
+    // }
+
+    /**
+     * Get token from query string
+     *
+     * Note:
+     *  Lifted outside of any Angular service to prevent cyclical service dependencies.
+     *
+     * @method getJWTFromUrl
+     * @returns {String} token - token in query string or undefined
+     */
+
+    function getJWTFromUrl() {
+        var queryString = window.location.hash ? window.location.hash : window.location.href;
+        var res = queryString.match(/access_token=([^\&]*)/);
+        return res && res[1];
+    };
+
+    /**
+     * GeoPlatform Common Module Authentication Support
+     *
+     * Contains re-usable services, directives, and other angular components
+     *
+     *
+     * NOTE: This module uses certain variables in $rootScope in order to
+     * perform actions like authentication.  The following variables should be
+     * set before using any service/directive in this file:
+     *
+     *   - idspUrl : the url to the identity service provider server
+     *   - idmUrl : the url to the identity management server
+     *   - portalUrl : the url to the main landing page of GeoPlatform (www.geoplatform.gov in production)
+     */
+    angular.module('gp-common')
+
+    /**
+     * Authentication Service
+     *
+     * Because the auth service redirects the page to the IDM portal
+     * and WMV is reloaded once the login/logout processes are complete,
+     * there's no need to bind listeners informing other components of
+     * an auth change.
+     *
+     * Inside "DEV", you should close and re-open any components' widgets
+     * to get current auth status.
+     */
+    .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig', function ($q, $http, $location, $rootScope, $window, Config) {
+
+        //extend Storage prototype
+        Storage.prototype.setObject = function (key, value) {
+            this.setItem(key, btoa(JSON.stringify(value)));
+        };
+
+        Storage.prototype.getObject = function (key) {
+            var value = atob(this.getItem(key));
+            return value && JSON.parse(value);
+        };
+
+        function User(opts) {
+            for (var p in opts) {
+                this[p] = opts[p];
+            }
+            if (!this.id && this.username) this.id = this.username;
+
+            this.toJSON = function () {
+                return {
+                    id: this.id,
+                    username: this.username,
+                    name: this.name,
+                    email: this.email,
+                    org: this.org,
+                    exp: this.exp
+                };
+            };
+
+            this.clone = function () {
+                return new User(this.toJSON());
+            };
+            this.compare = function (arg) {
+                if (arg instanceof User) {
+                    return this.id === arg.id;
+                } else if ((typeof arg === "undefined" ? "undefined" : _typeof(arg)) === 'object') {
+                    return typeof arg.id !== 'undefined' && arg.id === this.id;
+                }
+                return false;
+            };
+        }
+
+        var _user = null;
+
+        /**
+         * Authentication Service
+         */
+        var Service = function Service() {
+
+            var self = this;
+
+            //$q version of getUser
+            this.getUserQ = function () {
+                return $q.when(self.getUser());
+            };
+
+            /**
+             * Redirects the page to the login site
+             */
+            this.login = function () {
+
+                //use current window
+                var current = window.location.href;
+                var redirect = Config.CALLBACK ? Config.CALLBACK : current;
+
+                if (Config.AUTH_TYPE !== 'grant' && Config.AUTH_TYPE !== 'token') {
+                    //fail this request
+                    throw new Error("Invalid authentication request type.  Must be 'token' or 'grant'.");
+                }
+
+                //check auth type to set login URL: Implicit -> to IDP, Grant -> Resource Provider Login URL
+                var loginUrl = Config.AUTH_TYPE === 'token' ? Config.IDP_BASE_URL + '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' + Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect) : Config.LOGIN_URL;
+
+                window.location = loginUrl;
+
+                //This could be writen to use an modal / pop-up for login so you don't have to lose your current page
+                //Logout already executes using a background call
+            };
+
+            /**
+             * Performs background logout and requests jwt revokation
+             */
+            this.logout = function () {
+                //implicitly remove incase the idp is down and the revoke call does not work
+                _user = null;
+                self.clearLocalStorageJWT();
+
+                $http.get(Config.IDP_BASE_URL + '/auth/revoke').then(function (response) {
+                    self.removeAuth();
+                    //goto logout page
+                    if (Config.LOGOUT_URL) {
+                        Config.FORCE_LOGIN = false;
+                        window.location = Config.LOGOUT_URL;
+                    } else {
+                        window.location.hash = '';
+                        window.location = Config.PORTAL_URL || window.location.host;
+                    }
+                }, function (err) {
+                    console.log(err);
+                });
+            };
+
+            /**
+             * Optional force redirect for non-public services
+             */
+            this.forceLogin = function () {
+                self.login();
+            };
+
+            /**
+             * Get protected user profile
+             */
+            this.getOauthProfile = function () {
+                var Q = $q.defer();
+                //check to make sure we can make called
+                if (self.getJWTfromLocalStorage()) {
+                    var url = Config.IDP_BASE_URL + '/api/profile';
+                    $http.get(url).then(function (response) {
+                        //when we get it, save it so we don't have to hit the IDP so many times
+                        Q.resolve(response.data);
+                    }, function (err) {
+                        console.log(err);
+                        Q.reject(err);
+                    });
+                }
+                return Q.promise;
+            };
+
+            /*
+             * Set the _user property in this scope
+             */
+            this.setUser = function (user) {
+                _user = user;
+            };
+
+            /**
+             * Unpacks JWT to see if session is valid.
+             *
+             * Side Effects:
+             *  - Sets the _user property
+             *  - Sets the Authorize header if valid user found (this.setAuth)
+             *  - Will redirect user to login url if FORCE_LOGIN is set an no valid user is found
+             *
+             * @return {User} - the authenticated user or undefined
+             */
+            this.check = function () {
+                // Pull user from either LocalStorage or the JWT (or the URL)
+                var jwt = self.getJWT();
+
+                // Save JWT in Auhorization Header
+                if (jwt && !self.isExpired(jwt)) {
+                    self.setAuth(jwt);
+                    var user = self.parseJwt(jwt);
+                    // slightly differnet mapping ;)
+                    self.setUser(new User({
+                        id: user.sub,
+                        username: user.username,
+                        email: user.email,
+                        name: user.name,
+                        org: user.org,
+                        exp: user.exp
+                    }));
+
+                    //clean hosturl on redirect from oauth
+                    var current = $window && $window.location && $window.location.hash ? $window.location.hash : $location.url();
+                    if (getJWTFromUrl()) {
+                        var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
+                        $window.location = cleanUrl;
+                    }
+
+                    // No valid userdata found
+                } else {
+                    self.removeAuth();
+                    // Redirect if settings set
+                    if (Config.FORCE_LOGIN === true) self.forceLogin();
+                }
+
+                // return the user
+                return _user;
+            };
+
+            /**
+             * If the callback parameter is specified, this method
+             * will return undefined. Otherwise, it returns the user (or null).
+             *
+             * Side Effects:
+             *  - This property sets the _user property for the enclosing scope
+             *  - Will redirect users if no valid JWT was found
+             *
+             * @param callback optional function to invoke with the user
+             * @return object representing current user
+             */
+            this.getUser = function (callback) {
+                // better check 'em first
+                self.check(); // Sideffects will redirect browser if JWT invalid
+
+                return callback && typeof callback === 'function' ? callback(_user) : _user;
+            };
+
+            //=====================================================
+
+            /**
+             * Extract token from current URL
+             *
+             * @method getJWTFromUrl
+             *
+             * @return {String | undefined} - JWT Token (raw string)
+             */
+            this.getJWTFromUrl = function () {
+                var queryString = $window && $window.location && $window.location.hash ? $window.location.hash : $location.url();
+                var res = queryString.match(/access_token=([^\&]*)/);
+                return res && res[1];
+            };
+
+            /**
+             * Load the JWT stored in local storage.
+             *
+             * @method getJWTfromLocalStorage
+             *
+             * @return {JWT | undefined} An object wih the following format:
+             */
+            this.getJWTfromLocalStorage = function () {
+                return window.localStorage.gpoauthJWT;
+            };
+
+            /**
+             * Attempt and pull JWT from the following locations (in order):
+             *  - URL query parameter 'access_token' (returned from IDP)
+             *  - Browser local storage (saved from previous request)
+             *
+             * @method getJWT
+             *
+             * @return {JWT | undefined}
+             */
+            this.getJWT = function () {
+                return self.getJWTFromUrl() || self.getJWTfromLocalStorage();
+            };
+
+            /**
+             * Remove the JWT saved in local storge.
+             *
+             * @method clearLocalStorageJWT
+             *
+             * @return  {undefined}
+             */
+            this.clearLocalStorageJWT = function () {
+                delete window.localStorage.gpoauthJWT;
+            };
+
+            /**
+             * Is a token expired.
+             *
+             * @method isExpired
+             * @param {JWT} jwt - A JWT
+             *
+             * @return {boolean}
+             */
+            this.isExpired = function (jwt) {
+                var exp = jwt && self.parseJwt(jwt).exp;
+                var now = new Date().getTime() / 1000;
+                return now > exp;
+            };
+
+            /**
+             * Unsafe (signature not checked) unpacking of JWT.
+             *
+             * @param {string} token - Access Token (JWT)
+             *
+             * @return {Object} the parsed payload in the JWT
+             */
+            this.parseJwt = function (token) {
+                var parsed;
+                if (token) {
+                    var base64Url = token.split('.')[1];
+                    var base64 = base64Url.replace('-', '+').replace('_', '/');
+                    parsed = JSON.parse(atob(base64));
+                }
+                return parsed;
+            };
+
+            /**
+             *
+             */
+            this.validateJwt = function (token) {
+                var parsed = self.parseJwt(token);
+                var valid = parsed && parsed.exp && parsed.exp * 1000 > Date.now() ? true : false;
+                //TODO: chk jwt signature too
+                return valid;
+            };
+
+            this.setAuth = function (jwt) {
+                window.localStorage.gpoauthJWT = jwt;
+                $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
+                $http.defaults.useXDomain = true;
+                return;
+            };
+
+            this.removeAuth = function () {
+                _user = null;
+                delete window.localStorage.gpoauthJWT;
+                delete $http.defaults.headers.common.Authorization;
+                $http.defaults.useXDomain = false;
+                return;
+            };
+
+            //initialize with auth check
+            this.check();
+        };
+
+        return new Service();
+    }])
+
+    /**
+     * Interceptor that check for an updaed AccessToken coming from any request
+     * and will take it and set it as the token to use in future outgoing
+     * requests
+     */
+    .factory('ng-common-AuthenticationInterceptor', ["$injector", "$window", function ($injector, $window) {
+        // Interceptor
+        return {
+            response: function response(resp) {
+                var jwt = getJWTFromUrl();
+                var authHeader = resp.headers('Authorization');
+
+                if (jwt) {
+                    var AuthenticationService = $injector.get('AuthenticationService');
+                    AuthenticationService.setAuth(jwt);
+                } else if (authHeader) {
+                    var _AuthenticationService = $injector.get('AuthenticationService');
+                    _AuthenticationService.setAuth(authHeader.replace('Bearer ', ''));
+                }
+
+                return resp;
+            }
+        };
+    }]).config(["$httpProvider", function myAppConfig($httpProvider) {
+        $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
+    }]).directive('gpLoginButton', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
+        return {
+            scope: {
+                minimal: '@'
+            },
+            replace: true,
+            template: ['<div class="btn-account btn-group">' +
+
+            //not logged in
+            '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' +
+
+            //logged in
+            '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' + '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
+            controller: ["$scope", "$element", function controller($scope, $element) {
+
+                if ($scope.minimal === 'true') $scope.minimal = true;
+                if ($scope.minimal !== true) $scope.minimal = false;
+
+                $scope.idpUrl = Config.idmUrl;
+                // console.log("IDM Base Url: " + Config.idmUrl);
+
+                AuthenticationService.getUser(function (user) {
+                    $timeout(function () {
+                        $scope.user = user;
+                    }, 100);
+                });
+
+                $scope.login = function () {
+                    $scope.user = AuthenticationService.login();
+                };
+
+                $scope.logout = function () {
+                    $scope.user = AuthenticationService.logout();
+                };
+            }]
+        };
+    }]).directive('gpAccountDetails', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
+
+        return {
+            scope: {},
+            replace: true,
+            template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' + '  </div>', '</div>'].join(' '),
+            controller: ["$scope", "$element", function controller($scope, $element) {
+
+                $scope.idpUrl = Config.idmUrl;
+
+                AuthenticationService.getUser(function (user) {
+                    $timeout(function () {
+                        $scope.user = user;
+                    }, 100);
+                });
+
+                $scope.login = function () {
+                    $scope.user = AuthenticationService.login();
+                };
+
+                $scope.logout = function () {
+                    $scope.user = AuthenticationService.logout();
+                };
+            }]
+        };
+    }]);
+})(angular);
+
+(function () {
+
+    "use strict";
+
+    if (typeof Array.prototype.find === 'undefined') {
+        Array.prototype.find = function (callback) {
+            for (var i = 0; i < this.length; ++i) {
+                if (callback(this[i], i, this)) return this[i];
+            }
+            return null;
+        };
+    }
+    if (typeof Array.prototype.filter === 'undefined') {
+        Array.prototype.filter = function (callback) {
+            var results = [];
+            for (var i = 0; i < this.length; ++i) {
+                if (callback(this[i], i, this)) results.push(this[i]);
+            }
+            return results;
+        };
+    }
+    if (typeof Array.prototype.each === 'undefined') {
+        Array.prototype.each = function (callback) {
+            for (var i = 0; i < this.length; ++i) {
+                callback(this[i], i, this);
+            }
+        };
+    }
+    if (typeof Array.prototype.indexOfObj === 'undefined') {
+        Array.prototype.indexOfObj = function (obj, comparatorFn) {
+
+            var arr = this,
+                len = arr.length;
+
+            if (typeof comparatorFn !== 'function') comparatorFn = function comparatorFn(a, b) {
+                return a === b;
+            };
+
+            for (var i = 0; i < len; ++i) {
+                if (comparatorFn(obj, arr[i])) return i;
+            }
+            return -1;
+        };
+    }
+    if (typeof String.prototype.startsWith === 'undefined') {
+        String.prototype.startsWith = function (value) {
+            var str = this;
+            if (!str.length) return false;
+            if (!value.length) return false;
+            if (str.length < value.length) return false;
+            return str.indexOf(value) === 0;
+        };
+    }
+    if (typeof String.prototype.endsWith === 'undefined') {
+        String.prototype.endsWith = function (value) {
+            var str = this;
+            if (!str.length) return false;
+            if (!value.length) return false;
+            if (str.length < value.length) return false;
+            var substr = str.substring(str.length - value.length, str.length);
+            return substr == value;
+        };
+    }
+
+    if (typeof Date.prototype.plus === 'undefined') {
+        Date.prototype.plus = function (offset) {
+
+            var type = typeof offset === "undefined" ? "undefined" : _typeof(offset);
+            if (type === 'undefined') return this;
+
+            var offsetMS = 0;
+            if (type === 'string') {
+                switch (offset) {
+                    case 'hour':
+                        offsetMS = 1000 * 60 * 60;break;
+                    case 'day':
+                        offsetMS = 1000 * 60 * 60 * 24;break;
+                    case 'week':
+                        offsetMS = 1000 * 60 * 60 * 24 * 7;break;
+                    case 'month':
+                        offsetMS = 1000 * 60 * 60 * 24 * 31;break;
+                    case 'year':
+                        offsetMS = 1000 * 60 * 60 * 24 * 365;break;
+                }
+            } else if (type === 'number') {
+                offsetMS = offset;
+            } else return this;
+
+            var d = this;
+            return new Date(d.getTime() + offsetMS);
+        };
+    }
+
+    if (typeof Date.prototype.random === 'undefined') {
+        Date.prototype.random = function (threshold) {
+
+            var type = typeof threshold === "undefined" ? "undefined" : _typeof(threshold);
+            if (type === 'undefined') return this;
+
+            var offsetMS = 0;
+            if (type === 'string') {
+                switch (threshold) {
+                    case 'hour':
+                        offsetMS = 1000 * 60 * 60;break;
+                    case 'day':
+                        offsetMS = 1000 * 60 * 60 * 24;break;
+                    case 'week':
+                        offsetMS = 1000 * 60 * 60 * 24 * 7;break;
+                    case 'month':
+                        offsetMS = 1000 * 60 * 60 * 24 * 31;break;
+                    case 'year':
+                        offsetMS = 1000 * 60 * 60 * 24 * 365;break;
+                }
+            } else if (type === 'number') {
+                offsetMS = threshold;
+            } else return this;
+
+            var d = this;
+            return new Date(d.getTime() + Math.floor(Math.random() * offsetMS));
+        };
+    }
+})();
 (function (angular) {
 
     "use strict";
@@ -3105,10 +3679,10 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                 _isLoading = false;
 
                 //fallback
-                var obj = { error: "An Error Occurred", message: "No details provided" };
+                var obj = { error: "An Error Occurred", message: "No details provided"
 
-                //http response error
-                if (response && response.data) obj = response.data;
+                    //http response error
+                };if (response && response.data) obj = response.data;
                 //normal error
                 else if (response && response.message) obj = response;
 
@@ -4040,553 +4614,3 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
         };
     });
 })(angular);
-(function (angular) {
-
-    'use strict';
-
-    //flag on whether we're in dev env
-
-    function isDEV() {
-        return "localhost" === window.location.hostname || ~window.location.hostname.indexOf("192.168") || ~window.location.hostname.indexOf("10.0");
-    }
-
-    /** 
-     * GeoPlatform Common Module Authentication Support
-     *
-     * Contains re-usable services, directives, and other angular components
-     *
-     * 
-     * NOTE: This module uses certain variables in $rootScope in order to 
-     * perform actions like authentication.  The following variables should be
-     * set before using any service/directive in this file:
-     *
-     *   - idspUrl : the url to the identity service provider server
-     *   - idmUrl : the url to the identity management server
-     *   - portalUrl : the url to the main landing page of GeoPlatform (www.geoplatform.gov in production) 
-     */
-    angular.module('gp-common')
-
-    /**
-     * Authentication Service
-     * 
-     * Because the auth service redirects the page to the IDM portal
-     * and WMV is reloaded once the login/logout processes are complete,
-     * there's no need to bind listeners informing other components of 
-     * an auth change.
-     *
-     * Inside "DEV", you should close and re-open any components' widgets
-     * to get current auth status.
-     */
-    .service('AuthenticationService', ['$q', '$http', 'GPConfig', function ($q, $http, Config) {
-
-        // console.log("IDSP Base Url: " + Config.idspUrl);
-
-        function User(opts) {
-            for (var p in opts) {
-                this[p] = opts[p];
-            }
-            if (!this.id && this.username) this.id = this.username;
-
-            this.toJSON = function () {
-                return {
-                    id: this.id,
-                    username: this.username,
-                    name: this.name,
-                    email: this.email,
-                    org: this.org,
-                    roles: this.roles
-                };
-            };
-            this.clone = function () {
-                return new User(this.toJSON());
-            };
-            this.compare = function (arg) {
-                if (arg instanceof User) {
-                    return this.id === arg.id;
-                } else if ((typeof arg === "undefined" ? "undefined" : _typeof(arg)) === 'object') {
-                    return typeof arg.id !== 'undefined' && arg.id === this.id;
-                }
-                return false;
-            };
-            this.isAuthorized = function (role) {
-                var env = Config.env || Config.ENV || Config.NODE_ENV;
-                if (env === 'dev' || env === 'development') return true;
-                if (!this.roles || !this.roles.length || typeof this.roles.push === 'undefined') return false;
-                return this.roles.indexOf(role) >= 0;
-            };
-        }
-
-        var TEST_USER = new User({
-            id: "tester",
-            username: "tester",
-            email: "tester@geoplatform.us",
-            name: "John Test",
-            org: "Other",
-            roles: ['tester']
-        });
-
-        var _user = null;
-
-        if (isDEV()) {
-
-            /*
-             * If testing when user is not logged in, inject the following before
-             *  this ng-common library is included in the page:
-             * 
-             *     GeoPlatform.TEST_NO_AUTH = true;
-             * 
-             *  but be sure to inject AFTER the GeoPlatform configuration object exists!
-             */
-            if (GeoPlatform && GeoPlatform.TEST_NO_AUTH) _user = null;else _user = TEST_USER.clone();
-        }
-
-        var STATUS = {
-            NONE: 0,
-            INITIALIZING: -1, //auth check in progress
-            INITIALIZED: 1 //auth check completed
-        };
-
-        /** 
-         * @param {string} cookie - a concatenated string of user info
-         * @return {object|null} user info
-         */
-        function parseCookie(cookie) {
-
-            // console.log(cookie);
-            if (!cookie || !cookie.length) return null;
-
-            var data = {};
-
-            var str = decodeURIComponent(cookie);
-            var parts = str.split('+');
-            parts = parts.map(function (part) {
-                var kvp = part.split(':');
-                data[kvp[0]] = kvp.slice(1).join(':');
-            });
-
-            data.groups = data.groups ? data.groups.split(',') : [];
-            // console.log(data.groups);
-
-            return data;
-        }
-
-        function getRoles() {
-            var cookie = document.cookie.replace(/(?:(?:^|.*;\s*)AUTHENTICATEDGEOSAML\s*\=\s*([^;]*).*$)|^.*$/, "$1");
-            var user = parseCookie(cookie);
-            return user ? user.groups : [];
-        }
-
-        /**
-         * Authentication Service
-         */
-        var Service = function Service() {
-
-            var self = this;
-
-            this.status = STATUS.NONE;
-
-            //$q version of getUser
-            this.getUserQ = function () {
-                var deferred = $q.defer();
-                this.getUser(function (user) {
-                    deferred.resolve(user);
-                });
-                return deferred.promise;
-            };
-
-            /**
-             * If the callback parameter is specified, this method
-             * will return undefined. Otherwise, it returns the user (or null).
-             *
-             * @param callback optional function to invoke with the user
-             * @return object representing current user
-             */
-            this.getUser = function (callback) {
-                if (callback && typeof callback === 'function') {
-
-                    // console.log("Getting user info: " + self.status + ", " + JSON.stringify(_user||{empty:true}));
-
-                    //if already checked, return what we have
-                    if (self.status === STATUS.INITIALIZED) callback(_user);
-                    //if not in process of checking, check
-                    else if (self.status !== STATUS.INITIALIZING) {
-                            //if hasn't been checked for auth yet, do that now
-                            self.check().then(function (_user) {
-                                self.status = STATUS.INITIALIZED;
-                                callback(_user);
-                            }, function () {
-                                self.status = STATUS.INITIALIZED;
-                                callback(null);
-                            });
-                        }
-                        //if in process of checking, wait until it finishes
-                        else {
-                                setTimeout(function () {
-                                    self.getUser(callback);
-                                }, 500);
-                            }
-                    return;
-                }
-                return _user;
-            };
-
-            /**
-             * @return {string} current HREF of the application
-             */
-            this.getCurrentLocation = function () {
-                return window.location.href;
-            };
-
-            /**
-             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
-             */
-            this.onBeforeLogin = function (callback) {
-                if (callback) {
-                    this.beforeLoginFn = function () {
-                        var deferred = $q.defer();
-                        callback(function () {
-                            deferred.resolve();
-                        });
-                        return deferred.promise;
-                    };
-                } else {
-                    this.beforeLoginFn = null;
-                }
-            };
-
-            /**
-             * Redirects the page to the login site
-             */
-            this.login = function () {
-                var _this17 = this;
-
-                var promise = this.beforeLoginFn ? this.beforeLoginFn() : $q.resolve();
-                promise.then(function () {
-
-                    if (isDEV() && !(GeoPlatform && GeoPlatform.TEST_NO_AUTH)) {
-                        _user = TEST_USER.clone();
-                        return _user;
-                    }
-                    var current = _this17.getCurrentLocation();
-                    window.location = Config.idspUrl + '/module.php/core/as_login.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(current);
-                });
-            };
-
-            /**
-             * @param {function} callback - callbackFn( doneFn ) { ... doneFn(); }
-             */
-            this.onBeforeLogout = function (callback) {
-                if (callback) {
-                    this.beforeLogoutFn = function () {
-                        var promise = $q.defer();
-                        callback(function () {
-                            promise.resolve();
-                        });
-                        return promise;
-                    };
-                } else {
-                    this.beforeLogoutFn = null;
-                }
-            };
-
-            /**
-             * Redirects the page to the logout site
-             */
-            this.logout = function () {
-                var _this18 = this;
-
-                var promise = this.beforeLogoutFn ? this.beforeLogoutFn() : $q.resolve();
-                promise.then(function () {
-
-                    if (isDEV()) {
-                        _user = null;
-                        return _user;
-                    }
-                    var current = _this18.getCurrentLocation();
-                    window.location = Config.idspUrl + '/module.php/core/as_logout.php?AuthId=geosaml&ReturnTo=' + encodeURIComponent(curfalse);
-                });
-            };
-
-            /**
-             * Queries simplesamlphp if the current session is authenticated
-             * @return promise - then(function(user) {}, function(response){})
-             */
-            this.check = function () {
-
-                var deferred = $q.defer();
-
-                if (isDEV()) {
-                    // console.log("Dev env");
-                    setTimeout(function () {
-                        deferred.resolve(_user);
-                    }, 1000);
-                    return deferred.promise;
-                }
-
-                self.status = STATUS.INITIALIZING;
-
-                //check authentication on load
-                var promise = $http.get(Config.idspUrl + '/authenticategeosaml.php?as=geosaml');
-                promise.then(function (response) {
-
-                    var content = response.data ? response.data : response;
-
-                    // console.log("Received from SP: " + content);
-                    if (typeof content === 'string') {
-                        try {
-                            content = JSON.parse(content);
-                        } catch (e) {
-                            deferred.reject(e);
-                            return;
-                        }
-                    }
-
-                    if (content.Success) {
-                        //authenticated
-                        _user = new User({
-                            id: content.name[0],
-                            username: content.name[0],
-                            email: content.mail[0],
-                            name: content.first_name[0] + ' ' + content.last_name[0],
-                            org: content.organization[0],
-                            roles: getRoles()
-                        });
-                        // console.log("Authenticated user: " + JSON.stringify(_user));
-                    } else {
-                        _user = null; //not authenticated
-                        // console.log("Failed to authenticate user");
-                    }
-
-                    deferred.resolve(_user);
-                }, function (data, status, headers) {
-                    // failed check
-                    // console.log("Authentication call failed");
-                    deferred.reject(data);
-                }).catch(function (e) {
-                    // console.log("Authentication check caught an error: " + e.message);
-                    deferred.reject(e.message);
-                });
-
-                return deferred.promise;
-            };
-
-            //=====================================================
-
-            //initialize with auth check
-            this.check().then(function (user) {
-                self.status = STATUS.INITIALIZED;
-            }, function (err) {
-                self.status = STATUS.INITIALIZED;
-            }).catch(function (e) {
-                // console.log("Initial auth check errored");
-            });
-        };
-
-        return new Service();
-    }]).directive('gpLoginButton', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
-        return {
-            scope: {
-                minimal: '@'
-            },
-            replace: true,
-            template: ['<div class="btn-account btn-group">' +
-
-            //not logged in
-            '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' +
-
-            //logged in
-            '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' + '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
-
-                if ($scope.minimal === 'true') $scope.minimal = true;
-                if ($scope.minimal !== true) $scope.minimal = false;
-
-                $scope.idpUrl = Config.idmUrl;
-                // console.log("IDM Base Url: " + Config.idmUrl);
-
-                AuthenticationService.getUser(function (user) {
-                    $timeout(function () {
-                        $scope.user = user;
-                    }, 100);
-                });
-
-                $scope.login = function () {
-                    $scope.user = AuthenticationService.login();
-                };
-
-                $scope.logout = function () {
-                    $scope.user = AuthenticationService.logout();
-                };
-
-                //watch user for changes (timeouts)
-                var watcher = $scope.$watch(function () {
-                    return AuthenticationService.getUser();
-                }, function (newUser) {
-                    $scope.user = newUser;
-                });
-
-                $scope.$on('$destroy', function () {
-                    watcher(); //destroy watcher
-                });
-            }]
-        };
-    }]).directive('gpAccountDetails', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
-
-        return {
-            scope: {},
-            replace: true,
-            template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' + '  </div>', '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
-
-                $scope.idpUrl = Config.idmUrl;
-
-                AuthenticationService.getUser(function (user) {
-                    $timeout(function () {
-                        $scope.user = user;
-                    }, 100);
-                });
-
-                $scope.login = function () {
-                    $scope.user = AuthenticationService.login();
-                };
-
-                $scope.logout = function () {
-                    $scope.user = AuthenticationService.logout();
-                };
-
-                //watch user for changes (timeouts)
-                var watcher = $scope.$watch(function () {
-                    return AuthenticationService.getUser();
-                }, function (newUser) {
-                    $scope.user = newUser;
-                });
-
-                $scope.$on('$destroy', function () {
-                    watcher(); //destroy watcher
-                });
-            }]
-        };
-    }]);
-})(angular);
-(function () {
-
-    "use strict";
-
-    if (typeof Array.prototype.find === 'undefined') {
-        Array.prototype.find = function (callback) {
-            for (var i = 0; i < this.length; ++i) {
-                if (callback(this[i], i, this)) return this[i];
-            }
-            return null;
-        };
-    }
-    if (typeof Array.prototype.filter === 'undefined') {
-        Array.prototype.filter = function (callback) {
-            var results = [];
-            for (var i = 0; i < this.length; ++i) {
-                if (callback(this[i], i, this)) results.push(this[i]);
-            }
-            return results;
-        };
-    }
-    if (typeof Array.prototype.each === 'undefined') {
-        Array.prototype.each = function (callback) {
-            for (var i = 0; i < this.length; ++i) {
-                callback(this[i], i, this);
-            }
-        };
-    }
-    if (typeof Array.prototype.indexOfObj === 'undefined') {
-        Array.prototype.indexOfObj = function (obj, comparatorFn) {
-
-            var arr = this,
-                len = arr.length;
-
-            if (typeof comparatorFn !== 'function') comparatorFn = function comparatorFn(a, b) {
-                return a === b;
-            };
-
-            for (var i = 0; i < len; ++i) {
-                if (comparatorFn(obj, arr[i])) return i;
-            }
-            return -1;
-        };
-    }
-    if (typeof String.prototype.startsWith === 'undefined') {
-        String.prototype.startsWith = function (value) {
-            var str = this;
-            if (!str.length) return false;
-            if (!value.length) return false;
-            if (str.length < value.length) return false;
-            return str.indexOf(value) === 0;
-        };
-    }
-    if (typeof String.prototype.endsWith === 'undefined') {
-        String.prototype.endsWith = function (value) {
-            var str = this;
-            if (!str.length) return false;
-            if (!value.length) return false;
-            if (str.length < value.length) return false;
-            var substr = str.substring(str.length - value.length, str.length);
-            return substr == value;
-        };
-    }
-
-    if (typeof Date.prototype.plus === 'undefined') {
-        Date.prototype.plus = function (offset) {
-
-            var type = typeof offset === "undefined" ? "undefined" : _typeof(offset);
-            if (type === 'undefined') return this;
-
-            var offsetMS = 0;
-            if (type === 'string') {
-                switch (offset) {
-                    case 'hour':
-                        offsetMS = 1000 * 60 * 60;break;
-                    case 'day':
-                        offsetMS = 1000 * 60 * 60 * 24;break;
-                    case 'week':
-                        offsetMS = 1000 * 60 * 60 * 24 * 7;break;
-                    case 'month':
-                        offsetMS = 1000 * 60 * 60 * 24 * 31;break;
-                    case 'year':
-                        offsetMS = 1000 * 60 * 60 * 24 * 365;break;
-                }
-            } else if (type === 'number') {
-                offsetMS = offset;
-            } else return this;
-
-            var d = this;
-            return new Date(d.getTime() + offsetMS);
-        };
-    }
-
-    if (typeof Date.prototype.random === 'undefined') {
-        Date.prototype.random = function (threshold) {
-
-            var type = typeof threshold === "undefined" ? "undefined" : _typeof(threshold);
-            if (type === 'undefined') return this;
-
-            var offsetMS = 0;
-            if (type === 'string') {
-                switch (threshold) {
-                    case 'hour':
-                        offsetMS = 1000 * 60 * 60;break;
-                    case 'day':
-                        offsetMS = 1000 * 60 * 60 * 24;break;
-                    case 'week':
-                        offsetMS = 1000 * 60 * 60 * 24 * 7;break;
-                    case 'month':
-                        offsetMS = 1000 * 60 * 60 * 24 * 31;break;
-                    case 'year':
-                        offsetMS = 1000 * 60 * 60 * 24 * 365;break;
-                }
-            } else if (type === 'number') {
-                offsetMS = threshold;
-            } else return this;
-
-            var d = this;
-            return new Date(d.getTime() + Math.floor(Math.random() * offsetMS));
-        };
-    }
-})();
