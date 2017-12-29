@@ -136,9 +136,14 @@
             }
 
             //check auth type to set login URL: Implicit -> to IDP, Grant -> Resource Provider Login URL
-            var loginUrl = (Config.AUTH_TYPE === 'token') ? Config.IDP_BASE_URL +
-              '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' +
-              Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect) : Config.LOGIN_URL;
+
+            var loginUrl = (Config.AUTH_TYPE === 'token') 
+                  ? Config.IDP_BASE_URL +
+                    '/auth/authorize?client_id=' + Config.APP_ID + 
+                    '&response_type=' + Config.AUTH_TYPE + 
+                    '&redirect_uri=' + encodeURIComponent(redirect)
+                  // NOTE: /login is the default login endpoint for node-gpoauth
+                  : Config.LOGIN_URL || '/login';
 
             window.location = loginUrl;
 
