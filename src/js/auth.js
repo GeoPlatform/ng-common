@@ -101,9 +101,12 @@
           this.isAuthorized = function(role) {
             let env = Config.env || Config.ENV || Config.NODE_ENV;
             if(env === 'dev' || env === 'development') return true;
-            if(!this.roles || !this.roles.length || typeof(this.roles.push) === 'undefined')
-                return false;
-            return this.roles.indexOf(role)>=0;exp: this.exp
+
+            return this.groups && 
+                    !!this.groups
+                            .map(g => g.name)
+                            .filter(n => n === role)
+                            .length;
           };
         }
 
@@ -231,7 +234,8 @@
                 username: user.username,
                 email: user.email,
                 name: user.name,
-                org: user.org,
+                orgs: user.orgs,
+                groups: user.groups,
                 exp: user.exp
               }))
 

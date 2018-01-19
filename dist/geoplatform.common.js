@@ -4136,8 +4136,12 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
             this.isAuthorized = function (role) {
                 var env = Config.env || Config.ENV || Config.NODE_ENV;
                 if (env === 'dev' || env === 'development') return true;
-                if (!this.roles || !this.roles.length || typeof this.roles.push === 'undefined') return false;
-                return this.roles.indexOf(role) >= 0;exp: this.exp;
+
+                return this.groups && !!this.groups.map(function (g) {
+                    return g.name;
+                }).filter(function (n) {
+                    return n === role;
+                }).length;
             };
         }
 
@@ -4261,7 +4265,8 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
                         username: user.username,
                         email: user.email,
                         name: user.name,
-                        org: user.org,
+                        orgs: user.orgs,
+                        groups: user.groups,
                         exp: user.exp
                     }));
 
