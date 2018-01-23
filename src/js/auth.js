@@ -110,8 +110,6 @@
           };
         }
 
-        var _user = null;
-
         /**
          * Authentication Service
          */
@@ -159,8 +157,7 @@
            */
           this.logout = function() {
             //implicitly remove incase the idp is down and the revoke call does not work
-            _user = null;
-            self.clearLocalStorageJWT();
+            self.removeAuth();
 
             $http.get(Config.IDP_BASE_URL + '/auth/revoke')
               .then(function(response) {
@@ -191,7 +188,7 @@
           this.getOauthProfile = function() {
             var Q = $q.defer();
             //check to make sure we can make called
-            if (self.getJWTfromLocalStorage()) {
+            if (self.getJWT()) {
               var url = Config.IDP_BASE_URL + '/api/profile';
               $http.get(url)
                 .then(function(response) {
@@ -205,76 +202,69 @@
             return Q.promise;
           };
 
-          /*
-           * Set the _user property in this scope
-           */
-          this.setUser = function(user){ _user = user }
-
           /**
            * Unpacks JWT to see if session is valid.
            *
            * Side Effects:
-           *  - Sets the _user property
-           *  - Sets the Authorize header if valid user found (this.setAuth)
            *  - Will redirect user to login url if FORCE_LOGIN is set an no valid user is found
            *
            * @return {User} - the authenticated user or undefined
            */
-          this.check = function() {
+          this.init = function() {
             // Pull user from either LocalStorage or the JWT (or the URL)
             const jwt = self.getJWT();
 
             // Save JWT in Auhorization Header
-            if(jwt && !self.isExpired(jwt)){
-              self.setAuth(jwt);
-              const user = self.parseJwt(jwt);
-              // slightly differnet mapping ;)
-              self.setUser(new User({
-                id: user.sub,
-                username: user.username,
-                email: user.email,
-                name: user.name,
-                orgs: user.orgs,
-                groups: user.groups,
-                exp: user.exp
-              }))
-
-              //clean hosturl on redirect from oauth
-              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              if (getJWTFromUrl()) {
-                var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
-                $window.location = cleanUrl;
-              }
+            if(jwt) self.setAuth(jwt);
 
             // No valid userdata found
-            } else {
-              self.removeAuth();
+            if(!jwt) {
               // Redirect if settings set
               if(Config.FORCE_LOGIN === true) self.forceLogin();
             }
 
+            //clean hosturl on redirect from oauth
+            if (getJWTFromUrl()) {
+              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
+              var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
+              $window.location = cleanUrl;
+            }
+
             // return the user
-            return _user
+            return self.getUserFromJWT(jwt)
           };
+
+          /**
+           * Get User object from the JWT.
+           * 
+           * If no JWT is provided it will be looked for at the normal JWT
+           * locations (localStorage or URL queryString).
+           * 
+           * @param {JWT} [jwt] - the JWT to extract user from. 
+           */
+          this.getUserFromJWT = function(jwt) {
+            if(!jwt) jwt = self.getJWT();
+            const user = self.parseJwt(jwt)
+            return user ? 
+                    new User(Object.assign({}, user, { id: user.sub })) :
+                    null;
+          }
 
           /**
            * If the callback parameter is specified, this method
            * will return undefined. Otherwise, it returns the user (or null).
            *
            * Side Effects:
-           *  - This property sets the _user property for the enclosing scope
            *  - Will redirect users if no valid JWT was found
            *
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
           this.getUser = function(callback) {
-            // better check 'em first
-            self.check(); // Sideffects will redirect browser if JWT invalid
-
+            const user = self.getUserFromJWT();
             return callback && typeof(callback) === 'function' ?
-              callback(_user) :
-              _user;
+              callback(user) :
+              user;
           }
 
           //=====================================================
@@ -313,7 +303,14 @@
            * @return {JWT | undefined}
            */
           this.getJWT = function(){
-            return self.getJWTFromUrl() || self.getJWTfromLocalStorage()
+            const jwt = self.getJWTFromUrl() || self.getJWTfromLocalStorage()
+            // Only deny implicit tokens that have expired
+            if(self.isExpired(jwt) && self.isImplicitJWT(jwt)) {
+              self.removeAuth();
+              return null;
+            } else {
+              return jwt;
+            }
           };
 
           /**
@@ -341,6 +338,10 @@
             return now > exp;
           };
 
+          this.isImplicitJWT = function(jwt){
+            return jwt && self.parseJwt(jwt).implicit;
+          }
+
           /**
            * Unsafe (signature not checked) unpacking of JWT.
            *
@@ -359,32 +360,42 @@
           };
 
           /**
+           * Simple front end validion to verify JWT is complete and not 
+           * expired.
            *
+           * Note:
+           *  Signature validation is the only truly save method. This is done
+           *  automatically in the node-gpoauth module.
            */
           this.validateJwt = function(token) {
             var parsed = self.parseJwt(token);
             var valid = (parsed && parsed.exp && parsed.exp * 1000 > Date.now()) ? true : false;
-            //TODO: chk jwt signature too
             return valid;
           };
 
+          /**
+           * Save JWT to localStorage and in the request headers for accessing
+           * protected resources.
+           * 
+           * @param {JWT} jwt 
+           */
           this.setAuth = function(jwt) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $http.defaults.useXDomain = true;
-            return;
           };
 
+          /**
+           * Purge the JWT from localStorage and authorization headers.
+           */
           this.removeAuth = function() {
-            _user = null;
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
             $http.defaults.useXDomain = false;
-            return;
           };
 
           //initialize with auth check
-          this.check()
+          this.init()
 
         };
 
