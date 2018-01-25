@@ -30,7 +30,7 @@
     const VAR_SCHEMES               = 'schemes';
     const VAR_VISIBILITY            = "visibility";
     const VAR_QUERY                 = 'query';
-    const VAR_EXTENT                = 'extent';
+    const VAR_EXTENT                = 'bbox';
     const VAR_MODIFIED_BEFORE       = 'modified.max';
     const VAR_MODIFIED_AFTER        = 'modified.min';
 

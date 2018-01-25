@@ -2909,7 +2909,7 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
     var VAR_SCHEMES = 'schemes';
     var VAR_VISIBILITY = "visibility";
     var VAR_QUERY = 'query';
-    var VAR_EXTENT = 'extent';
+    var VAR_EXTENT = 'bbox';
     var VAR_MODIFIED_BEFORE = 'modified.max';
     var VAR_MODIFIED_AFTER = 'modified.min';
 
