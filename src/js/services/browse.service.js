@@ -45,7 +45,7 @@
     const PARAMETER_IN_SCHEME       = 'scheme.id';
     const PARAMETER_VISIBILITY      = 'visibility';
     const PARAMETER_QUERY           = 'q';
-    const PARAMETER_EXTENT          = 'bbox';
+    const PARAMETER_EXTENT          = 'extent';
     const PARAMETER_MODIFIED_BEFORE = 'modified.max';
     const PARAMETER_MODIFIED_AFTER  = 'modified.min';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
