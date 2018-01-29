@@ -226,7 +226,9 @@
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
               const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              var cleanUrl = current.replace(/access_token=([^\&]*)/, '');
+              var cleanUrl = current
+                              .replace(/access_token=([^\&]*)/, '')
+                              .replace(/token_type=[^\&]*/, '');
               $window.location = cleanUrl;
             }
 
@@ -261,10 +263,23 @@
            * @return object representing current user
            */
           this.getUser = function(callback) {
-            const user = self.getUserFromJWT();
+            const user = self.isExpired(self.getJWT()) ? 
+                          null :
+                          self.getUserFromJWT();
             return callback && typeof(callback) === 'function' ?
               callback(user) :
               user;
+          }
+
+          /**
+           * Check function being used by some front end apps already.
+           * (wrapper for getUser)
+           */
+          this.check = function(){
+            const jwt = self.getJWT();
+            return jwt && !self.isExpired(jwt) ? 
+                    $q.when(self.getUserFromJWT(jwt)) :
+                    $q.reject(null);
           }
 
           //=====================================================
@@ -297,6 +312,10 @@
            * Attempt and pull JWT from the following locations (in order):
            *  - URL query parameter 'access_token' (returned from IDP)
            *  - Browser local storage (saved from previous request)
+           * 
+           * NOTE: 
+           *  This call will redirect user to login if the Config.FORCE_LOGIN
+           *  option is set to true.
            *
            * @method getJWT
            *
@@ -307,7 +326,9 @@
             // Only deny implicit tokens that have expired
             if(self.isExpired(jwt) && self.isImplicitJWT(jwt)) {
               self.removeAuth();
+              if(Config.FORCE_LOGIN === true) self.forceLogin();
               return null;
+
             } else {
               return jwt;
             }
