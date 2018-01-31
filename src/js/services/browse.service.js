@@ -30,7 +30,7 @@
     const VAR_SCHEMES               = 'schemes';
     const VAR_VISIBILITY            = "visibility";
     const VAR_QUERY                 = 'query';
-    const VAR_EXTENT                = 'extent';
+    const VAR_EXTENT                = 'bbox';
     const VAR_MODIFIED_BEFORE       = 'modified.max';
     const VAR_MODIFIED_AFTER        = 'modified.min';
 
@@ -45,7 +45,7 @@
     const PARAMETER_IN_SCHEME       = 'scheme.id';
     const PARAMETER_VISIBILITY      = 'visibility';
     const PARAMETER_QUERY           = 'q';
-    const PARAMETER_EXTENT          = 'bbox';
+    const PARAMETER_EXTENT          = 'extent';
     const PARAMETER_MODIFIED_BEFORE = 'modified.max';
     const PARAMETER_MODIFIED_AFTER  = 'modified.min';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
