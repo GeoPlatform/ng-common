@@ -324,7 +324,7 @@
           this.getJWT = function(){
             const jwt = self.getJWTFromUrl() || self.getJWTfromLocalStorage()
             // Only deny implicit tokens that have expired
-            if(self.isExpired(jwt) && self.isImplicitJWT(jwt)) {
+            if(!jwt || (jwt && self.isExpired(jwt) && self.isImplicitJWT(jwt))) {
               self.removeAuth();
               if(Config.FORCE_LOGIN === true) self.forceLogin();
               return null;
@@ -442,7 +442,8 @@
             AuthenticationService.setAuth(jwt);
           } else if (authHeader) {
             const AuthenticationService = $injector.get('AuthenticationService')
-            AuthenticationService.setAuth(authHeader.replace('Bearer ',''));
+            const token = authHeader.replace('Bearer', '').trim();
+            AuthenticationService.setAuth(token);
           }
 
           return resp;
