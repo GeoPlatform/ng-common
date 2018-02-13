@@ -407,7 +407,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             restrict: "AE",
             transclude: true,
             replace: true,
-            template: ['<header>', '  <div class="container-fluid">', '    <div class="row">', '      <div class="col-md-12">', '        <ul role="menu" class="header__menu" gp-header-menu>', '          <li ng-if="showHomeLink">', '            <a href="#/goHome">', '                <span class="glyphicon glyphicon-home"></span> ', '                <span class="hidden-xs hidden-sm">Home</span>', '            </a>', '          </li>', '          <div class="transcluded"></div>', '          <li><span gp-login-button></span></li>', '        </ul>', '        <h4 class="brand">', '          <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">', '            <span class="icon-gp"></span>', '            <span class="hidden-xs">GeoPlatform</span>', '          </a>', '          {{brand}}', '        </h4>', '      </div>', '    </div>', '  </div>', '</header>'].join(' '),
+            template: ['<header>', '  <div class="container-fluid">', '    <div class="row">', '      <div class="col-md-12">', '        <ul role="menu" class="header__menu" gp-header-menu>', '          <li ng-if="showHomeLink">', '            <a href="#/goHome">', '                <span class="glyphicon glyphicon-home"></span> ', '                <span class="hidden-xs hidden-sm">Home</span>', '            </a>', '          </li>', '          <div class="transcluded"></div>', '          <li><span gp-login-button></span></li>', '        </ul>', '        <h4 class="brand">', '          <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">', '            <span class="icon-gp"></span>', '            <span class="hidden-xs">GeoPlatform</span>', '          </a>', '          {{brand}}', '        </h4>', '      </div>', '    </div>', '  </div>', '  <gp-login-modal></gp-login-modal>', '</header>'].join(' '),
+
             // controller: function($rootScope, $scope, $element) {
             //     $scope.portalUrl = $rootScope.portalUrl;
             // }, 
@@ -3310,20 +3311,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             * Redirects the page to the login site
             */
             this.login = function () {
-                //use current window
-                var current = window.location.href;
-                var redirect = Config.CALLBACK ? Config.CALLBACK : current;
-                if (Config.AUTH_TYPE !== 'grant' && Config.AUTH_TYPE !== 'token') {
-                    //fail this request
-                    throw new Error("Invalid authentication request type.  Must be 'token' or 'grant'.");
+                console.log('Login called');
+
+                // Check implicit we need to actually redirect them
+                if (Config.AUTH_TYPE === 'token') {
+                    window.location = Config.IDP_BASE_URL + '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' + Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect);
+
+                    // Otherwise pop up the login modal
+                } else {
+                    $rootScope.$broadcast('requireLogin');
                 }
-                //check auth type to set login URL: Implicit -> to IDP, Grant -> Resource Provider Login URL
-                var loginUrl = Config.AUTH_TYPE === 'token' ? Config.IDP_BASE_URL + '/auth/authorize?client_id=' + Config.APP_ID + '&response_type=' + Config.AUTH_TYPE + '&redirect_uri=' + encodeURIComponent(redirect)
-                // NOTE: /login is the default login endpoint for node-gpoauth
-                : Config.LOGIN_URL || "/login?redirect_url=" + encodeURIComponent(window.location.toString());
-                window.location = loginUrl;
-                //This could be writen to use an modal / pop-up for login so you don't have to lose your current page
-                //Logout already executes using a background call
             };
             /**
             * Performs background logout and requests jwt revokation
@@ -3577,6 +3574,39 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         };
     }]).config(["$httpProvider", function myAppConfig($httpProvider) {
         $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
+    }]).directive('gpLoginModal', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
+        return {
+            scope: {
+                minimal: '@'
+            },
+            replace: true,
+            template: ['<div class="gpLoginCover" ng-if="requireLogin">' + '   <div class="gpLoginWindow">' + '     <iframe src="/login"></iframe>' + '   </div>' + '</div>'].join(' '),
+            controller: ["$scope", "$element", function controller($scope, $element) {
+                $scope.requireLogin = false;
+
+                function startAuthIntervalCheck(delay) {
+                    // Setup check for localstorage set and close iframe when set
+                    var timeout = setInterval(function () {
+                        console.log("Beep!");
+                        var jwt = AuthenticationService.getJWT();
+                        if (jwt) {
+                            // close iframe
+                            console.log("close Iframe event");
+                            $scope.requireLogin = false;
+                            window.location.reload();
+                            clearTimeout(timeout); // All Done here
+                        }
+                    }, delay);
+                }
+
+                // Catch the request to display login modal
+                $scope.$on('requireLogin', function () {
+                    console.log("EVENT: requireLogin");
+                    $scope.requireLogin = true;
+                    startAuthIntervalCheck(250);
+                });
+            }]
+        };
     }]).directive('gpLoginButton', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
         return {
             scope: {
