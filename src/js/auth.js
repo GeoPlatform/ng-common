@@ -226,10 +226,7 @@
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
               const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              var cleanUrl = current
-                              .replace(/access_token=([^\&]*)/, '')
-                              .replace(/token_type=[^\&]*/, '');
-              $window.location = cleanUrl;
+              $window.location = current.replace(/\?access_token=[^\&]*\&token_type=Bearer/, '')
             }
 
             // return the user
