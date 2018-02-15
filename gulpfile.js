@@ -4,36 +4,48 @@ const pkg         = require('./package.json'),
       concat      = require('gulp-concat'),
       ngAnnotate  = require('gulp-ng-annotate'),
       babel       = require('gulp-babel'),
+      es2015      = require('babel-preset-es2015'),
       uglify      = require('gulp-uglify'),
       rename      = require('gulp-rename'),
       notify      = require('gulp-notify'),
       del         = require('del'),
       srcmaps     = require('gulp-sourcemaps'),
+      ts          = require('gulp-typescript');
+
+const jshintConfig = {
+    // laxbreak: true,
+    // laxcomma: true,
+    esversion: 6, //JSHint Harmony/ES6
+    // eqnull: true,
+    browser: true,
+    jquery: true
+}
 
 require('gulp-help')(gulp, { description: 'Help listing.' });
 
 gulp.task('jshint', function () {
     gulp.src(['src/js/**/*.js'])
-        .pipe(jshint({
-            // laxbreak: true,
-            // laxcomma: true,
-            esversion: 6, //JSHint Harmony/ES6
-            // eqnull: true,
-            browser: true,
-            jquery: true
-        }))
+        .pipe(jshint(jshintConfig))
         .pipe(jshint.reporter('default'))
         // .pipe(livereload());
 });
 
 
 gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', function() {
+    const tsProject = ts.createProject('./tsconfig.json');
 
     //include module first, then other src files which depend on module
-    gulp.src(['src/js/module.js', 'src/js/kg/module.js', 'src/js/**/*.js'])
+    gulp.src([
+        'src/js/module.js',
+        'src/ts/modules.ts',
+        'src/js/kg/module.js',
+        'src/js/**/*.js',
+        'src/ts/**/*.ts'
+    ])
+        .pipe(tsProject())
         .pipe(srcmaps.init())
         .pipe(concat(pkg.name + '.js'))
-        .pipe(babel({presets: ["es2015"]}))
+        .pipe(babel({presets: [es2015]}))
         .pipe(ngAnnotate()).on('error', notify.onError("Error: <%= error.message %>"))
         .pipe(gulp.dest('dist/'))
         .pipe(uglify()).on('error', notify.onError("Error: <%= error.message %>"))
@@ -45,7 +57,7 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
 
 gulp.task('concat', 'Concat only, do not minify', () => {
     gulp.src(['src/js/module.js', 'src/js/**/*.js'])
-        .pipe(jshint())
+        .pipe(jshint(jshintConfig))
         .pipe(srcmaps.init())
         .pipe(concat(pkg.name + '.js'))
         .pipe(srcmaps.write('./'))
@@ -54,7 +66,7 @@ gulp.task('concat', 'Concat only, do not minify', () => {
 
 gulp.task('jshint', function() {
   return gulp.src(['src/js/module.js', 'src/js/**/*.js'])
-  .pipe(jshint())
+  .pipe(jshint(jshintConfig))
   .pipe(jshint.reporter('jshint-stylish'));
 });
 

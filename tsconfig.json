@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "noImplicitAny": true,
+    "target": "es5",
+    "module": "commonjs",
+    "removeComments": false,
+    "moduleResolution": "node",
+    "outDir": "../static/js",
+    "preserveConstEnums": true,
+    "inlineSourceMap": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "lib": [
+      "es2015",
+      "dom"
+    ]
+  },
+  "include": [
+    "js/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "**/*-spec.ts"
+  ]
+}
