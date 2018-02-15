@@ -168,7 +168,7 @@
                   window.location = Config.LOGOUT_URL;
                 } else {
                   window.location.hash = '';
-                  window.location = Config.PORTAL_URL || window.location.host;
+                  window.location = Config.portalUrl || window.location.host;
                 }
               }, function(err) {
                 console.log(err);

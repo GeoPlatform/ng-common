@@ -64,7 +64,41 @@ __Inject the Module__
 ```javascript
 angular.module('myModule', ['gp-common']);
 ```
+### Configuration
 
+The folling are values that can/should be set in the GeoPlatform global namespace:
+
+| property | required | description | values | default
+|---|---|---|---|---|
+| portalUrl | yes | FQDN of GeoPlatform portal URL | N/A | N/A |
+|env \| ENV \| NODE_ENV | yes | Enviroment flag to run ng-common with. Some features (like authentication) may be disabled or preform differently in a development vs production enviroment | dev, development, prod, prd, sit, test | N/A |
+
+> See additonal configurations in the Authentication section
+
+## Authentication
+ng-common has an interface for authenticating and verifying user identitiy against gpoauth OAuth service. Ng-common will automatically direct a user to the oauth provider and then back to the application with an accessToken/JWT. The recieved JWT will be sent with all subsequent requests and should allow users to access resources avaliable to them.
+
+There are two major types of authentication:  
+#### token (implicit)
+Token or implicit type authentication does not require or use a back end service for authentication. The entire authentication process will be handled between the Oauth provider and front end application hosting ng-common.
+
+#### grant
+Grant type authentiction require a back end service (like node-gpoauth) to handle recieving JWT and related tokens from the OAuth provider. 
+
+### Configuration
+The following are property that sould be found at the top level of the GeoPlatorm namespace:
+
+| property | required | description | values | default
+|---|---|---|---|---|
+| AUTH_TYPE | no | Type of token to request from gpoauth.  | token, grant | grant |
+| FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | true, false | false |
+| CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | N/A | /login |
+| IDP_BASE_URL | yes* | URL of the Oauth serice. | N/A | N/A |
+| APP_ID | yes* | Id (client_id) of appliction registerd with the Oauth service provider. | N/A | N/A |
+| LOGIN_URL | no | URL to redirect browser to when auth type is 'token'. | N/A | /login |
+| LOGOUT_URL | no | Url to redirec user to when they preform the logout action. | N/A | (will redirect to the portalUrl or root of application) |
+
+\* : indicates required configuration when authorization is type 'token'.
 
 ## Directives
 
