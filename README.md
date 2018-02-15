@@ -90,6 +90,7 @@ The following are property that sould be found at the top level of the GeoPlator
 
 | property | required | description | values | default
 |---|---|---|---|---|
+| ALLOWIFRAMELOGIN | no | Allow ng-common to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | true, false | false |
 | AUTH_TYPE | no | Type of token to request from gpoauth.  | token, grant | grant |
 | FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | true, false | false |
 | CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | N/A | /login |

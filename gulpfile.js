@@ -39,9 +39,8 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         'src/js/module.js',
         'src/ts/modules.ts',
         'src/js/kg/module.js',
-        'src/js/**/*.js'
-        // ,
-        // 'src/ts/**/*.ts'
+        'src/js/**/*.js',
+        'src/js/**/*.ts'
     ])
         .pipe(tsProject())
         .pipe(srcmaps.init())

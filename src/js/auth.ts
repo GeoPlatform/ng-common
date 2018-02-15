@@ -1,6 +1,50 @@
+/// <reference path="../models.ts" />
+
+import { IPromise } from "angular";
+
+
 (function(angular) {
 
-    'use strict';
+  'use strict';
+
+  //flag on whether we're in dev env
+  // function isDEV() {
+  //     return "localhost" === window.location.hostname ||
+  //         ~window.location.hostname.indexOf("192.168")||
+  //         ~window.location.hostname.indexOf("localhost")||
+  //         ~window.location.hostname.indexOf("10.0");
+  // }
+
+  /**
+   * Get token from query string
+   *
+   * Note:
+   *  Lifted outside of any Angular service to prevent cyclical service dependencies.
+   *
+   * @method getJWTFromUrl
+   * @returns {String} token - token in query string or undefined
+   */
+  function getJWTFromUrl(): string {
+    var queryString = window.location.hash ? window.location.hash : window.location.href;
+    var res = queryString.match(/access_token=([^\&]*)/);
+    return res && res[1];
+  };
+
+  /**
+   * GeoPlatform Common Module Authentication Support
+   *
+   * Contains re-usable services, directives, and other angular components
+   *
+   *
+   * NOTE: This module uses certain variables in $rootScope in order to
+   * perform actions like authentication.  The following variables should be
+   * set before using any service/directive in this file:
+   *
+   *   - idspUrl : the url to the identity service provider server
+   *   - idmUrl : the url to the identity management server
+   *   - portalUrl : the url to the main landing page of GeoPlatform (www.geoplatform.gov in production)
+   */
+  angular.module('gp-common')
 
     //flag on whether we're in dev env
     // function isDEV() {
@@ -54,7 +98,7 @@
     * to get current auth status.
     */
     .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig',
-    function($q, $http, $location, $rootScope, $window, Config) {
+      function($q: ng.IQService, $http: ng.IHttpService, $location: ng.ILocationService, $rootScope: ng.IRootScopeService, $window: ng.IWindowService, Config: GeoPlatform) {
 
         //extend Storage prototype
         Storage.prototype.setObject = function(key, value) {
@@ -66,41 +110,50 @@
             return value && JSON.parse(value);
         };
 
-        function User(opts) {
+        class User {
+          id: string
+          username: string
+          name: string
+          email: string
+          org: orgGroupArray
+          groups: orgGroupArray
+          exp: number
+
+          constructor(opts: JWT) {
             for (var p in opts) {
-                this[p] = opts[p];
+              this[p] = opts[p];
             }
             if (!this.id && this.username)
-            this.id = this.username;
+              this.id = this.username;
+          }
 
-            this.toJSON = function() {
-                return {
-                    id: this.id,
-                    username: this.username,
-                    name: this.name,
-                    email: this.email,
-                    org: this.org,
-                    exp: this.exp
-                };
+          toJSON() {
+            return {
+              id: this.id,
+              username: this.username,
+              name: this.name,
+              email: this.email,
+              org: this.org,
+              exp: this.exp
             };
 
-            this.clone = function() {
-                return new User(this.toJSON());
-            };
+          clone() {
+            return Object.assign({}, this)
+          };
 
-            this.compare = function(arg) {
-                if (arg instanceof User) {
-                    return this.id === arg.id;
-                } else if (typeof(arg) === 'object') {
-                    return typeof(arg.id) !== 'undefined' &&
-                    arg.id === this.id;
-                }
-                return false;
-            };
+          compare(arg) {
+            if (arg instanceof User) {
+              return this.id === arg.id;
+            } else if (typeof(arg) === 'object') {
+              return typeof(arg.id) !== 'undefined' &&
+                arg.id === this.id;
+            }
+            return false;
+          };
 
-            this.isAuthorized = function(role) {
-                let env = Config.env || Config.ENV || Config.NODE_ENV;
-                if(env === 'dev' || env === 'development') return true;
+          isAuthorized(role: string) {
+            let env = Config.env || Config.ENV || Config.NODE_ENV;
+            if(env === 'dev' || env === 'development') return true;
 
                 return this.groups &&
                 !!this.groups
@@ -125,14 +178,18 @@
 
             // Check implicit we need to actually redirect them
             if(Config.AUTH_TYPE === 'token') {
-              window.location = Config.IDP_BASE_URL +
+              window.location.href = Config.IDP_BASE_URL +
                       '/auth/authorize?client_id=' + Config.APP_ID + 
                       '&response_type=' + Config.AUTH_TYPE + 
-                      '&redirect_uri=' + encodeURIComponent(redirect)
+                      '&redirect_uri=' + encodeURIComponent(Config.CALLBACK || '/login')
 
             // Otherwise pop up the login modal
             } else {
-              $rootScope.$broadcast('requireLogin')
+              if(Config.ALLOWIFRAMELOGIN === true){
+                $rootScope.$broadcast('requireLogin')
+              } else {
+                // TODO: Do redirect login
+              }
             }
           };
 
@@ -146,6 +203,25 @@
             this.logout = function() {
                 //implicitly remove incase the idp is down and the revoke call does not work
                 self.removeAuth();
+                //goto logout page
+                if (Config.LOGOUT_URL) {
+                  Config.FORCE_LOGIN = false;
+                  window.location.href = Config.LOGOUT_URL;
+                } else {
+                  window.location.hash = '';
+                  window.location.href = Config.portalUrl || window.location.host;
+                }
+              }, function(err) {
+                console.log(err);
+              });
+          };
+
+          /**
+           * Optional force redirect for non-public services
+           */
+          this.forceLogin = function() {
+            self.login();
+          };
 
                 $http.get(Config.IDP_BASE_URL + '/auth/revoke')
                 .then(function(response) {
@@ -184,12 +260,11 @@
               if(Config.FORCE_LOGIN === true) self.forceLogin();
             }
 
-            /**
-            * Optional force redirect for non-public services
-            */
-            this.forceLogin = function() {
-                self.login();
-            };
+            //clean hosturl on redirect from oauth
+            if (getJWTFromUrl()) {
+              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
+              $window.location.href = current.replace(/\?access_token=[^\&]*\&token_type=Bearer/, '')
+            }
 
             // return the user
             return self.getUserFromJWT(jwt)
@@ -279,7 +354,7 @@
            *
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
-          this.checkWithClient = function(originalJWT){
+          this.checkWithClient = function(originalJWT: string): IPromise<string> {
             return $http.get('/checktoken')
                     .then(resp => {
                       const header = resp.headers('Authorization')
@@ -299,7 +374,7 @@
            *
            * @return {String | undefined} - JWT Token (raw string)
            */
-          this.getJWTFromUrl = function(){
+          this.getJWTFromUrl = function(): string {
             const queryString = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url();
             const res = queryString.match(/access_token=([^\&]*)/);
             return res && res[1];
@@ -312,7 +387,7 @@
            *
            * @return {JWT | undefined} An object wih the following format:
            */
-          this.getJWTfromLocalStorage = function(){
+          this.getJWTfromLocalStorage = function(): string{
             return window.localStorage.gpoauthJWT
           };
 
@@ -329,7 +404,7 @@
            *
            * @return {JWT | undefined}
            */
-          this.getJWT = function(){
+          this.getJWT = function(): string{
             const jwt = self.getJWTFromUrl() || self.getJWTfromLocalStorage()
             // Only deny implicit tokens that have expired
             if(!jwt || (jwt && self.isExpired(jwt) && self.isImplicitJWT(jwt))) {
@@ -378,7 +453,7 @@
            *
            * @return {Object} the parsed payload in the JWT
            */
-          this.parseJwt = function(token) {
+          this.parseJwt = function(token: string): JWT {
             var parsed;
             if (token) {
               var base64Url = token.split('.')[1];
@@ -411,7 +486,7 @@
           this.setAuth = function(jwt) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
-            $http.defaults.useXDomain = true;
+            // $http.defaults.useXDomain = true;
           };
 
           /**
@@ -420,7 +495,7 @@
           this.removeAuth = function() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
-            $http.defaults.useXDomain = false;
+            // $http.defaults.useXDomain = false;
           };
 
 
