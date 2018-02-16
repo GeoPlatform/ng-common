@@ -22,13 +22,13 @@
         }
 
         // General
-        if(!GeoPlatform.env || !GeoPlatform.ENV || GeoPlatform.NODE_ENV){
+        if(!GeoPlatform.env && !GeoPlatform.ENV && GeoPlatform.NODE_ENV){
             missing(`"env", "ENV", or "NODE_ENV"`)
         }
         // if(!GeoPlatform.portalUrl){ missing(`"portalUrl"`) }
 
         // Auth Settings
-        if(GeoPlatform.AUTH_TYPE && (GeoPlatform.AUTH_TYPE !== 'token' || GeoPlatform.AUTH_TYPE !== 'grant')){
+        if(GeoPlatform.AUTH_TYPE && (GeoPlatform.AUTH_TYPE !== 'token' && GeoPlatform.AUTH_TYPE !== 'grant')){
             // Not set is ok as well
             invalid(GeoPlatform.AUTH_TYPE, 'token | grant')
         }

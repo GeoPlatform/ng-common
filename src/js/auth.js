@@ -144,7 +144,7 @@
                     '&response_type=' + Config.AUTH_TYPE + 
                     '&redirect_uri=' + encodeURIComponent(redirect)
                   // NOTE: /login is the default login endpoint for node-gpoauth
-                  : Config.LOGIN_URL || '/login';
+                  : Config.LOGIN_URL || `/login?redirect_url=${encodeURIComponent(window.location.toString())}` ;
 
             window.location = loginUrl;
 
@@ -225,8 +225,11 @@
 
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
-              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              $window.location = current.replace(/\?access_token=[^\&]*\&token_type=Bearer/, '')
+              if(window.history && window.history.replaceState){
+                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '') )
+              } else {
+                $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '')
+              }
             }
 
             // return the user
