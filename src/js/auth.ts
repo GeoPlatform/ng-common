@@ -1,7 +1,4 @@
-/// <reference path="../models.ts" />
-
-import { IPromise } from "angular";
-
+/// <reference path="../types.ts" />
 
 (function(angular) {
 
@@ -185,10 +182,14 @@ import { IPromise } from "angular";
 
             // Otherwise pop up the login modal
             } else {
-              if(Config.ALLOWIFRAMELOGIN === true){
+              // Iframe login
+              if(Config.ALLOWIFRAMELOGIN === true || Config.ALLOWIFRAMELOGIN === 'true' ){
                 $rootScope.$broadcast('requireLogin')
+
+                // Redirect login
               } else {
-                // TODO: Do redirect login
+                window.location.href = Config.LOGIN_URL 
+                                    || `/login?redirect_url=${encodeURIComponent(window.location.toString())}`
               }
             }
           };
@@ -262,8 +263,11 @@ import { IPromise } from "angular";
 
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
-              const current = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url()
-              $window.location.href = current.replace(/\?access_token=[^\&]*\&token_type=Bearer/, '')
+              if(window.history && window.history.replaceState){
+                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '') )
+              } else {
+                $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '')
+              }
             }
 
             // return the user
@@ -568,7 +572,8 @@ import { IPromise } from "angular";
                     // close iframe
                     console.log("close Iframe event")
                     $scope.requireLogin = false;
-                    // window.location.reload();
+                    $scope.$emit("userAuthenticated", user)
+                    window.location.reload();
                     clearTimeout(timeout) // All Done here
                     AuthenticationService.init()
                   }

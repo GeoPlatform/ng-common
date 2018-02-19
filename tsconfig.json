@@ -3,12 +3,11 @@
     "allowJs": true,
     "noImplicitAny": true,
     "target": "es5",
-    "module": "commonjs",
-    "removeComments": false,
+    "module": "none",
     "moduleResolution": "node",
+    "removeComments": false,
     "outDir": "../static/js",
     "preserveConstEnums": true,
-    "inlineSourceMap": true,
     "typeRoots": [
       "./node_modules/@types"
     ],
