@@ -24,6 +24,7 @@
     const VAR_TYPES                 = 'types';
     const VAR_THEMES                = 'themes';
     const VAR_PUBLISHERS            = 'publishers';
+    const VAR_USED_BY               = 'usedBy';
     const VAR_USER                  = 'user';
     const VAR_CREATED_BY            = 'createdBy';
     const VAR_SERVICE_TYPES         = 'serviceTypes';
@@ -38,6 +39,7 @@
     const PARAMETER_TYPE            = 'type';
     const PARAMETER_THEME           = 'theme.id';
     const PARAMETER_PUBLISHER       = 'publisher.id';
+    const PARAMETER_USED_BY         = 'usedBy.id';
     const PARAMETER_CREATED_BY      = 'createdBy';
     const PARAMETER_CONTRIBUTED_BY  = 'contributedBy';
     const PARAMETER_CREATOR         = 'creator.id';
@@ -55,6 +57,7 @@
         { option: VAR_TYPES,            parameter: PARAMETER_TYPE           },
         { option: VAR_THEMES,           parameter: PARAMETER_THEME          },
         { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER      },
+        { option: VAR_USED_BY,          parameter: PARAMETER_USED_BY        },
         { option: VAR_USER,             parameter: PARAMETER_CREATOR        },
         { option: VAR_CREATED_BY,       parameter: PARAMETER_CREATED_BY     },
         { option: VAR_SERVICE_TYPES,    parameter: PARAMETER_SVC_TYPE       },
@@ -258,7 +261,7 @@
                 _isLoading = false;
 
                 //fallback
-                let obj = { error: "An Error Occurred", message: "No details provided" }
+                let obj = { error: "An Error Occurred", message: "No details provided" };
 
                 //http response error
                 if(response && response.data) obj = response.data;
@@ -437,6 +440,14 @@
             setAgencies: function(publishers, fireUpdate) { setOption(VAR_PUBLISHERS, publishers, fireUpdate); },
 
             getAgencies: function() { return _options[VAR_PUBLISHERS]; },
+
+            /**
+             * @param {array[string]} ids - ids of agents using this item
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setUsedBy: function(ids, fireUpdate) { setOption(VAR_USED_BY, ids, fireUpdate); },
+
+            getUsedBy: function() { return _options[VAR_USED_BY]; },
 
             /**
              * @param {array[string]} svcTypes - ids
