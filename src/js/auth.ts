@@ -152,12 +152,12 @@
             let env = Config.env || Config.ENV || Config.NODE_ENV;
             if(env === 'dev' || env === 'development') return true;
 
-                return this.groups &&
-                !!this.groups
-                .map(g => g.name)
-                .filter(n => n === role)
-                .length;
-            };
+            return this.groups &&
+                    !!this.groups
+                            .map(g => g.name)
+                            .filter(n => n === role)
+                            .length;
+          };
         }
 
         /**
@@ -176,8 +176,8 @@
             // Check implicit we need to actually redirect them
             if(Config.AUTH_TYPE === 'token') {
               window.location.href = Config.IDP_BASE_URL +
-                      '/auth/authorize?client_id=' + Config.APP_ID + 
-                      '&response_type=' + Config.AUTH_TYPE + 
+                      '/auth/authorize?client_id=' + Config.APP_ID +
+                      '&response_type=' + Config.AUTH_TYPE +
                       '&redirect_uri=' + encodeURIComponent(Config.CALLBACK || '/login')
 
             // Otherwise pop up the login modal
@@ -188,7 +188,7 @@
 
                 // Redirect login
               } else {
-                window.location.href = Config.LOGIN_URL 
+                window.location.href = Config.LOGIN_URL
                                     || `/login?redirect_url=${encodeURIComponent(window.location.toString())}`
               }
             }
@@ -264,7 +264,7 @@
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
               if(window.history && window.history.replaceState){
-                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '') )
+                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&\%3F]access_token=[^\&]*\&token_type=Bearer/, '') )
               } else {
                 $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '')
               }
@@ -276,15 +276,15 @@
 
           /**
            * Get User object from the JWT.
-           * 
+           *
            * If no JWT is provided it will be looked for at the normal JWT
            * locations (localStorage or URL queryString).
-           * 
-           * @param {JWT} [jwt] - the JWT to extract user from. 
+           *
+           * @param {JWT} [jwt] - the JWT to extract user from.
            */
           this.getUserFromJWT = function(jwt) {
             const user = self.parseJwt(jwt)
-            return user ? 
+            return user ?
                     new User(Object.assign({}, user, { id: user.sub })) :
                     null;
           }
@@ -305,13 +305,13 @@
             if(callback && typeof(callback) === 'function'){
               self.check()
               .then(user => callback(user))
-              
+
               // If no callback we have to provide a sync response (no network)
             } else {
               // We allow front end to get user data if grant type and expired
               // because they will recieve a new token automatically when
               // making a call to the client(application)
-              return self.isImplicitJWT(jwt) && self.isExpired(jwt) ? 
+              return self.isImplicitJWT(jwt) && self.isExpired(jwt) ?
                       null :
                       self.getUserFromJWT(jwt);
             }
@@ -325,7 +325,7 @@
           /**
            * Check function being used by some front end apps already.
            * (wrapper for getUser)
-           * 
+           *
            * @method check
            * @returns {User} - ng-common user object or null
            */
@@ -349,8 +349,8 @@
            * Makes a call to a service hosting node-gpoauth to allow for a
            * token refresh on an expired token, or a token that has been
            * invalidated to be revoked.
-           * 
-           * Note: Client as in hosting application: 
+           *
+           * Note: Client as in hosting application:
            *    https://www.digitalocean.com/community/tutorials/an-introduction-to-oauth-2
            *
            * @method checkWithClient
@@ -399,8 +399,8 @@
            * Attempt and pull JWT from the following locations (in order):
            *  - URL query parameter 'access_token' (returned from IDP)
            *  - Browser local storage (saved from previous request)
-           * 
-           * NOTE: 
+           *
+           * NOTE:
            *  This call will redirect user to login if the Config.FORCE_LOGIN
            *  option is set to true.
            *
@@ -468,7 +468,7 @@
           };
 
           /**
-           * Simple front end validion to verify JWT is complete and not 
+           * Simple front end validion to verify JWT is complete and not
            * expired.
            *
            * Note:
@@ -484,8 +484,8 @@
           /**
            * Save JWT to localStorage and in the request headers for accessing
            * protected resources.
-           * 
-           * @param {JWT} jwt 
+           *
+           * @param {JWT} jwt
            */
           this.setAuth = function(jwt) {
             window.localStorage.gpoauthJWT = jwt;
@@ -545,8 +545,8 @@
 })
 
 
-    .directive('gpLoginModal', ['$timeout', 'AuthenticationService', 'GPConfig',
-      function($timeout, AuthenticationService, Config) {
+    .directive('gpLoginModal', ['rootScope', 'AuthenticationService', 'GPConfig',
+      function($rootScope, AuthenticationService, Config) {
         return {
           scope: {
             minimal: '@'
@@ -565,15 +565,12 @@
             function startAuthIntervalCheck(delay){
               // Setup check for localstorage set and close iframe when set
               const timeout = setInterval(function(){
-                console.log("Beep!")
                 AuthenticationService.check()
                 .then(user => {
                   if(user){
                     // close iframe
-                    console.log("close Iframe event")
                     $scope.requireLogin = false;
-                    $scope.$emit("userAuthenticated", user)
-                    window.location.reload();
+                    $rootScope.$broadcast("userAuthenticated", user)
                     clearTimeout(timeout) // All Done here
                     AuthenticationService.init()
                   }

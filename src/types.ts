@@ -5,6 +5,7 @@
 /// <reference path="../node_modules/@types/angular-ui-bootstrap/index.d.ts" />
 /// <reference path="../node_modules/@types/angular-route/index.d.ts" />
 
+
 // import { IAngularStatic } from "angular";
 
 type GeoPlatform = {
@@ -34,12 +35,12 @@ declare const jQuery: JQLite
 
 type orgGroupArray = [{_id: string, name: string}]
 
-type JWT = { 
+type JWT = {
   sub: string
   name: string
   email: string
   username: string
-  roles: string                   
+  roles: string
   groups: orgGroupArray
   orgs: orgGroupArray
   scope: [string]
@@ -47,5 +48,5 @@ type JWT = {
   aud: string
   nonce: string
   iat: number
-  exp: number 
+  exp: number
 }
