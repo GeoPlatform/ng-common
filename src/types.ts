@@ -6,8 +6,6 @@
 /// <reference path="../node_modules/@types/angular-route/index.d.ts" />
 
 
-// import { IAngularStatic } from "angular";
-
 type GeoPlatform = {
   // General
   env?: string
@@ -49,4 +47,12 @@ type JWT = {
   nonce: string
   iat: number
   exp: number
+  implicit?: boolean
+}
+
+
+// ============== AngularJS augments ==========
+
+interface IInjectorService {
+  get<T>(name: string, caller?: string): T;
 }

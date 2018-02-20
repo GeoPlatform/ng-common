@@ -43,47 +43,7 @@
    */
   angular.module('gp-common')
 
-    //flag on whether we're in dev env
-    // function isDEV() {
-    //     return "localhost" === window.location.hostname ||
-    //         ~window.location.hostname.indexOf("192.168")||
-    //         ~window.location.hostname.indexOf("localhost")||
-    //         ~window.location.hostname.indexOf("10.0");
-    // }
-
-    /**
-    * Get token from query string
-    *
-    * Note:
-    *  Lifted outside of any Angular service to prevent cyclical service dependencies.
-    *
-    * @method getJWTFromUrl
-    * @returns {String} token - token in query string or undefined
-    */
-    function getJWTFromUrl() {
-        var queryString = window.location.hash ? window.location.hash : window.location.href;
-        var res = queryString.match(/access_token=([^\&]*)/);
-        return res && res[1];
-    }
-
-    /**
-    * GeoPlatform Common Module Authentication Support
-    *
-    * Contains re-usable services, directives, and other angular components
-    *
-    *
-    * NOTE: This module uses certain variables in $rootScope in order to
-    * perform actions like authentication.  The following variables should be
-    * set before using any service/directive in this file:
-    *
-    *   - idspUrl : the url to the identity service provider server
-    *   - idmUrl : the url to the identity management server
-    *   - portalUrl : the url to the main landing page of GeoPlatform (www.geoplatform.gov in production)
-    */
-    angular.module('gp-common')
-
-
-    /**
+   /**
     * Authentication Service
     *
     * Because the auth service redirects the page to the IDM portal
@@ -98,13 +58,13 @@
       function($q: ng.IQService, $http: ng.IHttpService, $location: ng.ILocationService, $rootScope: ng.IRootScopeService, $window: ng.IWindowService, Config: GeoPlatform) {
 
         //extend Storage prototype
-        Storage.prototype.setObject = function(key, value) {
-            this.setItem(key, btoa(JSON.stringify(value)));
+        Storage.prototype.setObject = function(key: string, value: any) {
+          this.setItem(key, btoa(JSON.stringify(value)));
         };
 
-        Storage.prototype.getObject = function(key) {
-            var value = atob(this.getItem(key));
-            return value && JSON.parse(value);
+        Storage.prototype.getObject = function(key: string) {
+          var value = atob(this.getItem(key));
+          return value && JSON.parse(value);
         };
 
         class User {
@@ -117,28 +77,24 @@
           exp: number
 
           constructor(opts: JWT) {
-            for (var p in opts) {
-              this[p] = opts[p];
-            }
-            if (!this.id && this.username)
-              this.id = this.username;
+            this.id = opts.sub
+            this.username = opts.username
+            this.name = opts.name
+            this.email = opts.email
+            this.org = opts.orgs
+            this.groups = opts.groups
+            this.exp = opts.exp
           }
 
           toJSON() {
-            return {
-              id: this.id,
-              username: this.username,
-              name: this.name,
-              email: this.email,
-              org: this.org,
-              exp: this.exp
-            };
+            return JSON.parse(JSON.stringify(this));
+          };
 
           clone() {
             return Object.assign({}, this)
           };
 
-          compare(arg) {
+          compare(arg: any) {
             if (arg instanceof User) {
               return this.id === arg.id;
             } else if (typeof(arg) === 'object') {
@@ -160,17 +116,19 @@
           };
         }
 
-        /**
-        * Authentication Service
-        */
-        var Service = function() {
+        type userOrNothin = User | null | undefined
 
-            var self = this;
+        /**
+         * Authentication Service
+         */
+        class AuthService {
+
+          constructor(){ this.init(); }
 
           /**
            * Redirects or displays login window the page to the login site
            */
-          this.login = function() {
+          login() {
             console.log('Login called')
 
             // Check implicit we need to actually redirect them
@@ -194,16 +152,16 @@
             }
           };
 
-                //This could be writen to use an modal / pop-up for login so you don't have to lose your current page
-                //Logout already executes using a background call
-            };
+          /**
+           * Performs background logout and requests jwt revokation
+           */
+          logout() {
+            //implicitly remove incase the idp is down and the revoke call does not work
+            this.removeAuth();
 
-            /**
-            * Performs background logout and requests jwt revokation
-            */
-            this.logout = function() {
-                //implicitly remove incase the idp is down and the revoke call does not work
-                self.removeAuth();
+            $http.get(Config.IDP_BASE_URL + '/auth/revoke')
+              .then(function(response) {
+                this.removeAuth();
                 //goto logout page
                 if (Config.LOGOUT_URL) {
                   Config.FORCE_LOGIN = false;
@@ -220,20 +178,28 @@
           /**
            * Optional force redirect for non-public services
            */
-          this.forceLogin = function() {
-            self.login();
+          forceLogin() {
+            this.login();
           };
 
-                $http.get(Config.IDP_BASE_URL + '/auth/revoke')
+          /**
+           * Get protected user profile
+           */
+          getOauthProfile() {
+            var Q = $q.defer();
+            //check to make sure we can make called
+            if (this.getJWT()) {
+              var url = Config.IDP_BASE_URL + '/api/profile';
+              $http.get(url)
                 .then(function(response) {
                     self.removeAuth();
                     //goto logout page
                     if (Config.LOGOUT_URL) {
                         Config.FORCE_LOGIN = false;
-                        window.location = Config.LOGOUT_URL;
+                        window.location.href = Config.LOGOUT_URL;
                     } else {
                         window.location.hash = '';
-                        window.location = Config.portalUrl || window.location.host;
+                        window.location.href = Config.portalUrl || window.location.host;
                     }
                 }, function(err) {
                     console.log(err);
@@ -250,15 +216,15 @@
            *
            * @return {User} - the authenticated user or undefined
            */
-          this.init = function() {
-            const jwt = self.getJWT();
+          init(): IPromise<User> {
+            const jwt = this.getJWT();
             if(jwt){
-               self.setAuth(jwt); // Save JWT in Auhorization Header
+               this.setAuth(jwt); // Save JWT in Auhorization Header
 
             // No valid userdata found
             } else {
               // Redirect if settings set
-              if(Config.FORCE_LOGIN === true) self.forceLogin();
+              if(Config.FORCE_LOGIN === true) this.forceLogin();
             }
 
             //clean hosturl on redirect from oauth
@@ -271,7 +237,7 @@
             }
 
             // return the user
-            return self.getUserFromJWT(jwt)
+            return this.getUserFromJWT(jwt)
           };
 
           /**
@@ -282,8 +248,8 @@
            *
            * @param {JWT} [jwt] - the JWT to extract user from.
            */
-          this.getUserFromJWT = function(jwt) {
-            const user = self.parseJwt(jwt)
+          getUserFromJWT(jwt: string) {
+            const user = this.parseJwt(jwt)
             return user ?
                     new User(Object.assign({}, user, { id: user.sub })) :
                     null;
@@ -299,27 +265,27 @@
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
-          this.getUser = function(callback) {
-            const jwt = self.getJWT();
+          getUser(callback?: (user: User) => undefined): userOrNothin {
+            const jwt = this.getJWT();
             // If callback provided we can treat async and call server
             if(callback && typeof(callback) === 'function'){
-              self.check()
-              .then(user => callback(user))
+              this.check()
+              .then(user => callback(user));
 
               // If no callback we have to provide a sync response (no network)
             } else {
               // We allow front end to get user data if grant type and expired
               // because they will recieve a new token automatically when
               // making a call to the client(application)
-              return self.isImplicitJWT(jwt) && self.isExpired(jwt) ?
+              return this.isImplicitJWT(jwt) && this.isExpired(jwt) ?
                       null :
-                      self.getUserFromJWT(jwt);
+                      this.getUserFromJWT(jwt);
             }
           }
 
           //$q version of getUser
-          this.getUserQ = function() {
-            return self.check();
+          getUserQ() {
+            return this.check();
           };
 
           /**
@@ -329,19 +295,19 @@
            * @method check
            * @returns {User} - ng-common user object or null
            */
-          this.check = function(){
-            const jwt = self.getJWT();
+          check(): IPromise<User>{
+            const jwt = this.getJWT();
 
             if(!jwt) return $q.when(null);
-            if(!self.isImplicitJWT(jwt)){ // Grant token
-              return self.isExpired(jwt) ?
-                      self.checkWithClient(jwt)
-                        .then(jwt => self.getUserFromJWT(jwt)) : // Check with server
-                      $q.when(self.getUserFromJWT(jwt));
+            if(!this.isImplicitJWT(jwt)){ // Grant token
+              return this.isExpired(jwt) ?
+                      this.checkWithClient(jwt)
+                        .then(jwt => this.getUserFromJWT(jwt)) : // Check with server
+                      $q.when(this.getUserFromJWT(jwt));
             } else { // Implicit JWT
-              return self.isExpired(jwt) ?
+              return this.isExpired(jwt) ?
                       $q.reject(null) :
-                      $q.when(self.getUserFromJWT(jwt));
+                      $q.when(this.getUserFromJWT(jwt));
             }
           }
 
@@ -358,12 +324,12 @@
            *
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
-          this.checkWithClient = function(originalJWT: string): IPromise<string> {
+          checkWithClient(originalJWT: string): IPromise<string> {
             return $http.get('/checktoken')
                     .then(resp => {
                       const header = resp.headers('Authorization')
                       const newJWT = header && header.replace('Bearer ','')
-                      if(newJWT) self.setAuth(newJWT);
+                      if(newJWT) this.setAuth(newJWT);
 
                       return newJWT ? newJWT : originalJWT;
                     })
@@ -378,7 +344,7 @@
            *
            * @return {String | undefined} - JWT Token (raw string)
            */
-          this.getJWTFromUrl = function(): string {
+          getJWTFromUrl(): string {
             const queryString = ($window && $window.location && $window.location.hash) ? $window.location.hash : $location.url();
             const res = queryString.match(/access_token=([^\&]*)/);
             return res && res[1];
@@ -391,7 +357,7 @@
            *
            * @return {JWT | undefined} An object wih the following format:
            */
-          this.getJWTfromLocalStorage = function(): string{
+          getJWTfromLocalStorage(): string{
             return window.localStorage.gpoauthJWT
           };
 
@@ -408,12 +374,12 @@
            *
            * @return {JWT | undefined}
            */
-          this.getJWT = function(): string{
-            const jwt = self.getJWTFromUrl() || self.getJWTfromLocalStorage()
+          getJWT(): string {
+            const jwt = this.getJWTFromUrl() || this.getJWTfromLocalStorage()
             // Only deny implicit tokens that have expired
-            if(!jwt || (jwt && self.isExpired(jwt) && self.isImplicitJWT(jwt))) {
-              self.removeAuth();
-              if(Config.FORCE_LOGIN === true) self.forceLogin();
+            if(!jwt || (jwt && this.isExpired(jwt) && this.isImplicitJWT(jwt))) {
+              this.removeAuth();
+              if(Config.FORCE_LOGIN === true) this.forceLogin();
               return null;
 
             } else {
@@ -428,7 +394,7 @@
            *
            * @return  {undefined}
            */
-          this.clearLocalStorageJWT = function(){
+          clearLocalStorageJWT(){
             delete window.localStorage.gpoauthJWT;
           };
 
@@ -440,14 +406,18 @@
            *
            * @return {boolean}
            */
-          this.isExpired = function(jwt){
-            const exp = jwt && self.parseJwt(jwt).exp;
+          isExpired(jwt: string){
+            const exp = jwt && this.parseJwt(jwt).exp;
             const now = (new Date()).getTime() / 1000;
             return now > exp;
           };
 
-          this.isImplicitJWT = function(jwt){
-            return jwt && self.parseJwt(jwt).implicit;
+          /**
+           * Is the JWT an implicit JWT?
+           * @param jwt
+           */
+          isImplicitJWT(jwt: string){
+            return jwt && this.parseJwt(jwt).implicit;
           }
 
           /**
@@ -457,12 +427,14 @@
            *
            * @return {Object} the parsed payload in the JWT
            */
-          this.parseJwt = function(token: string): JWT {
+          parseJwt(token: string): JWT {
             var parsed;
             if (token) {
-              var base64Url = token.split('.')[1];
-              var base64 = base64Url.replace('-', '+').replace('_', '/');
-              parsed = JSON.parse(atob(base64));
+              try {
+                var base64Url = token.split('.')[1];
+                var base64 = base64Url.replace('-', '+').replace('_', '/');
+                parsed = JSON.parse(atob(base64));
+              } catch(e) { /* Don't throw parse error */ }
             }
             return parsed;
           };
@@ -475,8 +447,8 @@
            *  Signature validation is the only truly save method. This is done
            *  automatically in the node-gpoauth module.
            */
-          this.validateJwt = function(token) {
-            var parsed = self.parseJwt(token);
+          validateJwt(token: string) {
+            var parsed = this.parseJwt(token);
             var valid = (parsed && parsed.exp && parsed.exp * 1000 > Date.now()) ? true : false;
             return valid;
           };
@@ -487,7 +459,7 @@
            *
            * @param {JWT} jwt
            */
-          this.setAuth = function(jwt) {
+          setAuth(jwt: string) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             // $http.defaults.useXDomain = true;
@@ -496,56 +468,50 @@
           /**
            * Purge the JWT from localStorage and authorization headers.
            */
-          this.removeAuth = function() {
+          removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
             // $http.defaults.useXDomain = false;
           };
-
-
-
-          //initialize with auth check
-          this.init()
-
-        };
-
-        return new Service();
-
-    }
-])
-
-/**
-* Interceptor that check for an updaed AccessToken coming from any request
-* and will take it and set it as the token to use in future outgoing
-* requests
-*/
-.factory('ng-common-AuthenticationInterceptor', function($injector, $window){
-    // Interceptor
-    return {
-        response: function(resp) {
-            const jwt = getJWTFromUrl();
-            const authHeader = resp.headers('Authorization');
-
-            if(jwt){
-                const AuthenticationService = $injector.get('AuthenticationService');
-                AuthenticationService.setAuth(jwt);
-            } else if (authHeader) {
-                const AuthenticationService = $injector.get('AuthenticationService');
-                const token = authHeader.replace('Bearer', '').trim();
-                AuthenticationService.setAuth(token);
-            }
-
-            return resp;
         }
-    };
-})
 
-.config(function myAppConfig ($httpProvider) {
-    $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
-})
+        return new AuthService();
+
+      }
+    ])
+
+    /**
+     * Interceptor that check for an updaed AccessToken coming from any request
+     * and will take it and set it as the token to use in future outgoing
+     * requests
+     */
+    .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: IWindowService){
+      // Interceptor
+      return {
+        response: function(resp: ng.IHttpResponse<any>) {
+          const jwt = getJWTFromUrl();
+          const authHeader = resp.headers('Authorization');
+
+          if(jwt){
+            const AuthenticationService = $injector.get('AuthenticationService')
+            AuthenticationService.setAuth(jwt);
+          } else if (authHeader) {
+            const AuthenticationService = $injector.get('AuthenticationService')
+            const token = authHeader.replace('Bearer', '').trim();
+            AuthenticationService.setAuth(token);
+          }
+
+          return resp;
+        }
+      };
+    })
+
+    .config(function myAppConfig ($httpProvider:  ng.IHttpProvider) {
+      $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
+    })
 
 
-    .directive('gpLoginModal', ['rootScope', 'AuthenticationService', 'GPConfig',
+    .directive('gpLoginModal', ['$rootScope', 'AuthenticationService', 'GPConfig',
       function($rootScope, AuthenticationService, Config) {
         return {
           scope: {
@@ -562,11 +528,11 @@
           controller: function($scope, $element) {
             $scope.requireLogin = false;
 
-            function startAuthIntervalCheck(delay){
+            function startAuthIntervalCheck(delay: number){
               // Setup check for localstorage set and close iframe when set
               const timeout = setInterval(function(){
                 AuthenticationService.check()
-                .then(user => {
+                .then((user: any) => {
                   if(user){
                     // close iframe
                     $scope.requireLogin = false;
@@ -580,7 +546,6 @@
 
             // Catch the request to display login modal
             $scope.$on('requireLogin', function(){
-              console.log("EVENT: requireLogin")
               $scope.requireLogin = true;
               startAuthIntervalCheck(500);
             });
@@ -644,10 +609,10 @@
             $scope.idpUrl = Config.idmUrl;
             // console.log("IDM Base Url: " + Config.idmUrl);
 
-            AuthenticationService.getUser(function(user) {
-                $timeout(function() {
-                    $scope.user = user;
-                }, 100);
+            AuthenticationService.getUser(function(user: any) {
+              $timeout(function() {
+                $scope.user = user;
+              }, 100);
             });
 
             $scope.login = function() {
@@ -658,71 +623,69 @@
                 $scope.user = AuthenticationService.logout();
             };
         }
-    };
-}
-])
+      };
+    }
+    ])
 
 
 
 .directive('gpAccountDetails', ['$timeout', 'AuthenticationService', 'GPConfig',
-function($timeout, AuthenticationService, Config) {
+  function($timeout, AuthenticationService, Config) {
 
-    return {
-        scope: {},
-        replace: true,
-        template: [
-            '<div>' +
-            '  <div class="media">',
-            '    <div class="media-left">',
-            '        <div class="media-object">',
-            '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>',
-            '        </div>',
-            '    </div>',
-            '    <div class="media-body" ng-if="user">',
-            '       <div class="media-heading">{{::user.name}}</div>' +
-            '       <div><small><em>{{::user.username}}</em></small></div>' +
-            '       <div><small>{{::user.email}}</small></div>' +
-            '       <div><small>{{::user.org}}</small></div>' +
-            '    </div>',
-            '    <div class="media-body" ng-if="!user">',
-            '       <div class="media-heading">Please Sign In</div>' +
-            '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' +
-            '    </div>',
-            '  </div>',
-            '  <hr/>',
-            '  <div ng-if="user">',
-            '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' +
-            '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' +
-            '  </div>',
-            '  <div ng-if="!user">',
-            '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' +
-            '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' +
-            '  </div>',
-            '</div>'
-        ].join(' '),
-        controller: function($scope, $element) {
+      return {
+          scope: {},
+          replace: true,
+          template: [
+              '<div>' +
+              '  <div class="media">',
+              '    <div class="media-left">',
+              '        <div class="media-object">',
+              '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>',
+              '        </div>',
+              '    </div>',
+              '    <div class="media-body" ng-if="user">',
+              '       <div class="media-heading">{{::user.name}}</div>' +
+              '       <div><small><em>{{::user.username}}</em></small></div>' +
+              '       <div><small>{{::user.email}}</small></div>' +
+              '       <div><small>{{::user.org}}</small></div>' +
+              '    </div>',
+              '    <div class="media-body" ng-if="!user">',
+              '       <div class="media-heading">Please Sign In</div>' +
+              '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' +
+              '    </div>',
+              '  </div>',
+              '  <hr/>',
+              '  <div ng-if="user">',
+              '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' +
+              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' +
+              '  </div>',
+              '  <div ng-if="!user">',
+              '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' +
+              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' +
+              '  </div>',
+              '</div>'
+          ].join(' '),
+          controller: function($scope, $element) {
 
-            $scope.idpUrl = Config.idmUrl;
+              $scope.idpUrl = Config.idmUrl;
 
-            AuthenticationService.getUser(function(user) {
+              AuthenticationService.getUser(function(user: any /* TODO: lift User */) {
                 $timeout(function() {
-                    $scope.user = user;
+                  $scope.user = user;
                 }, 100);
-            });
+              });
 
-            $scope.login = function() {
-                $scope.user = AuthenticationService.login();
-            };
+              $scope.login = function() {
+                  $scope.user = AuthenticationService.login();
+              };
 
-            $scope.logout = function() {
-                $scope.user = AuthenticationService.logout();
-            };
+              $scope.logout = function() {
+                  $scope.user = AuthenticationService.logout();
+              };
 
-        }
-    };
-}
-])
-
-;
+          }
+      };
+    }
+  ]);
 
 })(angular);
