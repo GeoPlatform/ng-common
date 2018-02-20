@@ -72,7 +72,7 @@
           username: string
           name: string
           email: string
-          org: orgGroupArray
+          org: string
           groups: orgGroupArray
           exp: number
 
@@ -81,7 +81,7 @@
             this.username = opts.username
             this.name = opts.name
             this.email = opts.email
-            this.org = opts.orgs
+            this.org = opts.orgs[0] && opts.orgs[0].name
             this.groups = opts.groups
             this.exp = opts.exp
           }
@@ -142,7 +142,7 @@
             } else {
               // Iframe login
               if(Config.ALLOWIFRAMELOGIN === true || Config.ALLOWIFRAMELOGIN === 'true' ){
-                $rootScope.$broadcast('requireLogin')
+                $rootScope.$broadcast('auth:requireLogin')
 
                 // Redirect login
               } else {
@@ -217,7 +217,7 @@
            *
            * @return {User} - the authenticated user or undefined
            */
-          init(): IPromise<User> {
+          init(): User {
             const jwt = this.getJWT();
             if(jwt){
                this.setAuth(jwt); // Save JWT in Auhorization Header
@@ -296,7 +296,7 @@
            * @method check
            * @returns {User} - ng-common user object or null
            */
-          check(): IPromise<User>{
+          check(): ng.IPromise<User>{
             const jwt = this.getJWT();
 
             if(!jwt) return $q.when(null);
@@ -325,7 +325,7 @@
            *
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
-          checkWithClient(originalJWT: string): IPromise<string> {
+          checkWithClient(originalJWT: string){
             return $http.get('/checktoken')
                     .then(resp => {
                       const header = resp.headers('Authorization')
@@ -408,9 +408,12 @@
            * @return {boolean}
            */
           isExpired(jwt: string){
-            const exp = jwt && this.parseJwt(jwt).exp;
-            const now = (new Date()).getTime() / 1000;
-            return now > exp;
+            const parsedJWT = this.parseJwt(jwt)
+            if(parsedJWT){
+              const now = (new Date()).getTime() / 1000;
+              return now > parsedJWT.exp;
+            }
+            return true
           };
 
           /**
@@ -418,7 +421,8 @@
            * @param jwt
            */
           isImplicitJWT(jwt: string){
-            return jwt && this.parseJwt(jwt).implicit;
+            const parsedJWT = this.parseJwt(jwt)
+            return parsedJWT && parsedJWT.implicit;
           }
 
           /**
@@ -463,7 +467,7 @@
           setAuth(jwt: string) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
-            $http.defaults.useXDomain = true;
+            // $http.defaults.useXDomain = true;
           };
 
           /**
@@ -472,7 +476,7 @@
           removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
-            $http.defaults.useXDomain = false;
+            // $http.defaults.useXDomain = false;
           };
         }
 
@@ -486,7 +490,7 @@
      * and will take it and set it as the token to use in future outgoing
      * requests
      */
-    .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: IWindowService){
+    .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptor
       return {
         response: function(resp: ng.IHttpResponse<any>) {
@@ -546,7 +550,7 @@
             }
 
             // Catch the request to display login modal
-            $scope.$on('requireLogin', function(){
+            $scope.$on('auth:requireLogin', function(){
               $scope.requireLogin = true;
               startAuthIntervalCheck(500);
             });
@@ -556,8 +560,8 @@
     ])
 
 
-    .directive('gpLoginButton', ['$timeout', 'AuthenticationService', 'GPConfig',
-      function($timeout, AuthenticationService, Config) {
+    .directive('gpLoginButton', ['$rootScope', '$timeout', 'AuthenticationService', 'GPConfig',
+      function($rootScope, $timeout, AuthenticationService, Config) {
         return {
           scope: {
             minimal: '@'
@@ -623,6 +627,10 @@
             $scope.logout = function() {
                 $scope.user = AuthenticationService.logout();
             };
+
+            $rootScope.$on('userAuthenticated', (event: Event, user: any) => {
+              $scope.user = user;
+            })
         }
       };
     }
