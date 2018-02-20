@@ -3458,7 +3458,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 //implicitly remove incase the idp is down and the revoke call does not work
                 this.removeAuth();
                 $http.get(Config.IDP_BASE_URL + '/auth/revoke').then(function (response) {
-                    this.removeAuth();
                     //goto logout page
                     if (Config.LOGOUT_URL) {
                         Config.FORCE_LOGIN = false;
@@ -3484,6 +3483,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
              */
             AuthService.prototype.getOauthProfile = function () {
                 var Q = $q.defer();
+                var self = this;
                 //check to make sure we can make called
                 if (this.getJWT()) {
                     var url = Config.IDP_BASE_URL + '/api/profile';
@@ -3741,7 +3741,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             AuthService.prototype.setAuth = function (jwt) {
                 window.localStorage.gpoauthJWT = jwt;
                 $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
-                // $http.defaults.useXDomain = true;
+                $http.defaults.useXDomain = true;
             };
             ;
             /**
@@ -3750,7 +3750,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             AuthService.prototype.removeAuth = function () {
                 delete window.localStorage.gpoauthJWT;
                 delete $http.defaults.headers.common.Authorization;
-                // $http.defaults.useXDomain = false;
+                $http.defaults.useXDomain = false;
             };
             ;
             return AuthService;

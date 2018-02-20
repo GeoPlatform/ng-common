@@ -161,7 +161,6 @@
 
             $http.get(Config.IDP_BASE_URL + '/auth/revoke')
               .then(function(response) {
-                this.removeAuth();
                 //goto logout page
                 if (Config.LOGOUT_URL) {
                   Config.FORCE_LOGIN = false;
@@ -186,10 +185,12 @@
            * Get protected user profile
            */
           getOauthProfile() {
-            var Q = $q.defer();
+            const Q = $q.defer();
+            const self = this;
+
             //check to make sure we can make called
             if (this.getJWT()) {
-              var url = Config.IDP_BASE_URL + '/api/profile';
+              const url = Config.IDP_BASE_URL + '/api/profile';
               $http.get(url)
                 .then(function(response) {
                     self.removeAuth();
@@ -462,7 +463,7 @@
           setAuth(jwt: string) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
-            // $http.defaults.useXDomain = true;
+            $http.defaults.useXDomain = true;
           };
 
           /**
@@ -471,7 +472,7 @@
           removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
-            // $http.defaults.useXDomain = false;
+            $http.defaults.useXDomain = false;
           };
         }
 
