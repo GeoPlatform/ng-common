@@ -77,7 +77,7 @@
         },
         template:
         `
-            <div class="card" ng-if="$ctrl.value">
+            <div class="card c-query-filter" ng-if="$ctrl.value">
 
                 <h5 class="card-title">Find Similar</h5>
                 <div class="card-content">

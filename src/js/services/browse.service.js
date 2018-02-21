@@ -34,6 +34,7 @@
     const VAR_EXTENT                = 'bbox';
     const VAR_MODIFIED_BEFORE       = 'modified.max';
     const VAR_MODIFIED_AFTER        = 'modified.min';
+    const VAR_RESOURCE_TYPES        = 'resourceTypes';
 
     //parameter names for various query constraints used in requests to MDR for results
     const PARAMETER_TYPE            = 'type';
@@ -50,23 +51,25 @@
     const PARAMETER_EXTENT          = 'extent';
     const PARAMETER_MODIFIED_BEFORE = 'modified.max';
     const PARAMETER_MODIFIED_AFTER  = 'modified.min';
+    const PARAMETER_RESOURCE_TYPES  = 'resourceType';
     // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
 
 
     const PARAM_OPTIONS = [
-        { option: VAR_TYPES,            parameter: PARAMETER_TYPE           },
-        { option: VAR_THEMES,           parameter: PARAMETER_THEME          },
-        { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER      },
-        { option: VAR_USED_BY,          parameter: PARAMETER_USED_BY        },
-        { option: VAR_USER,             parameter: PARAMETER_CREATOR        },
-        { option: VAR_CREATED_BY,       parameter: PARAMETER_CREATED_BY     },
-        { option: VAR_SERVICE_TYPES,    parameter: PARAMETER_SVC_TYPE       },
-        { option: VAR_SCHEMES,          parameter: PARAMETER_IN_SCHEME      },
-        { option: VAR_VISIBILITY,       parameter: PARAMETER_VISIBILITY     },
-        { option: VAR_QUERY,            parameter: PARAMETER_QUERY          },
-        { option: VAR_EXTENT,           parameter: PARAMETER_EXTENT         },
+        { option: VAR_TYPES,            parameter: PARAMETER_TYPE            },
+        { option: VAR_THEMES,           parameter: PARAMETER_THEME           },
+        { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER       },
+        { option: VAR_USED_BY,          parameter: PARAMETER_USED_BY         },
+        { option: VAR_USER,             parameter: PARAMETER_CREATOR         },
+        { option: VAR_CREATED_BY,       parameter: PARAMETER_CREATED_BY      },
+        { option: VAR_SERVICE_TYPES,    parameter: PARAMETER_SVC_TYPE        },
+        { option: VAR_SCHEMES,          parameter: PARAMETER_IN_SCHEME       },
+        { option: VAR_VISIBILITY,       parameter: PARAMETER_VISIBILITY      },
+        { option: VAR_QUERY,            parameter: PARAMETER_QUERY           },
+        { option: VAR_EXTENT,           parameter: PARAMETER_EXTENT          },
         { option: VAR_MODIFIED_BEFORE,  parameter: PARAMETER_MODIFIED_BEFORE },
-        { option: VAR_MODIFIED_AFTER,   parameter: PARAMETER_MODIFIED_AFTER }
+        { option: VAR_MODIFIED_AFTER,   parameter: PARAMETER_MODIFIED_AFTER  },
+        { option: VAR_RESOURCE_TYPES,   parameter: PARAMETER_RESOURCE_TYPES  }
     ];
 
 
@@ -372,16 +375,6 @@
             },
 
             applyConstraints: function(obj) {
-                // _options[VAR_QUERY] = obj.query;
-                // _options[VAR_TYPES] = obj.types;
-                // _options[VAR_THEMES] = obj.themes;
-                // _options[VAR_PUBLISHERS] = obj.publishers;
-                // _options[VAR_USER] = obj.user;
-                // _options[VAR_CREATED_BY] = obj.createdBy;
-                // _options[VAR_SERVICE_TYPES] = obj.serviceTypes;
-                // _options[VAR_SCHEMES] = obj.schemes;
-                // _options[VAR_VISIBILITY] = obj.visibility;
-                // //do we need to set extent here too?
 
                 for(var p in obj) {
                     if(obj.hasOwnProperty(p)) {
@@ -404,13 +397,13 @@
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setQuery: function(text, fireUpdate) { setOption(VAR_QUERY, text, fireUpdate); },
+            getQuery: function() { return _options[VAR_QUERY]; },
 
             /**
              * @param {array[string]} types - name of class(es) to request
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setTypes: function(types, fireUpdate) { setOption(VAR_TYPES, types, fireUpdate); },
-
             getTypes: function() { return _options[VAR_TYPES]; },
 
             /**
@@ -418,19 +411,20 @@
              * @param {boolean} fireUpdate -
              */
             setUser: function(userId, fireUpdate) { setOption(VAR_USER, userId, fireUpdate); },
+            getUser: function() { return _options[VAR_USER]; },
 
             /**
              * @param {array[string]} creators - ids of creators
              * @param {boolean} fireUpdate -
              */
             setCreatedBy: function(creators, fireUpdate) { setOption(VAR_CREATED_BY, creators, fireUpdate); },
+            getCreatedBy: function() { return _options[VAR_CREATED_BY]; },
 
             /**
              * @param {array[string]} themes - name of class(es) to request
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setThemes: function(themes, fireUpdate) { setOption(VAR_THEMES, themes, fireUpdate); },
-
             getThemes: function() { return _options[VAR_THEMES]; },
 
             /**
@@ -438,7 +432,6 @@
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setAgencies: function(publishers, fireUpdate) { setOption(VAR_PUBLISHERS, publishers, fireUpdate); },
-
             getAgencies: function() { return _options[VAR_PUBLISHERS]; },
 
             /**
@@ -446,7 +439,6 @@
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setUsedBy: function(ids, fireUpdate) { setOption(VAR_USED_BY, ids, fireUpdate); },
-
             getUsedBy: function() { return _options[VAR_USED_BY]; },
 
             /**
@@ -454,20 +446,28 @@
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setServiceTypes: function(svcTypes, fireUpdate) { setOption(VAR_SERVICE_TYPES, svcTypes, fireUpdate);  },
-
             getServiceTypes: function() { return _options[VAR_SERVICE_TYPES]; },
+
+            /**
+             * @param {array[string]} resTypes - uris
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setResourceTypes: function(resTypes, fireUpdate) { setOption(VAR_RESOURCE_TYPES, resTypes, fireUpdate);  },
+            getResourceTypes: function() { return _options[VAR_RESOURCE_TYPES]; },
 
             /**
              * @param {array[string]} schemes - ids
              * @param {bool} fireUpdate - trigger update (default is true)
              */
             setSchemes: function(schemes, fireUpdate) { setOption(VAR_SCHEMES, schemes, fireUpdate); },
+            getSchemes: function() { return _options[VAR_SCHEMES]; },
 
             /**
              * @param {string} visibility - one of 'public' or 'private'
              * @param {boolean} fireUpdate
              */
             setVisibility: function(visibility, fireUpdate) { setOption(VAR_VISIBILITY, visibility, fireUpdate); },
+            getVisibility: function() { return _options[VAR_VISIBILITY]; },
 
             /**
              * @param {Date} date - date to compare against
@@ -491,7 +491,6 @@
                 setOption(oppProp, null, false);
                 setOption(prop, arg, true);
             },
-
             getModified: function() {
                 return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
             },
@@ -502,9 +501,7 @@
              */
             setExtent: function(bboxStr) { setOption(VAR_EXTENT, bboxStr, true); },
 
-            /**
-             * @return {string} bbox string or null if not set
-             */
+            /** @return {string} bbox string or null if not set */
             getExtent: function() { return _options[VAR_EXTENT]; },
 
             /**

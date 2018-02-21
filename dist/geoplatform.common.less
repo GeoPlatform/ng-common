@@ -91,6 +91,80 @@
 }
 
 
+.c-query-filter.card {
+
+    background: transparent;
+    box-shadow: none;
+    padding:    0;
+    font-size:  1em;
+    margin-bottom: 2em;
+
+    .card-title {
+        display:         flex;
+        justify-content: flex-start;
+        align-items:     center;
+        font-size:       0.875em;    //override default card-title style
+        margin-bottom:   0;
+        min-height:      2em;    //for those without collapse buttons
+        color:           lighten(@color-gray-dk, 15%);
+        border-bottom:   1px solid @color-gray-xlt;
+        text-transform:  uppercase;
+
+        .btn-link {
+            color: lighten(@color-gray-dk, 15%);
+        }
+    }
+
+    .c-facets {
+
+        font-size: 0.875rem;
+
+        & > .c-facet__value {
+            border-width:   0 0 0 2px;
+            border-color:   transparent;
+            border-style:   solid;
+            color:          @color-gray-md;
+            padding:        0.5em;
+            font-size:      1em; //override default c-facet__value style
+
+            &:hover {
+                background: fadeOut(@color-gray-xlt, 10%);
+                color:              @color-gray-dk;
+            }
+
+            &.active {
+                background: fadeOut(@color-active, 75%);
+                border-left-color:  @color-active;
+                color:              @color-gray-dk;
+            }
+
+            .badge { float: right; }
+        }
+
+        &.is-collapsed > .c-facet__value.active {
+            background-color: transparent;
+            border-color:     transparent;
+            color:            @color-gray-md;
+        }
+
+        //any inputs that aren't wrapped in a c-facet__value should have a bit of margin
+        .input-group-slick, select {
+            margin-top: 0.5em;
+        }
+        //otherwise, don't...
+        .c-facet__value > .input-group-slick,
+        .c-facet__value > select {
+            margin-top:     0;
+            margin-left:  -.5em;
+            margin-right: -.5em;
+        }
+    }
+
+}
+
+
+
+
 .c-facets {
     // .u-text--sm;
 }

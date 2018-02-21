@@ -227,18 +227,16 @@
 
         template:
         `
-            <div class="card c-filter__recommended-terms">
+            <div class="card c-query-filter c-filter__recommended-terms">
 
-                <h5 class="card-title l-flex-container flex-justify-between flex-align-center">
-
-                    Filter using Semantic Concepts
-
+                <h5 class="card-title">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
                         <span class="glyphicon"
-                            ng-class="{'glyphicon-chevron-up':!$ctrl.displayOpts.collapse,'glyphicon-chevron-down':$ctrl.displayOpts.collapse}"></span>
+                            ng-class="{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}"></span>
                     </button>
+                    <span>Filter using Semantic Concepts</span>
                 </h5>
 
                 <div class="c-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">

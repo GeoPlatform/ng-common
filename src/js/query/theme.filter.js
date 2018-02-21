@@ -82,14 +82,14 @@
         },
         template:
         `
-            <div class="card c-browse-filter">
-                <h5 class="card-title l-flex-container flex-justify-between flex-align-center">
-                    Filter by NGDA Themes
+            <div class="card c-query-filter c-browse-filter">
+                <h5 class="card-title">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
-                        <span class="glyphicon" ng-class="{'glyphicon-chevron-up':!$ctrl.collapse,'glyphicon-chevron-down':$ctrl.collapse}"></span>
+                        <span class="glyphicon" ng-class="{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}"></span>
                     </button>
+                    <span>Filter by NGDA Themes</span>
                 </h5>
                 <div class="card-content">
                     <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
