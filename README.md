@@ -90,19 +90,17 @@ Grant type authentiction require a back end service (like node-gpoauth) to handl
 ### iFrame Authentication
 Apps have the abilility to allow for authentication via iframe and keep the user from having to redirect to the oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
 
-**Events related to a user authenticating are:**
+**Events related to a authentication are:**
 
 | name | description | args |
 |---|---|---|
 | userAuthenticated | Is called when a user has authenticated and the iframe authenticaiton window is closed | event: the event, <br>user: the User object <br>(see: https://github.com/GeoPlatform/ng-common/blob/feature/gpoauth-iframe-authentication/src/js/auth.ts#L70-L117|
+| userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | event: the event |
 
 **Example:**
 ```javascript
     angular.module('myModule', [])
-    /**
-     * Rrefresh page when user is logged in. This will allow the init process
-     * to run to completion with the user already loaded.
-     */
+
     .run(function ($rootScope) {
         $rootScope.$on('userAuthenticated', (event, user) => {
           $rootScope.user = user

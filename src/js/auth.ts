@@ -129,8 +129,6 @@
            * Redirects or displays login window the page to the login site
            */
           login() {
-            console.log('Login called')
-
             // Check implicit we need to actually redirect them
             if(Config.AUTH_TYPE === 'token') {
               window.location.href = Config.IDP_BASE_URL +
@@ -146,8 +144,8 @@
 
                 // Redirect login
               } else {
-                window.location.href = Config.LOGIN_URL
-                                    || `/login?redirect_url=${encodeURIComponent(window.location.toString())}`
+                window.location.href = Config.LOGIN_URL || `/login` +
+                                    `?redirect_url=${encodeURIComponent(window.location.href)}`
               }
             }
           };
@@ -156,22 +154,17 @@
            * Performs background logout and requests jwt revokation
            */
           logout() {
-            //implicitly remove incase the idp is down and the revoke call does not work
-            this.removeAuth();
+            const self = this;
 
             $http.get(Config.IDP_BASE_URL + '/auth/revoke')
-              .then(function(response) {
-                //goto logout page
-                if (Config.LOGOUT_URL) {
-                  Config.FORCE_LOGIN = false;
-                  window.location.href = Config.LOGOUT_URL;
-                } else {
-                  window.location.hash = '';
-                  window.location.href = Config.portalUrl || window.location.host;
-                }
-              }, function(err) {
-                console.log(err);
-              });
+            .then(response => {
+              window.location.href = Config.LOGOUT_URL ?
+                                      Config.LOGOUT_URL :
+                                      window.location.host
+            })
+            .catch((err: Error) => console.log(err))
+            //implicitly remove incase the idp is down and the revoke call does not work
+            .finally(() => self.removeAuth());
           };
 
           /**
@@ -186,27 +179,17 @@
            */
           getOauthProfile() {
             const Q = $q.defer();
-            const self = this;
 
             //check to make sure we can make called
             if (this.getJWT()) {
-              const url = Config.IDP_BASE_URL + '/api/profile';
-              $http.get(url)
-                .then(function(response) {
-                    self.removeAuth();
-                    //goto logout page
-                    if (Config.LOGOUT_URL) {
-                        Config.FORCE_LOGIN = false;
-                        window.location.href = Config.LOGOUT_URL;
-                    } else {
-                        window.location.hash = '';
-                        window.location.href = Config.portalUrl || window.location.host;
-                    }
-                }, function(err) {
-                    console.log(err);
-                });
+              $http.get(Config.IDP_BASE_URL + '/api/profile')
+                .then(response =>  Q.resolve(response))
+                .catch(err => Q.reject(err))
+            } else {
+              Q.reject(null)
             }
-            return Q.promise;
+
+            return Q.promise
           };
 
           /**
@@ -476,6 +459,7 @@
           removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
+            $rootScope.$broadcast("userSignOut")
             // $http.defaults.useXDomain = false;
           };
         }
