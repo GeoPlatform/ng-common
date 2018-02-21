@@ -3,23 +3,21 @@
     "allowJs": true,
     "noImplicitAny": true,
     "target": "es5",
-    "module": "commonjs",
-    "removeComments": false,
+    "module": "none",
     "moduleResolution": "node",
+    "removeComments": false,
     "outDir": "../static/js",
     "preserveConstEnums": true,
-    "inlineSourceMap": true,
+    "rootDir": "src",
     "typeRoots": [
       "./node_modules/@types"
     ],
     "lib": [
       "es2015",
+      "es6",
       "dom"
     ]
   },
-  "include": [
-    "js/**/*.ts"
-  ],
   "exclude": [
     "node_modules",
     "**/*-spec.ts"

@@ -60,7 +60,8 @@
                 '      </div>',
                 '    </div>',
                 '  </div>',
-                '</header>'
+                '  <gp-login-modal></gp-login-modal>',
+                '</header>',
             ].join(' '),
 
             // controller: function($rootScope, $scope, $element) {

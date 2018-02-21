@@ -6,9 +6,9 @@ Angular directives and services for GeoPlatform web applications
 
 __Add as a Bower dependency__
 
-```json 
+```json
 "dependencies": {
-    
+
     "gp.common": "GeoPlatform/ng-common#<version number>",
 
 }
@@ -29,7 +29,7 @@ __Include the JavaScript__
   <body>
     <!-- body contents -->
 
-    <!-- JS dependencies 
+    <!-- JS dependencies
     ...
     ...
     ...
@@ -44,7 +44,7 @@ __Include the JavaScript__
     </script>
 
     <script src="/path/to/gp.common/dist/geoplatform.common.min.js"></script>
-    
+
   </body>
 </html>
 ```
@@ -75,21 +75,48 @@ The folling are values that can/should be set in the GeoPlatform global namespac
 
 > See additonal configurations in the Authentication section
 
+<br><br>
 ## Authentication
 ng-common has an interface for authenticating and verifying user identitiy against gpoauth OAuth service. Ng-common will automatically direct a user to the oauth provider and then back to the application with an accessToken/JWT. The recieved JWT will be sent with all subsequent requests and should allow users to access resources avaliable to them.
 
-There are two major types of authentication:  
+There are two major types of authentication:
 #### token (implicit)
 Token or implicit type authentication does not require or use a back end service for authentication. The entire authentication process will be handled between the Oauth provider and front end application hosting ng-common.
 
 #### grant
-Grant type authentiction require a back end service (like node-gpoauth) to handle recieving JWT and related tokens from the OAuth provider. 
+Grant type authentiction require a back end service (like node-gpoauth) to handle recieving JWT and related tokens from the OAuth provider.
+<br><br>
 
-### Configuration
+### iFrame Authentication
+Apps have the abilility to allow for authentication via iframe and keep the user from having to redirect to the oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
+
+**Events related to a authentication are:**
+
+| name | description | args |
+|---|---|---|
+| userAuthenticated | Is called when a user has authenticated and the iframe authenticaiton window is closed | event: the event, <br>user: the User object <br>(see: https://github.com/GeoPlatform/ng-common/blob/feature/gpoauth-iframe-authentication/src/js/auth.ts#L70-L117|
+| userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | event: the event |
+
+**Example:**
+```javascript
+    angular.module('myModule', [])
+
+    .run(function ($rootScope) {
+        $rootScope.$on('userAuthenticated', (event, user) => {
+          $rootScope.user = user
+          // - or -
+          window.location.reload();
+        })
+    });
+```
+<br><br>
+
+### Autentication Configuration
 The following are property that sould be found at the top level of the GeoPlatorm namespace:
 
 | property | required | description | values | default
 |---|---|---|---|---|
+| ALLOWIFRAMELOGIN | no | Allow ng-common to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | true, false | false |
 | AUTH_TYPE | no | Type of token to request from gpoauth.  | token, grant | grant |
 | FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | true, false | false |
 | CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | N/A | /login |
@@ -100,6 +127,7 @@ The following are property that sould be found at the top level of the GeoPlator
 
 \* : indicates required configuration when authorization is type 'token'.
 
+<br><br>
 ## Directives
 
 ### Header
@@ -126,7 +154,7 @@ This is used by `gp-header` but can also be used separately.  Watches route chan
 </ul>
 ```
 
-**Note:** Only works when applied to a `UL` element. 
+**Note:** Only works when applied to a `UL` element.
 
 
 ### Sign In Button
@@ -225,7 +253,7 @@ hook3();    //dismiss
 
 'joinBy' : joins an array's values into a string, delimiter parameter optional.
 
-'facets' : returns an array of values for facets with a given prefix. 
+'facets' : returns an array of values for facets with a given prefix.
 
 Given
 ```json
@@ -299,11 +327,11 @@ Angular $resource-based service for communicating with UAL's recommender endpoin
 The Section Editor is how you display and manipulate Knowledge Graph property values.
 
 ```html
-<kg-section 
+<kg-section
     ng-model="$ctrl.item.knowledgeGraph.places"
     on-change="$ctrl.onChange('places', values)"
-    type="Place" 
-    label="Places" 
+    type="Place"
+    label="Places"
     description="The central place (location) associated with this item">
 </kg-section>
 ```
