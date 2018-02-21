@@ -10,7 +10,7 @@ type GeoPlatform = {
   // General
   env?: string
   ENV?: string
-  NODE_ENV: string
+  NODE_ENV?: string
 
   // Links
   portalUrl: string
@@ -18,13 +18,13 @@ type GeoPlatform = {
 
   // Auth Settings
   AUTH_TYPE?: 'grant' | 'token'
-  FORCE_LOGIN?: boolean
   CALLBACK?: string
   IDP_BASE_URL?: string
   APP_ID?: boolean
   LOGIN_URL?: string
   LOGOUT_URL?: string
-  ALLOWIFRAMELOGIN?: true | false | 'true'
+  FORCE_LOGIN?: boolean
+  ALLOWIFRAMELOGIN?: boolean
 }
 
 // Declare assumed globals

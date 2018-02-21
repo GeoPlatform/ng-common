@@ -29,6 +29,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             if (!GeoPlatform.IDP_BASE_URL) missing('IDP_BASE_URL');
             if (!GeoPlatform.APP_ID) missing('APP_ID');
         }
+        // Convert boolean implicits
+        // All because !!'false' === true (WAT typing!!!)
+        function toREALBoolean(val) {
+            return JSON.parse(val);
+        }
+        GeoPlatform.ALLOWIFRAMELOGIN = toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false);
+        GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false);
         return GeoPlatform;
     }());
 })(jQuery, angular);
@@ -1385,95 +1392,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(angular);
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular, Constants) {
     'use strict';
 
@@ -1736,6 +1654,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';
@@ -3441,7 +3448,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     // Otherwise pop up the login modal
                 } else {
                     // Iframe login
-                    if (Config.ALLOWIFRAMELOGIN === true || Config.ALLOWIFRAMELOGIN === 'true') {
+                    if (Config.ALLOWIFRAMELOGIN) {
                         $rootScope.$broadcast('auth:requireLogin');
                         // Redirect login
                     } else {
@@ -3504,7 +3511,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     // No valid userdata found
                 } else {
                     // Redirect if settings set
-                    if (Config.FORCE_LOGIN === true) this.forceLogin();
+                    if (Config.FORCE_LOGIN) this.forceLogin();
                 }
                 //clean hosturl on redirect from oauth
                 if (getJWTFromUrl()) {
@@ -3555,9 +3562,69 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     return this.isImplicitJWT(jwt) && this.isExpired(jwt) ? null : this.getUserFromJWT(jwt);
                 }
             };
-            //$q version of getUser
+            /**
+             * Promise version of get user.
+             *
+             * Below is a table of how this function handels this method with
+             * differnt configurations.
+             *  - FORCE_LOGIN : Horizontal
+             *  - ALLOWIFRAMELOGIN : Vertical
+             *
+             *
+             * getUserQ | T | F (FORCE_LOGIN)
+             * -----------------------------
+             * T        | 1 | 2
+             * F        | 3 | 4
+             * (ALLOWIFRAMELOGIN)
+             *
+             * Cases:
+             * 1. Delay resolve function till user is logged in
+             * 2. Return null (if user not authorized)
+             * 3. Force the redirect
+             * 4. Return null (if user not authorized)
+             *
+             * NOTE:
+             * Case 1 above will cause this method's promise to be a long stall
+             * until the user completes the login process. This should allow the
+             * app to forgo a reload is it should have waited till the entire
+             * time till the user was successfully logged in.
+             *
+             * @method getUserQ
+             *
+             * @returns {Promise<User>} User - the authenticated user
+             */
             AuthService.prototype.getUserQ = function () {
-                return this.check();
+                var self = this;
+                var q = $q.defer();
+                this.check().then(function (user) {
+                    if (user) {
+                        q.resolve(user);
+                    } else {
+                        // Case 1
+                        if (Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN) {
+                            // Resolve with user once they have logged in
+                            $rootScope.$on('userAuthenticated', function (event, user) {
+                                q.resolve(user);
+                            });
+                            self.forceLogin();
+                        }
+                        // Case 2
+                        if (Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN) {
+                            q.resolve(null); // or reject?
+                        }
+                        // Case 3
+                        if (!Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN) {
+                            self.forceLogin();
+                        }
+                        // Case 4
+                        if (!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN) {
+                            q.resolve(null); // or reject?
+                        }
+                    }
+                }).catch(function (err) {
+                    return console.log(err);
+                });
+                return q.promise;
             };
             ;
             /**
@@ -3632,20 +3699,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
              *  - URL query parameter 'access_token' (returned from IDP)
              *  - Browser local storage (saved from previous request)
              *
-             * NOTE:
-             *  This call will redirect user to login if the Config.FORCE_LOGIN
-             *  option is set to true.
-             *
              * @method getJWT
              *
-             * @return {JWT | undefined}
+             * @return {sting | undefined}
              */
             AuthService.prototype.getJWT = function () {
                 var jwt = this.getJWTFromUrl() || this.getJWTfromLocalStorage();
                 // Only deny implicit tokens that have expired
-                if (!jwt || jwt && this.isExpired(jwt) && this.isImplicitJWT(jwt)) {
-                    this.removeAuth();
-                    if (Config.FORCE_LOGIN === true) this.forceLogin();
+                if (!jwt || jwt && this.isImplicitJWT(jwt) && this.isExpired(jwt)) {
                     return null;
                 } else {
                     return jwt;

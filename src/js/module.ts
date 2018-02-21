@@ -39,6 +39,15 @@
             if(!GeoPlatform.APP_ID) missing('APP_ID');
         }
 
+        // Convert boolean implicits
+        // All because !!'false' === true (WAT typing!!!)
+        function toREALBoolean(val: any): boolean {
+            return JSON.parse(val)
+        }
+
+        GeoPlatform.ALLOWIFRAMELOGIN = toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false)
+        GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false)
+
         return GeoPlatform;
     })());
 

@@ -139,7 +139,7 @@
             // Otherwise pop up the login modal
             } else {
               // Iframe login
-              if(Config.ALLOWIFRAMELOGIN === true || Config.ALLOWIFRAMELOGIN === 'true' ){
+              if(Config.ALLOWIFRAMELOGIN){
                 $rootScope.$broadcast('auth:requireLogin')
 
                 // Redirect login
@@ -208,7 +208,7 @@
             // No valid userdata found
             } else {
               // Redirect if settings set
-              if(Config.FORCE_LOGIN === true) this.forceLogin();
+              if(Config.FORCE_LOGIN) this.forceLogin();
             }
 
             //clean hosturl on redirect from oauth
@@ -267,9 +267,71 @@
             }
           }
 
-          //$q version of getUser
+          /**
+           * Promise version of get user.
+           *
+           * Below is a table of how this function handels this method with
+           * differnt configurations.
+           *  - FORCE_LOGIN : Horizontal
+           *  - ALLOWIFRAMELOGIN : Vertical
+           *
+           *
+           * getUserQ | T | F (FORCE_LOGIN)
+           * -----------------------------
+           * T        | 1 | 2
+           * F        | 3 | 4
+           * (ALLOWIFRAMELOGIN)
+           *
+           * Cases:
+           * 1. Delay resolve function till user is logged in
+           * 2. Return null (if user not authorized)
+           * 3. Force the redirect
+           * 4. Return null (if user not authorized)
+           *
+           * NOTE:
+           * Case 1 above will cause this method's promise to be a long stall
+           * until the user completes the login process. This should allow the
+           * app to forgo a reload is it should have waited till the entire
+           * time till the user was successfully logged in.
+           *
+           * @method getUserQ
+           *
+           * @returns {Promise<User>} User - the authenticated user
+           */
           getUserQ() {
-            return this.check();
+            const self = this;
+            const q = $q.defer()
+
+            this.check()
+              .then(user => {
+                if(user) {
+                  q.resolve(user)
+                } else {
+                  // Case 1
+                  if(Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
+                    // Resolve with user once they have logged in
+                    $rootScope.$on('userAuthenticated', (event: ng.IAngularEvent, user: User) => {
+                      q.resolve(user)
+                    })
+                    self.forceLogin()
+                  }
+                  // Case 2
+                  if(Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
+                    q.resolve(null) // or reject?
+                  }
+                  // Case 3
+                  if(!Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
+                    self.forceLogin()
+                  }
+                  // Case 4
+                  if(!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
+                    q.resolve(null) // or reject?
+                  }
+                }
+              })
+              .catch((err: Error) => console.log(err))
+
+            return q.promise
           };
 
           /**
@@ -350,22 +412,15 @@
            *  - URL query parameter 'access_token' (returned from IDP)
            *  - Browser local storage (saved from previous request)
            *
-           * NOTE:
-           *  This call will redirect user to login if the Config.FORCE_LOGIN
-           *  option is set to true.
-           *
            * @method getJWT
            *
-           * @return {JWT | undefined}
+           * @return {sting | undefined}
            */
           getJWT(): string {
             const jwt = this.getJWTFromUrl() || this.getJWTfromLocalStorage()
             // Only deny implicit tokens that have expired
-            if(!jwt || (jwt && this.isExpired(jwt) && this.isImplicitJWT(jwt))) {
-              this.removeAuth();
-              if(Config.FORCE_LOGIN === true) this.forceLogin();
+            if(!jwt || (jwt && this.isImplicitJWT(jwt) && this.isExpired(jwt))) {
               return null;
-
             } else {
               return jwt;
             }
