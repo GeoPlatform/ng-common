@@ -145,8 +145,7 @@
               // Handle User Authenticated
               if(event.data === 'iframe:userAuthenticated'){
                 self.removeSSOIframe()
-                // Pass event to angular
-                $rootScope.$broadcast("userAuthenticated", this.init())
+                self.init() // will broadcast to angular (side-effect)
               }
 
               // Handle logout event
@@ -565,6 +564,7 @@
             if(window.self != window.top){
               window.parent.postMessage("iframe:userAuthenticated", '*');
             }
+            $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
           };
 
@@ -578,6 +578,7 @@
             if(window.self != window.top){
               window.parent.postMessage("userSignOut", '*');
             }
+            $rootScope.$broadcast("userSignOut")
             // $http.defaults.useXDomain = false;
           };
         }
@@ -627,7 +628,6 @@
           replace: true,
           template:
             `<div class="gpLoginCover" ng-if="requireLogin">
-              <pre>-- {{ requireLogin }}-- </pre>
               <div class="gpLoginWindow">
                 <iframe src="/login"></iframe>
               </div>
@@ -642,8 +642,7 @@
 
             // Catch the request to display login modal
             $scope.$on('userAuthenticated', function(){
-              $scope.requireLogin = false; // close Iframe
-              $timeout(function(){ $scope.requireLogin = false })
+               $timeout(function(){ $scope.requireLogin = false })
             });
 
           }
@@ -698,16 +697,18 @@
 
             '</div>'
         ].join(' '),
-        controller: function($scope, $element) {
+        controller: function($scope, $rootScope, $element) {
 
             if ($scope.minimal === 'true') $scope.minimal = true;
             if ($scope.minimal !== true) $scope.minimal = false;
 
-            $scope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+            $scope.user = AuthenticationService.getUser();
+
+            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
               $timeout(function(){ $scope.user = user;})
             });
 
-            $scope.$on('userSignOut', function(event: ng.IAngularEvent){
+            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
               $timeout(function(){ $scope.user = null; })
             });
 
@@ -757,15 +758,15 @@
               '  </div>',
               '</div>'
           ].join(' '),
-          controller: function($scope, $element, $timeout) {
+          controller: function($scope: any, $rootScope: any, $element: ng.IRootElementService, $timeout: ng.ITimeoutService) {
 
-            $scope.user = null;
+            $scope.user = AuthenticationService.getUser();
 
-            $scope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
               $timeout(function(){ $scope.user = user; })
             });
 
-            $scope.$on('userSignOut', function(event: ng.IAngularEvent){
+            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
               $timeout(function(){ $scope.user = null; })
             });
 

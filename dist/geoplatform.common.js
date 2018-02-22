@@ -3457,7 +3457,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 if (!user && window.self === window.top) self.ssoCheck();
             }
             AuthService.prototype.setupMsgHandler = function () {
-                var _this = this;
                 var self = this;
                 addEventListener('message', function (event) {
                     // Handle SSO login failure
@@ -3467,8 +3466,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     // Handle User Authenticated
                     if (event.data === 'iframe:userAuthenticated') {
                         self.removeSSOIframe();
-                        // Pass event to angular
-                        $rootScope.$broadcast("userAuthenticated", _this.init());
+                        self.init(); // will broadcast to angular (side-effect)
                     }
                     // Handle logout event
                     if (event.data === 'userSignOut') {
@@ -3855,6 +3853,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 if (window.self != window.top) {
                     window.parent.postMessage("iframe:userAuthenticated", '*');
                 }
+                $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
                 // $http.defaults.useXDomain = true;
             };
             ;
@@ -3868,6 +3867,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 if (window.self != window.top) {
                     window.parent.postMessage("userSignOut", '*');
                 }
+                $rootScope.$broadcast("userSignOut");
                 // $http.defaults.useXDomain = false;
             };
             ;
@@ -3899,7 +3899,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 minimal: '@'
             },
             replace: true,
-            template: "<div class=\"gpLoginCover\" ng-if=\"requireLogin\">\n              <pre>-- {{ requireLogin }}-- </pre>\n              <div class=\"gpLoginWindow\">\n                <iframe src=\"/login\"></iframe>\n              </div>\n            </div>",
+            template: "<div class=\"gpLoginCover\" ng-if=\"requireLogin\">\n              <div class=\"gpLoginWindow\">\n                <iframe src=\"/login\"></iframe>\n              </div>\n            </div>",
             controller: ["$scope", "$element", "$timeout", function controller($scope, $element, $timeout) {
                 $scope.requireLogin = false;
                 // Catch the request to display login modal
@@ -3910,7 +3910,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 });
                 // Catch the request to display login modal
                 $scope.$on('userAuthenticated', function () {
-                    $scope.requireLogin = false; // close Iframe
                     $timeout(function () {
                         $scope.requireLogin = false;
                     });
@@ -3928,15 +3927,16 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' +
             //logged in
             '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' + '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
+            controller: ["$scope", "$rootScope", "$element", function controller($scope, $rootScope, $element) {
                 if ($scope.minimal === 'true') $scope.minimal = true;
                 if ($scope.minimal !== true) $scope.minimal = false;
-                $scope.$on('userAuthenticated', function (event, user) {
+                $scope.user = AuthenticationService.getUser();
+                $rootScope.$on('userAuthenticated', function (event, user) {
                     $timeout(function () {
                         $scope.user = user;
                     });
                 });
-                $scope.$on('userSignOut', function (event) {
+                $rootScope.$on('userSignOut', function (event) {
                     $timeout(function () {
                         $scope.user = null;
                     });
@@ -3954,14 +3954,14 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             scope: {},
             replace: true,
             template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' + '  </div>', '</div>'].join(' '),
-            controller: ["$scope", "$element", "$timeout", function controller($scope, $element, $timeout) {
-                $scope.user = null;
-                $scope.$on('userAuthenticated', function (event, user) {
+            controller: ["$scope", "$rootScope", "$element", "$timeout", function controller($scope, $rootScope, $element, $timeout) {
+                $scope.user = AuthenticationService.getUser();
+                $rootScope.$on('userAuthenticated', function (event, user) {
                     $timeout(function () {
                         $scope.user = user;
                     });
                 });
-                $scope.$on('userSignOut', function (event) {
+                $rootScope.$on('userSignOut', function (event) {
                     $timeout(function () {
                         $scope.user = null;
                     });
