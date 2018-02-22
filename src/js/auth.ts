@@ -175,9 +175,9 @@
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
               if(window.history && window.history.replaceState){
-                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&\%3F]access_token=[^\&]*\&token_type=Bearer/, '') )
+                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '') )
               } else {
-                $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '')
+                $window.location.search.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '')
               }
             }
 
@@ -194,7 +194,8 @@
             // Attempt automated backend authentication
             self.iframe = document.createElement('iframe');
             self.iframe.style.display = "none";
-            self.iframe.src = '/login?sso=true'; // Flag node-gpoauth for sso check
+            // Flag node-gpoauth for sso check
+            self.iframe.src = `/login?sso=true&cachebuster=${(new Date()).getTime()}`;
             self.iframe.id = 'sso.iframe';
             document.body.appendChild(self.iframe);
 
@@ -629,7 +630,7 @@
           template:
             `<div class="gpLoginCover" ng-if="requireLogin">
               <div class="gpLoginWindow">
-                <iframe src="/login"></iframe>
+                <iframe src="/login?cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
             </div>`,
           controller: function($scope, $element, $timeout) {
