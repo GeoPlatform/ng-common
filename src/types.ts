@@ -18,13 +18,13 @@ type GeoPlatform = {
 
   // Auth Settings
   AUTH_TYPE?: 'grant' | 'token'
-  CALLBACK?: string
   IDP_BASE_URL?: string
   APP_ID?: boolean
+  ALLOWIFRAMELOGIN?: boolean
+  FORCE_LOGIN?: boolean
+  CALLBACK?: string
   LOGIN_URL?: string
   LOGOUT_URL?: string
-  FORCE_LOGIN?: boolean
-  ALLOWIFRAMELOGIN?: boolean
 }
 
 // Declare assumed globals

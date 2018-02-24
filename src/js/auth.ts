@@ -127,24 +127,26 @@
 
           constructor(){
             const self = this;
-            self.setupMsgHandler() // must do first
 
             const user = self.init()
             if(!user && (window.self === window.top))
               self.ssoCheck()
           }
 
-          setupMsgHandler(){
+          ssoCheck(){
             const self = this;
+            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
+            const ssoIframe = this.createIframe(ssoURL)
+
             addEventListener('message', (event: any) => {
               // Handle SSO login failure
               if(event.data === 'iframe:ssoFailed'){
-                self.removeSSOIframe()
+                ssoIframe.remove()
               }
 
               // Handle User Authenticated
               if(event.data === 'iframe:userAuthenticated'){
-                self.removeSSOIframe()
+                ssoIframe.remove()
                 self.init() // will broadcast to angular (side-effect)
               }
 
@@ -187,29 +189,15 @@
           /**
            * Unpacks JWT to see if session is valid.
            */
-          ssoCheck() {
-            const self = this;
-            const def = $q.defer();
+          createIframe(url: string): HTMLIFrameElement {
+            let iframe = document.createElement('iframe')
 
-            // Attempt automated backend authentication
-            self.iframe = document.createElement('iframe');
-            self.iframe.style.display = "none";
-            // Flag node-gpoauth for sso check
-            self.iframe.src = `/login?sso=true&cachebuster=${(new Date()).getTime()}`;
-            self.iframe.id = 'sso.iframe';
-            document.body.appendChild(self.iframe);
+            iframe.style.display = "none";
+            iframe.src = url
+            document.body.appendChild(iframe);
 
-            return def.promise
+            return iframe
           };
-
-          /**
-           * Purge the (invisible) SSO iframe
-           */
-          removeSSOIframe(){
-            if(!!this.iframe){
-              this.iframe.remove()
-            }
-          }
 
           /**
            * Redirects or displays login window the page to the login site
@@ -241,19 +229,21 @@
            */
           logout() {
             const self = this;
+            // Create iframe to manually call the logout and remove gpoauth cookie
+            // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
+            // this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
+
             // Save JWT to send with final request to revoke it
             const jwt = this.getJWT()
             self.removeAuth() // purge the JWT
 
-            // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
             return $http({
                       method: 'GET',
-                      url: `/revoke`,
+                      url: `/revoke?sso=true`,
                       headers: {
                         Authorization: `Bearer ${jwt}`
                       }
                     })
-                    //implicitly remove incase the idp is down and the revoke call does not work
                     .then(() => {
                       if(Config.LOGOUT_URL){
                         window.location.href = Config.LOGOUT_URL
