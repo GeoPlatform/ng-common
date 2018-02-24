@@ -241,18 +241,27 @@
            */
           logout() {
             const self = this;
+            // Save JWT to send with final request to revoke it
+            const jwt = this.getJWT()
+            self.removeAuth() // purge the JWT
 
-            self.removeAuth()
-            return $http.get(`/revoke`)
-              //implicitly remove incase the idp is down and the revoke call does not work
-              .then(() => {
-                if(Config.LOGOUT_URL){
-                  window.location.href = Config.LOGOUT_URL
-                } else {
-                  window.location.reload();
-                }
-              })
-              .catch((err: Error) => console.log('Error logging out: ', err))
+            // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
+            return $http({
+                      method: 'GET',
+                      url: `/revoke`,
+                      headers: {
+                        Authorization: `Bearer ${jwt}`
+                      }
+                    })
+                    //implicitly remove incase the idp is down and the revoke call does not work
+                    .then(() => {
+                      if(Config.LOGOUT_URL){
+                        window.location.href = Config.LOGOUT_URL
+                      } else {
+                        window.location.reload();
+                      }
+                    })
+                    .catch((err: Error) => console.log('Error logging out: ', err));
           };
 
           /**
@@ -566,6 +575,7 @@
               window.parent.postMessage("iframe:userAuthenticated", '*');
             }
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
+
             // $http.defaults.useXDomain = true;
           };
 
@@ -579,7 +589,10 @@
             if(window.self != window.top){
               window.parent.postMessage("userSignOut", '*');
             }
+            // Send null user as well (backwards compatability)
+            $rootScope.$broadcast("userAuthenticated", null)
             $rootScope.$broadcast("userSignOut")
+
             // $http.defaults.useXDomain = false;
           };
         }

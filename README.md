@@ -94,8 +94,8 @@ Apps have the abilility to allow for authentication via iframe and keep the user
 
 | name | description | args |
 |---|---|---|
-| userAuthenticated | Is called when a user has authenticated and the iframe authenticaiton window is closed | event: the event, <br>user: the User object <br>(see: https://github.com/GeoPlatform/ng-common/blob/feature/gpoauth-iframe-authentication/src/js/auth.ts#L70-L117|
-| userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | event: the event |
+| userAuthenticated | Is called when a user has authenticated and the iframe authenticaiton window is closed, or user has signed out. In the later case null will be passed for the user argument. | **event**: the event, <br> **user**: User object (or null) |
+| userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | **event**: the event |
 
 **Example:**
 ```javascript
