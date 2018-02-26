@@ -181,7 +181,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         };
         AuthenticatedComponent.prototype.canUserEdit = function (item) {
             if (!this.authState.user) return false;
-            if (!item) return false;
+            if (!item) return this.authState.authorized;
             return this.isAuthorOf(item) || this.authState.authorized;
         };
         AuthenticatedComponent.prototype.isAuthorOf = function (item) {

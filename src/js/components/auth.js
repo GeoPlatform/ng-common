@@ -50,7 +50,7 @@
 
         canUserEdit(item) {
             if(!this.authState.user) return false;
-            if(!item) return false;
+            if(!item) return this.authState.authorized;
             return this.isAuthorOf(item) || this.authState.authorized;
         }
 
