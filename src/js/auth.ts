@@ -182,7 +182,10 @@
           }
 
           /**
-           * Unpacks JWT to see if session is valid.
+           * Create an invisable iframe and appends it to the bottom of the page.
+           *
+           * @method createIframe
+           * @returns {HTMLIFrameElement}
            */
           createIframe(url: string): HTMLIFrameElement {
             let iframe = document.createElement('iframe')
@@ -633,7 +636,7 @@
           template:
             `<div class="gpLoginCover" ng-if="requireLogin">
               <div class="gpLoginWindow">
-                <iframe src="/login?cachebuster=${(new Date()).getTime()}"></iframe>
+                <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading`)}&cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
             </div>`,
           controller: function($scope, $element, $timeout) {
