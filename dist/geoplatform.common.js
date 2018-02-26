@@ -1803,6 +1803,548 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 })(angular, GeoPlatform);
 
 (function (angular, Constants) {
+    'use strict';
+
+    var FACET_NAME = 'usedBy.id';
+    angular.module('gp-common').component('communityFilter', {
+        bindings: {
+            name: '@',
+            service: "<"
+        },
+        controller: ["$http", function controller($http) {
+            this.$onInit = function () {
+                this.collapse = true;
+                this.updateValues();
+            };
+            this.$onDestroy = function () {
+                this.values = null;
+            };
+            this.hasSelections = function () {
+                return (this.service.getUsedBy() || []).length;
+            };
+            this.isSelected = function (value) {
+                var selected = this.service.getUsedBy() || [];
+                return ~selected.indexOf(value.id);
+            };
+            this.toggle = function (value) {
+                var selected = this.service.getUsedBy() || [];
+                var idx = selected.indexOf(value.id);
+                if (idx >= 0) selected.splice(idx, 1);else selected.push(value.id);
+                this.service.setUsedBy(selected);
+            };
+            this.clear = function () {
+                var selected = this.service.getUsedBy() || [];
+                if (!selected || !selected.length) this.collapse = !this.collapse; //toggle collapsed state
+                else this.service.setUsedBy([]);
+            };
+            this.getCount = function (value) {
+                var facet = this.service.getFacet(FACET_NAME);
+                if (!facet) return '';
+                var valObj = facet.buckets.find(function (v) {
+                    return v.label === value.id;
+                });
+                if (!valObj) return '';
+                return valObj.count;
+            };
+            this.updateValues = function (query) {
+                var _this = this;
+                return $http.get(Constants.ualUrl + '/api/communities', {
+                    params: {
+                        sort: 'label,asc',
+                        q: query,
+                        size: 20,
+                        bust: new Date().getTime()
+                    }
+                }).then(function (response) {
+                    var total = response.data.totalResults;
+                    var newValues = response.data.results.slice(0);
+                    _this.additionalValueCount = total - newValues.length;
+                    var selections = _this.service.getUsedBy();
+                    if (selections && selections.length && _this.values && _this.values.length) {
+                        var existing = _this.values.filter(function (v) {
+                            //find existing values that are selected
+                            return ~selections.indexOf(v.id) &&
+                            // but not in new set of values
+                            !newValues.filter(function (nv) {
+                                return nv.id === v.id;
+                            }).length;
+                        });
+                        newValues = existing.concat(newValues);
+                    }
+                    _this.values = newValues;
+                }).catch(function (response) {
+                    console.log("(" + response.status + ") " + response.statusText);
+                });
+            };
+        }],
+        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Communities</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.updateValues($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Search by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.updateValues($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Community\n                        </a>\n                        <a  ng-repeat=\"value in $ctrl.values track by $index\"\n                            class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggle(value)\"\n                            ng-class=\"{active:$ctrl.isSelected(value)}\">\n\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(value)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}\"></span>\n                            {{value.label}}\n                        </a>\n                        <div class=\"c-facet__value t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>plus {{$ctrl.additionalValueCount}} more options</em>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
+    });
+})(angular, GeoPlatform);
+
+(function (angular) {
+    'use strict';
+
+    angular.module('gp-common').component('createdByFilter', {
+        bindings: {
+            service: '<' //service filtering by
+        },
+        controller: ["AuthenticationService", function controller(AuthenticationService) {
+            this.$onInit = function () {
+                var _this = this;
+                this.value = null; //input from user for "created by" value
+                this.collapse = true; //hide show controls
+                this.limitToUser = false; //filter using current user
+                this.modelOptions = {
+                    'updateOn': 'default blur',
+                    'debounce': {
+                        'default': 250,
+                        'blur': 0
+                    }
+                };
+                AuthenticationService.getUserQ().then(function (user) {
+                    _this.username = user ? user.username : null;
+                });
+            };
+            this.$onDestroy = function () {
+                this.value = null;
+                this.collapse = null;
+                this.limitToUser = null;
+                this.username = null;
+            };
+            this.filter = function () {
+                var value = this.limitToUser ? this.username : this.value;
+                if (typeof value !== 'undefined' && value !== null && value.trim().length === 0) value = null; //don't accept empty strings
+                this.service.setCreatedBy(value, true);
+            };
+            this.toggleLimitToUser = function () {
+                this.limitToUser = !this.limitToUser;
+                this.filter();
+            };
+            this.clear = function () {
+                this.value = null;
+                this.filter();
+            };
+        }],
+        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Author</span>\n                </h5>\n                <div class=\"card-content\">\n\n                    <div class=\"c-facets\" ng-hide=\"$ctrl.collapse\">\n\n                        <div class=\"input-group-slick\">\n                            <span class=\"glyphicon glyphicon-user\"></span>\n                            <input type=\"text\" class=\"form-control\" placeholder=\"Specify author username\"\n                                ng-disabled=\"$ctrl.limitToUser\"\n                                ng-model=\"$ctrl.value\"\n                                ng-model-options=\"$ctrl.modelOptions\"\n                                ng-change=\"$ctrl.filter()\">\n                            <span class=\"glyphicon glyphicon-remove\" title=\"Clear author\"\n                                ng-if=\"$ctrl.value.length&&!$ctrl.limitToUser\" ng-click=\"$ctrl.clear()\"></span>\n                        </div>\n                    \n                        <label class=\"control-label u-text--sm text-muted u-pd-top--sm\" ng-if=\"$ctrl.username\">\n                            <input type=\"checkbox\" ng-model=\"$ctrl.limitToUser\" ng-change=\"$ctrl.filter()\">\n                            Only show my maps\n                        </label>\n\n                    </div>\n                </div>\n            </div>\n        "
+    });
+})(angular);
+
+(function (angular, Constants) {
+    'use strict';
+
+    var PUBLISHER_FACET = 'publishers';
+    angular.module('gp-common').component('publisherFilter', {
+        bindings: {
+            name: '@',
+            service: "<"
+        },
+        controller: ["$http", function controller($http) {
+            this.$onInit = function () {
+                this.collapse = true;
+                this.updateValues();
+            };
+            this.$onDestroy = function () {
+                this.values = null;
+            };
+            this.hasSelections = function () {
+                return (this.service.getAgencies() || []).length;
+            };
+            this.isSelected = function (value) {
+                var selected = this.service.getAgencies() || [];
+                return ~selected.indexOf(value.id);
+            };
+            this.toggle = function (value) {
+                var selected = this.service.getAgencies() || [];
+                var idx = selected.indexOf(value.id);
+                if (idx >= 0) selected.splice(idx, 1);else selected.push(value.id);
+                this.service.setAgencies(selected);
+            };
+            this.clear = function () {
+                var selected = this.service.getAgencies() || [];
+                if (!selected || !selected.length) this.collapse = !this.collapse; //toggle collapsed state
+                else this.service.setAgencies([]);
+            };
+            this.getCount = function (value) {
+                var facet = this.service.getFacet(PUBLISHER_FACET);
+                if (!facet) return '';
+                var valObj = facet.buckets.find(function (v) {
+                    return v.label === value.id;
+                });
+                if (!valObj) return '';
+                return valObj.count;
+            };
+            this.updateValues = function (query) {
+                var _this = this;
+                return $http.get(Constants.ualUrl + '/api/items', {
+                    params: {
+                        type: 'org:Organization',
+                        sort: 'label,asc',
+                        q: query,
+                        size: 20,
+                        bust: new Date().getTime()
+                    }
+                }).then(function (response) {
+                    var total = response.data.totalResults;
+                    var newValues = response.data.results.slice(0);
+                    _this.additionalValueCount = total - newValues.length;
+                    var selections = _this.service.getAgencies();
+                    if (selections && selections.length && _this.values && _this.values.length) {
+                        var existing = _this.values.filter(function (v) {
+                            //find existing values that are selected
+                            return ~selections.indexOf(v.id) &&
+                            // but not in new set of values
+                            !newValues.filter(function (nv) {
+                                return nv.id === v.id;
+                            }).length;
+                        });
+                        newValues = existing.concat(newValues);
+                    }
+                    _this.values = newValues;
+                }, function (response) {
+                    console.log("(" + response.status + ") " + response.statusText);
+                });
+            };
+        }],
+        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Publishers</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.updateValues($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Search by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.updateValues($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Publisher\n                        </a>\n                        <a  ng-repeat=\"value in $ctrl.values track by $index\"\n                            class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggle(value)\"\n                            ng-class=\"{active:$ctrl.isSelected(value)}\">\n\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(value)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}\"></span>\n                            {{value.label}}\n                        </a>\n                        <div class=\"c-facet__value t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>plus {{$ctrl.additionalValueCount}} more options</em>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
+    });
+})(angular, GeoPlatform);
+
+(function (angular) {
+    'use strict';
+
+    var PARAMETER = "concepts";
+    var RecommendedTermFilter = /** @class */function () {
+        RecommendedTermFilter.$inject = ["$timeout", "RecommenderService"];
+        function RecommendedTermFilter($timeout, RecommenderService) {
+            'ngInject';
+
+            this.termService = RecommenderService;
+            this.$timeout = $timeout;
+        }
+        RecommendedTermFilter.prototype.$onInit = function () {
+            this.displayOpts = {
+                fetching: false,
+                empty: false,
+                collapse: false,
+                suggest: false
+            };
+            this.values = [];
+            this.suggested = [];
+            this.termQuery = null;
+            this.paging = {
+                start: 0,
+                size: 5,
+                sizeOptions: [5, 10, 20]
+            };
+        };
+        RecommendedTermFilter.prototype.$onDestroy = function () {
+            this.$timeout = null;
+            this.displayOpts = null;
+            this.values = null;
+            this.suggested = null;
+            this.service = null;
+            this.termService = null;
+            this.termQuery = null;
+            this.paging = null;
+            this.eventHandlers = null;
+        };
+        /* ----------------- typeahead methods ------------------ */
+        // onSelection ($item, $model, $label, $event) {
+        //     this.values.push($model);   //append selection to list
+        //     this.termQuery = null;      //clear the typeahead field
+        //     this.update();
+        // }
+        //
+        // getOptions (text) {
+        //
+        //     this.displayOpts.fetching = true;
+        //     this.displayOpts.empty = false;
+        //
+        //     let params = {
+        //         q:text,
+        //         size:12
+        //     };
+        //     if(this.type)
+        //         params['for'] = this.type;
+        //
+        //     return this.termService.query(params).$promise
+        //     .then( response => {
+        //         let results = response.results;
+        //         this.displayOpts.empty = !results.length;
+        //         return results;
+        //     })
+        //     .catch( e => {
+        //         this.displayOpts.empty = true;
+        //         console.log("Error finding semantic terms: " + e.message);
+        //     })
+        //     .finally( () => {
+        //         this.displayOpts.fetching = false;
+        //     });
+        // }
+        RecommendedTermFilter.prototype.hideSuggested = function () {
+            this.displayOpts.suggest = this.displayOpts.fetching = this.displayOpts.empty = false;
+            this.termQuery = null;
+            this.suggested = [];
+            this.paging.start = this.paging.total = 0;
+        };
+        RecommendedTermFilter.prototype.select = function (item) {
+            item._selected = true; //update status to show it's already _selected
+            this.values.push(item); //append selection to list
+            this.update(); //update overall browse query with new selection
+        };
+        RecommendedTermFilter.prototype.getOptions = function () {
+            var _this = this;
+            var text = this.termQuery;
+            // console.log("Querying using '" + text + "'");
+            //if empty value was provided, don't search.
+            if (!text || !text.length) {
+                this.suggested = [];
+                // this.suggestedTotal = this.suggestedCount = 0;
+                this.paging.start = this.paging.total = 0;
+                this.notify('gp:browse:suggestions:pagination', this.paging);
+                // this.displayOpts.suggest = false;
+                return;
+            }
+            //reset variables
+            this.suggested = [];
+            // this.suggestedTotal = this.suggestedCount = 0;
+            this.displayOpts.suggest = true;
+            this.displayOpts.fetching = true;
+            this.displayOpts.empty = false;
+            var params = {
+                q: text,
+                page: Math.floor(this.paging.start / this.paging.size),
+                size: this.paging.size
+            };
+            if (this.type) params['for'] = this.type;
+            this.termService.query(params).$promise.then(function (response) {
+                var results = response.results;
+                _this.displayOpts.empty = !results.length;
+                _this.suggested = results.map(function (result) {
+                    result._selected = _this.isSelected(result);
+                    return result;
+                });
+                _this.paging.total = response.totalResults;
+                _this.notify('gp:browse:suggestions:pagination', _this.paging);
+            }).catch(function (e) {
+                _this.displayOpts.empty = true;
+                _this.suggested = [];
+                _this.paging.total = 0;
+                _this.notify('gp:browse:suggestions:pagination', _this.paging);
+                console.log("Error finding semantic terms: " + e.message);
+            }).finally(function () {
+                _this.displayOpts.fetching = false;
+                // this.displayOpts.suggest = true;
+            });
+        };
+        RecommendedTermFilter.prototype.hasSelections = function () {
+            return this.values.length;
+        };
+        RecommendedTermFilter.prototype.isSelected = function (item) {
+            return this.values.filter(function (v) {
+                return v.uri === item.uri;
+            }).length;
+        };
+        RecommendedTermFilter.prototype.removeValue = function (index) {
+            if (this.values.length >= index) {
+                var removed_1 = this.values.splice(index, 1)[0]; //remove from selected
+                this.update(); //update overall browse query
+                //update associated item in suggested list (if visible)
+                if (this.suggested.length) {
+                    var match = this.suggested.find(function (i) {
+                        return i.uri === removed_1.uri;
+                    });
+                    if (match) match._selected = false;
+                }
+            }
+        };
+        RecommendedTermFilter.prototype.clear = function () {
+            this.values = [];
+            this.update();
+        };
+        RecommendedTermFilter.prototype.update = function () {
+            var value = this.values.length ? this.values.map(function (v) {
+                return v.uri;
+            }) : null;
+            this.service.applyOption(PARAMETER, value, true);
+        };
+        /* -------- pagination methods ----------- */
+        RecommendedTermFilter.prototype.on = function (event, callback) {
+            this.eventHandlers = this.eventHandlers || {};
+            this.eventHandlers[event] = this.eventHandlers[event] || [];
+            this.eventHandlers[event].push(callback);
+        };
+        RecommendedTermFilter.prototype.notify = function (event, data) {
+            var _this = this;
+            if (!this.$timeout || !this.eventHandlers || !this.eventHandlers[event]) return;
+            this.$timeout(function () {
+                angular.forEach(_this.eventHandlers[event], function (handler) {
+                    try {
+                        handler(data);
+                    } catch (e) {}
+                });
+            }, 100);
+        };
+        RecommendedTermFilter.prototype.getPagination = function () {
+            return this.paging;
+        };
+        RecommendedTermFilter.prototype.start = function (index) {
+            this.paging.start = index;
+            this.getOptions();
+        };
+        RecommendedTermFilter.prototype.size = function (value) {
+            this.paging.size = value;
+            this.getOptions();
+        };
+        return RecommendedTermFilter;
+    }();
+    angular.module('gp-common').component('recommendedTermFilter', {
+        bindings: {
+            //type of object being searched (ie, Layer, Map)
+            type: '@',
+            //BrowseObjectService the filter will affect
+            service: "<"
+        },
+        controller: RecommendedTermFilter,
+        template: "\n            <div class=\"card c-query-filter c-filter__recommended-terms\">\n\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}\"></span>\n                    </button>\n                    <span>Filter using Semantic Concepts</span>\n                </h5>\n\n                <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.displayOpts.collapse}\">\n\n                    <!--\n                    <div class=\"c-facet__value\">\n\n                        <div class=\"input-group-slick\">\n                            <input name=\"termQuery\" type=\"text\" class=\"form-control\"\n                              ng-model=\"$ctrl.termQuery\"\n                              typeahead-on-select=\"$ctrl.onSelection($item, $model, $label, $event)\"\n                              uib-typeahead=\"opt as ' (' + opt.context + ') ' + opt.label for opt in $ctrl.getOptions($viewValue)\"\n                              typeahead-loading=\"$ctrl.displayOpts.fetching\"\n                              typeahead-no-results=\"$ctrl.displayOpts.empty\"\n                              ng-model-options=\"{ debounce: 250 }\"\n                              typeahead-min-length=\"2\"\n                              typeahead-editable=\"false\"\n                              placeholder=\"Find a concept\">\n                            <span class=\"glyphicon glyphicon-hourglass spin\" ng-if=\"$ctrl.displayOpts.fetching\"></span>\n                        </div>\n\n                        <div ng-show=\"$ctrl.displayOpts.empty\">No Results Found</div>\n\n                    </div>\n                    -->\n\n                    <div ng-hide=\"$ctrl.displayOpts.collapse\">\n\n                        <div class=\"input-group-slick\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\"\n                                ng-model=\"$ctrl.termQuery\"\n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.getOptions()\"\n                                placeholder=\"Find concepts\">\n                            <span class=\"glyphicon glyphicon-remove\" ng-if=\"$ctrl.displayOpts.suggest\"\n                                ng-click=\"$ctrl.hideSuggested()\"></span>\n                        </div>\n\n                        <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"\n                            ng-if=\"$ctrl.displayOpts.suggest\">\n                        </gp-pagination>\n\n                        <div class=\"list-group list-group-sm u-text--sm\"\n                            ng-if=\"$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching\">\n\n                            <a ng-repeat=\"item in $ctrl.suggested track by $index\"\n                                class=\"list-group-item\"\n                                ng-class=\"{disabled:item._selected}\"\n                                ng-click=\"$ctrl.select(item)\">\n                                <span class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</span>\n                                <br>\n                                <span class=\"u-break--all u-text--sm t-text--italic\">{{item.uri}}</span>\n                            </a>\n\n                            <div ng-if=\"$ctrl.displayOpts.empty\" class=\"list-group-item disabled u-pd--md\">\n                                No concepts found\n                            </div>\n\n                        </div>\n\n                    </div>\n\n\n                    <!-- selected terms -->\n                    <div ng-repeat=\"term in $ctrl.values\" class=\"c-facet__value active\"\n                        title=\"Remove this term from the query\"\n                        ng-click=\"$ctrl.removeValue($index)\">\n\n                        <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">\n                            <span class=\"glyphicon glyphicon-check\"></span>\n                            {{term.prefLabel}}\n                        </div>\n                        <div class=\"u-break--all u-text--sm t-text--italic\">{{term.uri}}</div>\n                    </div>\n\n                </div>\n\n            </div>\n        "
+    });
+})(angular);
+
+(function (angular) {
+    'use strict';
+
+    angular.module('gp-common').component('similarityFilter', {
+        bindings: {
+            //type of object being searched (ie, Layer, Map)
+            type: '@',
+            //BrowseObjectService the filter will affect
+            service: "<",
+            //optional, id of current map (if one exists)
+            mapId: '@'
+        },
+        controller: function controller() {
+            this.$onInit = function () {
+                var _this = this;
+                this.collapse = true;
+                this.value = null;
+                this.useMap = false;
+                var evtName = this.service.events.SIMILARITY;
+                this.listener = this.service.on(evtName, function (event, layer) {
+                    _this.value = layer;
+                    _this.service.applyOption('similarTo', _this.value.id, true);
+                });
+                if (!this.type) this.type = "item";
+            };
+            this.$onDestroy = function () {
+                this.listener(); //dispose of listener
+                this.collapse = null;
+                this.value = null;
+                this.service = null;
+                this.mapId = null;
+            };
+            this.hasSelections = function () {
+                return !!this.value;
+            };
+            this.clearValue = function () {
+                if (this.useMap) {
+                    this.useMap = false;
+                    this.service.applyOption('similarTo', this.value.id, true);
+                } else {
+                    this.value = null;
+                    this.service.applyOption('similarTo', null, true);
+                }
+            };
+            this.toggleCurrentMap = function (bool) {
+                if (this.useMap) {
+                    this.useMap = false;
+                    if (this.value) {
+                        this.service.applyOption('similarTo', this.value.id, true);
+                    } else {
+                        this.service.applyOption('similarTo', false, true);
+                    }
+                } else {
+                    this.useMap = true;
+                    this.service.applyOption('similarTo', this.mapId, true);
+                }
+            };
+        },
+        template: "\n            <div class=\"card c-query-filter\" ng-if=\"$ctrl.value\">\n\n                <h5 class=\"card-title\">Find Similar</h5>\n                <div class=\"card-content\">\n\n                    <p class=\"u-text--sm\">Searching for {{$ctrl.type}}s similar to the following: </p>\n\n                    <div class=\"c-facets\">\n\n                        <a class=\"c-facet__value\" ng-if=\"$ctrl.value\" ng-click=\"$ctrl.clearValue()\">\n                            <span class=\"glyphicon glyphicon-remove-circle\"></span>\n                            {{$ctrl.value.label}}\n                        </a>\n\n                        <!--\n                        <a ng-if=\"$ctrl.mapId\" class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggleCurrentMap()\" ng-class=\"{active:$ctrl.useMap}\">\n                            <span class=\"glyphicon glyphicon-check\" ng-show=\"$ctrl.useMap\"></span>\n                            <span class=\"glyphicon glyphicon-unchecked\" ng-show=\"!$ctrl.useMap\"></span>\n                            Find similar to my current map\n                        </a>\n                        -->\n\n                    </div>\n\n                    <br>\n                    <p class=\"u-text--sm\">Note that query filters below are still being applied.</p>\n\n                </div>\n            </div>\n        "
+    });
+})(angular);
+
+(function (angular, Constants) {
+    'use strict';
+    /*
+        <themes-filter></themes-filter>
+     */
+
+    angular.module('gp-common').component('themeFilter', {
+        bindings: {
+            name: '@',
+            service: '<'
+        },
+        controller: ["$http", function controller($http) {
+            this.$onInit = function () {
+                this.collapse = true;
+                this.updateValues();
+            };
+            this.$onDestroy = function () {
+                this.values = null;
+                this.service = null;
+            };
+            this.hasSelections = function () {
+                return (this.service.getThemes() || []).length;
+            };
+            this.isSelected = function (value) {
+                var themes = this.service.getThemes() || [];
+                return ~themes.indexOf(value.id);
+            };
+            this.toggle = function (value) {
+                var themes = this.service.getThemes() || [];
+                var idx = themes.indexOf(value.id);
+                if (idx >= 0) themes.splice(idx, 1);else themes.push(value.id);
+                this.service.setThemes(themes);
+            };
+            this.clear = function () {
+                var themes = this.service.getThemes() || [];
+                if (!themes || !themes.length) this.collapse = !this.collapse; //toggle collapsed state
+                else this.service.setThemes([]);
+            };
+            this.getCount = function (value) {
+                var facet = this.service.getFacet('themes');
+                if (!facet) return '';
+                var valObj = facet.buckets.find(function (v) {
+                    return v.label === value.id;
+                });
+                if (!valObj) return '';
+                return valObj.count;
+            };
+            this.updateValues = function (query) {
+                var _this = this;
+                return $http.get(Constants.ualUrl + '/api/items', {
+                    params: {
+                        type: 'skos:Concept',
+                        'scheme.label': 'NGDA Portfolio Themes',
+                        fields: 'scheme',
+                        size: 9999,
+                        sort: 'label,asc',
+                        bust: new Date().getTime()
+                    }
+                }).then(function (response) {
+                    // let total = response.data.totalResults;
+                    _this.values = response.data.results.slice(0);
+                }, function (response) {
+                    console.log("(" + response.status + ") " + response.statusText);
+                }).catch(function (e) {
+                    console.log("Error fetching NGDA Themes: " + e.message);
+                });
+            };
+        }],
+        template: "\n            <div class=\"card c-query-filter c-browse-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span>Filter by NGDA Themes</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Theme\n                        </a>\n                        <a ng-repeat=\"theme in $ctrl.values track by $index\"\n                            class=\"c-facet__value\" ng-click=\"$ctrl.toggle(theme)\"\n                            ng-class=\"{active:$ctrl.isSelected(theme)}\">\n                                <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                                <span class=\"glyphicon\"\n                                    ng-class=\"{'glyphicon-check':$ctrl.isSelected(theme),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(theme)}\"></span>\n                                {{theme.label}}\n                            </a>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
+    });
+})(angular, GeoPlatform);
+
+(function (angular, Constants) {
     "use strict";
     //fields list sent to MDR in order to have these properties for display in search results
 
@@ -2753,548 +3295,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(angular);
 
-(function (angular, Constants) {
-    'use strict';
-
-    var FACET_NAME = 'usedBy.id';
-    angular.module('gp-common').component('communityFilter', {
-        bindings: {
-            name: '@',
-            service: "<"
-        },
-        controller: ["$http", function controller($http) {
-            this.$onInit = function () {
-                this.collapse = true;
-                this.updateValues();
-            };
-            this.$onDestroy = function () {
-                this.values = null;
-            };
-            this.hasSelections = function () {
-                return (this.service.getUsedBy() || []).length;
-            };
-            this.isSelected = function (value) {
-                var selected = this.service.getUsedBy() || [];
-                return ~selected.indexOf(value.id);
-            };
-            this.toggle = function (value) {
-                var selected = this.service.getUsedBy() || [];
-                var idx = selected.indexOf(value.id);
-                if (idx >= 0) selected.splice(idx, 1);else selected.push(value.id);
-                this.service.setUsedBy(selected);
-            };
-            this.clear = function () {
-                var selected = this.service.getUsedBy() || [];
-                if (!selected || !selected.length) this.collapse = !this.collapse; //toggle collapsed state
-                else this.service.setUsedBy([]);
-            };
-            this.getCount = function (value) {
-                var facet = this.service.getFacet(FACET_NAME);
-                if (!facet) return '';
-                var valObj = facet.buckets.find(function (v) {
-                    return v.label === value.id;
-                });
-                if (!valObj) return '';
-                return valObj.count;
-            };
-            this.updateValues = function (query) {
-                var _this = this;
-                return $http.get(Constants.ualUrl + '/api/communities', {
-                    params: {
-                        sort: 'label,asc',
-                        q: query,
-                        size: 20,
-                        bust: new Date().getTime()
-                    }
-                }).then(function (response) {
-                    var total = response.data.totalResults;
-                    var newValues = response.data.results.slice(0);
-                    _this.additionalValueCount = total - newValues.length;
-                    var selections = _this.service.getUsedBy();
-                    if (selections && selections.length && _this.values && _this.values.length) {
-                        var existing = _this.values.filter(function (v) {
-                            //find existing values that are selected
-                            return ~selections.indexOf(v.id) &&
-                            // but not in new set of values
-                            !newValues.filter(function (nv) {
-                                return nv.id === v.id;
-                            }).length;
-                        });
-                        newValues = existing.concat(newValues);
-                    }
-                    _this.values = newValues;
-                }).catch(function (response) {
-                    console.log("(" + response.status + ") " + response.statusText);
-                });
-            };
-        }],
-        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Communities</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.updateValues($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Search by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.updateValues($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Community\n                        </a>\n                        <a  ng-repeat=\"value in $ctrl.values track by $index\"\n                            class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggle(value)\"\n                            ng-class=\"{active:$ctrl.isSelected(value)}\">\n\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(value)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}\"></span>\n                            {{value.label}}\n                        </a>\n                        <div class=\"c-facet__value t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>plus {{$ctrl.additionalValueCount}} more options</em>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
-(function (angular) {
-    'use strict';
-
-    angular.module('gp-common').component('createdByFilter', {
-        bindings: {
-            service: '<' //service filtering by
-        },
-        controller: ["AuthenticationService", function controller(AuthenticationService) {
-            this.$onInit = function () {
-                var _this = this;
-                this.value = null; //input from user for "created by" value
-                this.collapse = true; //hide show controls
-                this.limitToUser = false; //filter using current user
-                this.modelOptions = {
-                    'updateOn': 'default blur',
-                    'debounce': {
-                        'default': 250,
-                        'blur': 0
-                    }
-                };
-                AuthenticationService.getUserQ().then(function (user) {
-                    _this.username = user ? user.username : null;
-                });
-            };
-            this.$onDestroy = function () {
-                this.value = null;
-                this.collapse = null;
-                this.limitToUser = null;
-                this.username = null;
-            };
-            this.filter = function () {
-                var value = this.limitToUser ? this.username : this.value;
-                if (typeof value !== 'undefined' && value !== null && value.trim().length === 0) value = null; //don't accept empty strings
-                this.service.setCreatedBy(value, true);
-            };
-            this.toggleLimitToUser = function () {
-                this.limitToUser = !this.limitToUser;
-                this.filter();
-            };
-            this.clear = function () {
-                this.value = null;
-                this.filter();
-            };
-        }],
-        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Author</span>\n                </h5>\n                <div class=\"card-content\">\n\n                    <div class=\"c-facets\" ng-hide=\"$ctrl.collapse\">\n\n                        <div class=\"input-group-slick\">\n                            <span class=\"glyphicon glyphicon-user\"></span>\n                            <input type=\"text\" class=\"form-control\" placeholder=\"Specify author username\"\n                                ng-disabled=\"$ctrl.limitToUser\"\n                                ng-model=\"$ctrl.value\"\n                                ng-model-options=\"$ctrl.modelOptions\"\n                                ng-change=\"$ctrl.filter()\">\n                            <span class=\"glyphicon glyphicon-remove\" title=\"Clear author\"\n                                ng-if=\"$ctrl.value.length&&!$ctrl.limitToUser\" ng-click=\"$ctrl.clear()\"></span>\n                        </div>\n                    \n                        <label class=\"control-label u-text--sm text-muted u-pd-top--sm\" ng-if=\"$ctrl.username\">\n                            <input type=\"checkbox\" ng-model=\"$ctrl.limitToUser\" ng-change=\"$ctrl.filter()\">\n                            Only show my maps\n                        </label>\n\n                    </div>\n                </div>\n            </div>\n        "
-    });
-})(angular);
-
-(function (angular, Constants) {
-    'use strict';
-
-    var PUBLISHER_FACET = 'publishers';
-    angular.module('gp-common').component('publisherFilter', {
-        bindings: {
-            name: '@',
-            service: "<"
-        },
-        controller: ["$http", function controller($http) {
-            this.$onInit = function () {
-                this.collapse = true;
-                this.updateValues();
-            };
-            this.$onDestroy = function () {
-                this.values = null;
-            };
-            this.hasSelections = function () {
-                return (this.service.getAgencies() || []).length;
-            };
-            this.isSelected = function (value) {
-                var selected = this.service.getAgencies() || [];
-                return ~selected.indexOf(value.id);
-            };
-            this.toggle = function (value) {
-                var selected = this.service.getAgencies() || [];
-                var idx = selected.indexOf(value.id);
-                if (idx >= 0) selected.splice(idx, 1);else selected.push(value.id);
-                this.service.setAgencies(selected);
-            };
-            this.clear = function () {
-                var selected = this.service.getAgencies() || [];
-                if (!selected || !selected.length) this.collapse = !this.collapse; //toggle collapsed state
-                else this.service.setAgencies([]);
-            };
-            this.getCount = function (value) {
-                var facet = this.service.getFacet(PUBLISHER_FACET);
-                if (!facet) return '';
-                var valObj = facet.buckets.find(function (v) {
-                    return v.label === value.id;
-                });
-                if (!valObj) return '';
-                return valObj.count;
-            };
-            this.updateValues = function (query) {
-                var _this = this;
-                return $http.get(Constants.ualUrl + '/api/items', {
-                    params: {
-                        type: 'org:Organization',
-                        sort: 'label,asc',
-                        q: query,
-                        size: 20,
-                        bust: new Date().getTime()
-                    }
-                }).then(function (response) {
-                    var total = response.data.totalResults;
-                    var newValues = response.data.results.slice(0);
-                    _this.additionalValueCount = total - newValues.length;
-                    var selections = _this.service.getAgencies();
-                    if (selections && selections.length && _this.values && _this.values.length) {
-                        var existing = _this.values.filter(function (v) {
-                            //find existing values that are selected
-                            return ~selections.indexOf(v.id) &&
-                            // but not in new set of values
-                            !newValues.filter(function (nv) {
-                                return nv.id === v.id;
-                            }).length;
-                        });
-                        newValues = existing.concat(newValues);
-                    }
-                    _this.values = newValues;
-                }, function (response) {
-                    console.log("(" + response.status + ") " + response.statusText);
-                });
-            };
-        }],
-        template: "\n            <div class=\"card c-query-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span class=\"flex-1\">Filter by Publishers</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.updateValues($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Search by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.updateValues($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Publisher\n                        </a>\n                        <a  ng-repeat=\"value in $ctrl.values track by $index\"\n                            class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggle(value)\"\n                            ng-class=\"{active:$ctrl.isSelected(value)}\">\n\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(value)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}\"></span>\n                            {{value.label}}\n                        </a>\n                        <div class=\"c-facet__value t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>plus {{$ctrl.additionalValueCount}} more options</em>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
-(function (angular) {
-    'use strict';
-
-    var PARAMETER = "concepts";
-    var RecommendedTermFilter = /** @class */function () {
-        RecommendedTermFilter.$inject = ["$timeout", "RecommenderService"];
-        function RecommendedTermFilter($timeout, RecommenderService) {
-            'ngInject';
-
-            this.termService = RecommenderService;
-            this.$timeout = $timeout;
-        }
-        RecommendedTermFilter.prototype.$onInit = function () {
-            this.displayOpts = {
-                fetching: false,
-                empty: false,
-                collapse: false,
-                suggest: false
-            };
-            this.values = [];
-            this.suggested = [];
-            this.termQuery = null;
-            this.paging = {
-                start: 0,
-                size: 5,
-                sizeOptions: [5, 10, 20]
-            };
-        };
-        RecommendedTermFilter.prototype.$onDestroy = function () {
-            this.$timeout = null;
-            this.displayOpts = null;
-            this.values = null;
-            this.suggested = null;
-            this.service = null;
-            this.termService = null;
-            this.termQuery = null;
-            this.paging = null;
-            this.eventHandlers = null;
-        };
-        /* ----------------- typeahead methods ------------------ */
-        // onSelection ($item, $model, $label, $event) {
-        //     this.values.push($model);   //append selection to list
-        //     this.termQuery = null;      //clear the typeahead field
-        //     this.update();
-        // }
-        //
-        // getOptions (text) {
-        //
-        //     this.displayOpts.fetching = true;
-        //     this.displayOpts.empty = false;
-        //
-        //     let params = {
-        //         q:text,
-        //         size:12
-        //     };
-        //     if(this.type)
-        //         params['for'] = this.type;
-        //
-        //     return this.termService.query(params).$promise
-        //     .then( response => {
-        //         let results = response.results;
-        //         this.displayOpts.empty = !results.length;
-        //         return results;
-        //     })
-        //     .catch( e => {
-        //         this.displayOpts.empty = true;
-        //         console.log("Error finding semantic terms: " + e.message);
-        //     })
-        //     .finally( () => {
-        //         this.displayOpts.fetching = false;
-        //     });
-        // }
-        RecommendedTermFilter.prototype.hideSuggested = function () {
-            this.displayOpts.suggest = this.displayOpts.fetching = this.displayOpts.empty = false;
-            this.termQuery = null;
-            this.suggested = [];
-            this.paging.start = this.paging.total = 0;
-        };
-        RecommendedTermFilter.prototype.select = function (item) {
-            item._selected = true; //update status to show it's already _selected
-            this.values.push(item); //append selection to list
-            this.update(); //update overall browse query with new selection
-        };
-        RecommendedTermFilter.prototype.getOptions = function () {
-            var _this = this;
-            var text = this.termQuery;
-            // console.log("Querying using '" + text + "'");
-            //if empty value was provided, don't search.
-            if (!text || !text.length) {
-                this.suggested = [];
-                // this.suggestedTotal = this.suggestedCount = 0;
-                this.paging.start = this.paging.total = 0;
-                this.notify('gp:browse:suggestions:pagination', this.paging);
-                // this.displayOpts.suggest = false;
-                return;
-            }
-            //reset variables
-            this.suggested = [];
-            // this.suggestedTotal = this.suggestedCount = 0;
-            this.displayOpts.suggest = true;
-            this.displayOpts.fetching = true;
-            this.displayOpts.empty = false;
-            var params = {
-                q: text,
-                page: Math.floor(this.paging.start / this.paging.size),
-                size: this.paging.size
-            };
-            if (this.type) params['for'] = this.type;
-            this.termService.query(params).$promise.then(function (response) {
-                var results = response.results;
-                _this.displayOpts.empty = !results.length;
-                _this.suggested = results.map(function (result) {
-                    result._selected = _this.isSelected(result);
-                    return result;
-                });
-                _this.paging.total = response.totalResults;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-            }).catch(function (e) {
-                _this.displayOpts.empty = true;
-                _this.suggested = [];
-                _this.paging.total = 0;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-                console.log("Error finding semantic terms: " + e.message);
-            }).finally(function () {
-                _this.displayOpts.fetching = false;
-                // this.displayOpts.suggest = true;
-            });
-        };
-        RecommendedTermFilter.prototype.hasSelections = function () {
-            return this.values.length;
-        };
-        RecommendedTermFilter.prototype.isSelected = function (item) {
-            return this.values.filter(function (v) {
-                return v.uri === item.uri;
-            }).length;
-        };
-        RecommendedTermFilter.prototype.removeValue = function (index) {
-            if (this.values.length >= index) {
-                var removed_1 = this.values.splice(index, 1)[0]; //remove from selected
-                this.update(); //update overall browse query
-                //update associated item in suggested list (if visible)
-                if (this.suggested.length) {
-                    var match = this.suggested.find(function (i) {
-                        return i.uri === removed_1.uri;
-                    });
-                    if (match) match._selected = false;
-                }
-            }
-        };
-        RecommendedTermFilter.prototype.clear = function () {
-            this.values = [];
-            this.update();
-        };
-        RecommendedTermFilter.prototype.update = function () {
-            var value = this.values.length ? this.values.map(function (v) {
-                return v.uri;
-            }) : null;
-            this.service.applyOption(PARAMETER, value, true);
-        };
-        /* -------- pagination methods ----------- */
-        RecommendedTermFilter.prototype.on = function (event, callback) {
-            this.eventHandlers = this.eventHandlers || {};
-            this.eventHandlers[event] = this.eventHandlers[event] || [];
-            this.eventHandlers[event].push(callback);
-        };
-        RecommendedTermFilter.prototype.notify = function (event, data) {
-            var _this = this;
-            if (!this.$timeout || !this.eventHandlers || !this.eventHandlers[event]) return;
-            this.$timeout(function () {
-                angular.forEach(_this.eventHandlers[event], function (handler) {
-                    try {
-                        handler(data);
-                    } catch (e) {}
-                });
-            }, 100);
-        };
-        RecommendedTermFilter.prototype.getPagination = function () {
-            return this.paging;
-        };
-        RecommendedTermFilter.prototype.start = function (index) {
-            this.paging.start = index;
-            this.getOptions();
-        };
-        RecommendedTermFilter.prototype.size = function (value) {
-            this.paging.size = value;
-            this.getOptions();
-        };
-        return RecommendedTermFilter;
-    }();
-    angular.module('gp-common').component('recommendedTermFilter', {
-        bindings: {
-            //type of object being searched (ie, Layer, Map)
-            type: '@',
-            //BrowseObjectService the filter will affect
-            service: "<"
-        },
-        controller: RecommendedTermFilter,
-        template: "\n            <div class=\"card c-query-filter c-filter__recommended-terms\">\n\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}\"></span>\n                    </button>\n                    <span>Filter using Semantic Concepts</span>\n                </h5>\n\n                <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.displayOpts.collapse}\">\n\n                    <!--\n                    <div class=\"c-facet__value\">\n\n                        <div class=\"input-group-slick\">\n                            <input name=\"termQuery\" type=\"text\" class=\"form-control\"\n                              ng-model=\"$ctrl.termQuery\"\n                              typeahead-on-select=\"$ctrl.onSelection($item, $model, $label, $event)\"\n                              uib-typeahead=\"opt as ' (' + opt.context + ') ' + opt.label for opt in $ctrl.getOptions($viewValue)\"\n                              typeahead-loading=\"$ctrl.displayOpts.fetching\"\n                              typeahead-no-results=\"$ctrl.displayOpts.empty\"\n                              ng-model-options=\"{ debounce: 250 }\"\n                              typeahead-min-length=\"2\"\n                              typeahead-editable=\"false\"\n                              placeholder=\"Find a concept\">\n                            <span class=\"glyphicon glyphicon-hourglass spin\" ng-if=\"$ctrl.displayOpts.fetching\"></span>\n                        </div>\n\n                        <div ng-show=\"$ctrl.displayOpts.empty\">No Results Found</div>\n\n                    </div>\n                    -->\n\n                    <div ng-hide=\"$ctrl.displayOpts.collapse\">\n\n                        <div class=\"input-group-slick\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\"\n                                ng-model=\"$ctrl.termQuery\"\n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.getOptions()\"\n                                placeholder=\"Find concepts\">\n                            <span class=\"glyphicon glyphicon-remove\" ng-if=\"$ctrl.displayOpts.suggest\"\n                                ng-click=\"$ctrl.hideSuggested()\"></span>\n                        </div>\n\n                        <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"\n                            ng-if=\"$ctrl.displayOpts.suggest\">\n                        </gp-pagination>\n\n                        <div class=\"list-group list-group-sm u-text--sm\"\n                            ng-if=\"$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching\">\n\n                            <a ng-repeat=\"item in $ctrl.suggested track by $index\"\n                                class=\"list-group-item\"\n                                ng-class=\"{disabled:item._selected}\"\n                                ng-click=\"$ctrl.select(item)\">\n                                <span class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</span>\n                                <br>\n                                <span class=\"u-break--all u-text--sm t-text--italic\">{{item.uri}}</span>\n                            </a>\n\n                            <div ng-if=\"$ctrl.displayOpts.empty\" class=\"list-group-item disabled u-pd--md\">\n                                No concepts found\n                            </div>\n\n                        </div>\n\n                    </div>\n\n\n                    <!-- selected terms -->\n                    <div ng-repeat=\"term in $ctrl.values\" class=\"c-facet__value active\"\n                        title=\"Remove this term from the query\"\n                        ng-click=\"$ctrl.removeValue($index)\">\n\n                        <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">\n                            <span class=\"glyphicon glyphicon-check\"></span>\n                            {{term.prefLabel}}\n                        </div>\n                        <div class=\"u-break--all u-text--sm t-text--italic\">{{term.uri}}</div>\n                    </div>\n\n                </div>\n\n            </div>\n        "
-    });
-})(angular);
-
-(function (angular) {
-    'use strict';
-
-    angular.module('gp-common').component('similarityFilter', {
-        bindings: {
-            //type of object being searched (ie, Layer, Map)
-            type: '@',
-            //BrowseObjectService the filter will affect
-            service: "<",
-            //optional, id of current map (if one exists)
-            mapId: '@'
-        },
-        controller: function controller() {
-            this.$onInit = function () {
-                var _this = this;
-                this.collapse = true;
-                this.value = null;
-                this.useMap = false;
-                var evtName = this.service.events.SIMILARITY;
-                this.listener = this.service.on(evtName, function (event, layer) {
-                    _this.value = layer;
-                    _this.service.applyOption('similarTo', _this.value.id, true);
-                });
-                if (!this.type) this.type = "item";
-            };
-            this.$onDestroy = function () {
-                this.listener(); //dispose of listener
-                this.collapse = null;
-                this.value = null;
-                this.service = null;
-                this.mapId = null;
-            };
-            this.hasSelections = function () {
-                return !!this.value;
-            };
-            this.clearValue = function () {
-                if (this.useMap) {
-                    this.useMap = false;
-                    this.service.applyOption('similarTo', this.value.id, true);
-                } else {
-                    this.value = null;
-                    this.service.applyOption('similarTo', null, true);
-                }
-            };
-            this.toggleCurrentMap = function (bool) {
-                if (this.useMap) {
-                    this.useMap = false;
-                    if (this.value) {
-                        this.service.applyOption('similarTo', this.value.id, true);
-                    } else {
-                        this.service.applyOption('similarTo', false, true);
-                    }
-                } else {
-                    this.useMap = true;
-                    this.service.applyOption('similarTo', this.mapId, true);
-                }
-            };
-        },
-        template: "\n            <div class=\"card c-query-filter\" ng-if=\"$ctrl.value\">\n\n                <h5 class=\"card-title\">Find Similar</h5>\n                <div class=\"card-content\">\n\n                    <p class=\"u-text--sm\">Searching for {{$ctrl.type}}s similar to the following: </p>\n\n                    <div class=\"c-facets\">\n\n                        <a class=\"c-facet__value\" ng-if=\"$ctrl.value\" ng-click=\"$ctrl.clearValue()\">\n                            <span class=\"glyphicon glyphicon-remove-circle\"></span>\n                            {{$ctrl.value.label}}\n                        </a>\n\n                        <!--\n                        <a ng-if=\"$ctrl.mapId\" class=\"c-facet__value\"\n                            ng-click=\"$ctrl.toggleCurrentMap()\" ng-class=\"{active:$ctrl.useMap}\">\n                            <span class=\"glyphicon glyphicon-check\" ng-show=\"$ctrl.useMap\"></span>\n                            <span class=\"glyphicon glyphicon-unchecked\" ng-show=\"!$ctrl.useMap\"></span>\n                            Find similar to my current map\n                        </a>\n                        -->\n\n                    </div>\n\n                    <br>\n                    <p class=\"u-text--sm\">Note that query filters below are still being applied.</p>\n\n                </div>\n            </div>\n        "
-    });
-})(angular);
-
-(function (angular, Constants) {
-    'use strict';
-    /*
-        <themes-filter></themes-filter>
-     */
-
-    angular.module('gp-common').component('themeFilter', {
-        bindings: {
-            name: '@',
-            service: '<'
-        },
-        controller: ["$http", function controller($http) {
-            this.$onInit = function () {
-                this.collapse = true;
-                this.updateValues();
-            };
-            this.$onDestroy = function () {
-                this.values = null;
-                this.service = null;
-            };
-            this.hasSelections = function () {
-                return (this.service.getThemes() || []).length;
-            };
-            this.isSelected = function (value) {
-                var themes = this.service.getThemes() || [];
-                return ~themes.indexOf(value.id);
-            };
-            this.toggle = function (value) {
-                var themes = this.service.getThemes() || [];
-                var idx = themes.indexOf(value.id);
-                if (idx >= 0) themes.splice(idx, 1);else themes.push(value.id);
-                this.service.setThemes(themes);
-            };
-            this.clear = function () {
-                var themes = this.service.getThemes() || [];
-                if (!themes || !themes.length) this.collapse = !this.collapse; //toggle collapsed state
-                else this.service.setThemes([]);
-            };
-            this.getCount = function (value) {
-                var facet = this.service.getFacet('themes');
-                if (!facet) return '';
-                var valObj = facet.buckets.find(function (v) {
-                    return v.label === value.id;
-                });
-                if (!valObj) return '';
-                return valObj.count;
-            };
-            this.updateValues = function (query) {
-                var _this = this;
-                return $http.get(Constants.ualUrl + '/api/items', {
-                    params: {
-                        type: 'skos:Concept',
-                        'scheme.label': 'NGDA Portfolio Themes',
-                        fields: 'scheme',
-                        size: 9999,
-                        sort: 'label,asc',
-                        bust: new Date().getTime()
-                    }
-                }).then(function (response) {
-                    // let total = response.data.totalResults;
-                    _this.values = response.data.results.slice(0);
-                }, function (response) {
-                    console.log("(" + response.status + ") " + response.statusText);
-                }).catch(function (e) {
-                    console.log("Error fetching NGDA Themes: " + e.message);
-                });
-            };
-        }],
-        template: "\n            <div class=\"card c-query-filter c-browse-filter\">\n                <h5 class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span>Filter by NGDA Themes</span>\n                </h5>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Theme\n                        </a>\n                        <a ng-repeat=\"theme in $ctrl.values track by $index\"\n                            class=\"c-facet__value\" ng-click=\"$ctrl.toggle(theme)\"\n                            ng-class=\"{active:$ctrl.isSelected(theme)}\">\n                                <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                                <span class=\"glyphicon\"\n                                    ng-class=\"{'glyphicon-check':$ctrl.isSelected(theme),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(theme)}\"></span>\n                                {{theme.label}}\n                            </a>\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
 (function () {
     "use strict";
 
@@ -3509,8 +3509,62 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
          */
         var AuthService = /** @class */function () {
             function AuthService() {
-                this.init();
+                var self = this;
+                var user = self.init();
+                if (!user && window.self === window.top) self.ssoCheck();
             }
+            AuthService.prototype.ssoCheck = function () {
+                var self = this;
+                var ssoURL = "/login?sso=true&cachebuster=" + new Date().getTime();
+                var ssoIframe = this.createIframe(ssoURL);
+                addEventListener('message', function (event) {
+                    // Handle SSO login failure
+                    if (event.data === 'iframe:ssoFailed') {
+                        ssoIframe.remove();
+                        // Force login only after SSO has failed
+                        if (Config.FORCE_LOGIN) self.forceLogin();
+                    }
+                    // Handle User Authenticated
+                    if (event.data === 'iframe:userAuthenticated') {
+                        ssoIframe.remove();
+                        self.init(); // will broadcast to angular (side-effect)
+                    }
+                    // Handle logout event
+                    if (event.data === 'userSignOut') {
+                        $rootScope.$broadcast("userSignOut");
+                    }
+                });
+            };
+            /**
+             * We keep this outside the constructor so that other services call
+             * call it to trigger the side-effects.
+             *
+             * @method init
+             */
+            AuthService.prototype.init = function () {
+                var jwt = this.getJWT();
+                if (jwt) this.setAuth(jwt);
+                //clean hosturl on redirect from oauth
+                if (getJWTFromUrl()) {
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=.*\&token_type=Bearer/, ''));
+                    } else {
+                        $window.location.search.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '');
+                    }
+                }
+                return this.getUserFromJWT(jwt);
+            };
+            /**
+             * Unpacks JWT to see if session is valid.
+             */
+            AuthService.prototype.createIframe = function (url) {
+                var iframe = document.createElement('iframe');
+                iframe.style.display = "none";
+                iframe.src = url;
+                document.body.appendChild(iframe);
+                return iframe;
+            };
+            ;
             /**
              * Redirects or displays login window the page to the login site
              */
@@ -3535,12 +3589,26 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
              */
             AuthService.prototype.logout = function () {
                 var self = this;
-                $http.get(Config.IDP_BASE_URL + '/auth/revoke').then(function (response) {
-                    window.location.href = Config.LOGOUT_URL ? Config.LOGOUT_URL : window.location.host;
+                // Create iframe to manually call the logout and remove gpoauth cookie
+                // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
+                // this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
+                // Save JWT to send with final request to revoke it
+                var jwt = this.getJWT();
+                self.removeAuth(); // purge the JWT
+                return $http({
+                    method: 'GET',
+                    url: "/revoke?sso=true",
+                    headers: {
+                        Authorization: "Bearer " + jwt
+                    }
+                }).then(function () {
+                    if (Config.LOGOUT_URL) {
+                        window.location.href = Config.LOGOUT_URL;
+                    } else {
+                        window.location.reload();
+                    }
                 }).catch(function (err) {
-                    return console.log(err);
-                }).finally(function () {
-                    return self.removeAuth();
+                    return console.log('Error logging out: ', err);
                 });
             };
             ;
@@ -3567,35 +3635,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     Q.reject(null);
                 }
                 return Q.promise;
-            };
-            ;
-            /**
-             * Unpacks JWT to see if session is valid.
-             *
-             * Side Effects:
-             *  - Will redirect user to login url if FORCE_LOGIN is set an no valid user is found
-             *
-             * @return {User} - the authenticated user or undefined
-             */
-            AuthService.prototype.init = function () {
-                var jwt = this.getJWT();
-                if (jwt) {
-                    this.setAuth(jwt); // Save JWT in Auhorization Header
-                    // No valid userdata found
-                } else {
-                    // Redirect if settings set
-                    if (Config.FORCE_LOGIN) this.forceLogin();
-                }
-                //clean hosturl on redirect from oauth
-                if (getJWTFromUrl()) {
-                    if (window.history && window.history.replaceState) {
-                        window.history.replaceState({}, 'Remove token from URL', $window.location.href.replace(/[\?\&\%3F]access_token=[^\&]*\&token_type=Bearer/, ''));
-                    } else {
-                        $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '');
-                    }
-                }
-                // return the user
-                return this.getUserFromJWT(jwt);
             };
             ;
             /**
@@ -3673,23 +3712,28 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                     if (user) {
                         q.resolve(user);
                     } else {
-                        // Case 1
+                        // Case 1 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: true
                         if (Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN) {
                             // Resolve with user once they have logged in
                             $rootScope.$on('userAuthenticated', function (event, user) {
                                 q.resolve(user);
                             });
-                            self.forceLogin();
                         }
-                        // Case 2
+                        // Case 2 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: false
                         if (Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN) {
-                            q.resolve(null); // or reject?
+                            q.resolve(null);
                         }
-                        // Case 3
+                        // Case 3 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: true
                         if (!Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN) {
-                            self.forceLogin();
+                            addEventListener('message', function (event) {
+                                // Handle SSO login failure
+                                if (event.data === 'iframe:ssoFailed') {
+                                    q.resolve(self.getUser());
+                                }
+                            });
+                            // q.resolve(null)
                         }
-                        // Case 4
+                        // Case 4 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: false
                         if (!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN) {
                             q.resolve(null); // or reject?
                         }
@@ -3864,6 +3908,11 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             AuthService.prototype.setAuth = function (jwt) {
                 window.localStorage.gpoauthJWT = jwt;
                 $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
+                // Pass the event to any parent page hosting this one
+                if (window.self != window.top) {
+                    window.parent.postMessage("iframe:userAuthenticated", '*');
+                }
+                $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
                 // $http.defaults.useXDomain = true;
             };
             ;
@@ -3873,6 +3922,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             AuthService.prototype.removeAuth = function () {
                 delete window.localStorage.gpoauthJWT;
                 delete $http.defaults.headers.common.Authorization;
+                // Pass the event to any parent page hosting this one
+                if (window.self != window.top) {
+                    window.parent.postMessage("userSignOut", '*');
+                }
+                // Send null user as well (backwards compatability)
+                $rootScope.$broadcast("userAuthenticated", null);
                 $rootScope.$broadcast("userSignOut");
                 // $http.defaults.useXDomain = false;
             };
@@ -3905,27 +3960,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 minimal: '@'
             },
             replace: true,
-            template: ['<div class="gpLoginCover" ng-if="requireLogin">' + '   <div class="gpLoginWindow">' + '     <iframe src="/login"></iframe>' + '   </div>' + '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
+            template: "<div class=\"gpLoginCover\" ng-if=\"requireLogin\">\n              <div class=\"gpLoginWindow\">\n                <iframe src=\"/login?cachebuster=" + new Date().getTime() + "\"></iframe>\n              </div>\n            </div>",
+            controller: ["$scope", "$element", "$timeout", function controller($scope, $element, $timeout) {
                 $scope.requireLogin = false;
-                function startAuthIntervalCheck(delay) {
-                    // Setup check for localstorage set and close iframe when set
-                    var timeout = setInterval(function () {
-                        AuthenticationService.check().then(function (user) {
-                            if (user) {
-                                // close iframe
-                                $scope.requireLogin = false;
-                                $rootScope.$broadcast("userAuthenticated", user);
-                                clearTimeout(timeout); // All Done here
-                                AuthenticationService.init();
-                            }
-                        });
-                    }, delay);
-                }
                 // Catch the request to display login modal
                 $scope.$on('auth:requireLogin', function () {
-                    $scope.requireLogin = true;
-                    startAuthIntervalCheck(500);
+                    $timeout(function () {
+                        $scope.requireLogin = true;
+                    });
+                });
+                // Catch the request to display login modal
+                $scope.$on('userAuthenticated', function () {
+                    $timeout(function () {
+                        $scope.requireLogin = false;
+                    });
                 });
             }]
         };
@@ -3940,25 +3988,26 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' +
             //logged in
             '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' + '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
+            controller: ["$scope", "$rootScope", "$element", function controller($scope, $rootScope, $element) {
                 if ($scope.minimal === 'true') $scope.minimal = true;
                 if ($scope.minimal !== true) $scope.minimal = false;
-                $scope.idpUrl = Config.idmUrl;
-                // console.log("IDM Base Url: " + Config.idmUrl);
-                AuthenticationService.getUser(function (user) {
+                $scope.user = AuthenticationService.getUser();
+                $rootScope.$on('userAuthenticated', function (event, user) {
                     $timeout(function () {
                         $scope.user = user;
-                    }, 100);
+                    });
+                });
+                $rootScope.$on('userSignOut', function (event) {
+                    $timeout(function () {
+                        $scope.user = null;
+                    });
                 });
                 $scope.login = function () {
-                    $scope.user = AuthenticationService.login();
+                    AuthenticationService.login();
                 };
                 $scope.logout = function () {
-                    $scope.user = AuthenticationService.logout();
+                    AuthenticationService.logout();
                 };
-                $rootScope.$on('userAuthenticated', function (event, user) {
-                    $scope.user = user;
-                });
             }]
         };
     }]).directive('gpAccountDetails', ['$timeout', 'AuthenticationService', 'GPConfig', function ($timeout, AuthenticationService, Config) {
@@ -3966,18 +4015,23 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             scope: {},
             replace: true,
             template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' + '  </div>', '</div>'].join(' '),
-            controller: ["$scope", "$element", function controller($scope, $element) {
-                $scope.idpUrl = Config.idmUrl;
-                AuthenticationService.getUser(function (user /* TODO: lift User */) {
+            controller: ["$scope", "$rootScope", "$element", "$timeout", function controller($scope, $rootScope, $element, $timeout) {
+                $scope.user = AuthenticationService.getUser();
+                $rootScope.$on('userAuthenticated', function (event, user) {
                     $timeout(function () {
                         $scope.user = user;
-                    }, 100);
+                    });
+                });
+                $rootScope.$on('userSignOut', function (event) {
+                    $timeout(function () {
+                        $scope.user = null;
+                    });
                 });
                 $scope.login = function () {
-                    $scope.user = AuthenticationService.login();
+                    AuthenticationService.login();
                 };
                 $scope.logout = function () {
-                    $scope.user = AuthenticationService.logout();
+                    AuthenticationService.logout();
                 };
             }]
         };

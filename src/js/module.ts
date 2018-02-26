@@ -38,7 +38,6 @@
             if(!GeoPlatform.IDP_BASE_URL) missing('IDP_BASE_URL');
             if(!GeoPlatform.APP_ID) missing('APP_ID');
         }
-
         // Convert boolean implicits
         // All because !!'false' === true (WAT typing!!!)
         function toREALBoolean(val: any): boolean {

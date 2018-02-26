@@ -123,7 +123,76 @@
          */
         class AuthService {
 
-          constructor(){ this.init(); }
+          iframe: HTMLIFrameElement
+
+          constructor(){
+            const self = this;
+
+            const user = self.init()
+            if(!user && (window.self === window.top))
+              self.ssoCheck()
+          }
+
+          ssoCheck(){
+            const self = this;
+            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
+            const ssoIframe = this.createIframe(ssoURL)
+
+            addEventListener('message', (event: any) => {
+              // Handle SSO login failure
+              if(event.data === 'iframe:ssoFailed'){
+                ssoIframe.remove()
+                // Force login only after SSO has failed
+                if(Config.FORCE_LOGIN) self.forceLogin()
+              }
+
+              // Handle User Authenticated
+              if(event.data === 'iframe:userAuthenticated'){
+                ssoIframe.remove()
+                self.init() // will broadcast to angular (side-effect)
+              }
+
+              // Handle logout event
+              if(event.data === 'userSignOut'){
+                $rootScope.$broadcast("userSignOut")
+              }
+            })
+          }
+
+          /**
+           * We keep this outside the constructor so that other services call
+           * call it to trigger the side-effects.
+           *
+           * @method init
+           */
+          init(){
+            const jwt = this.getJWT();
+            if(jwt) this.setAuth(jwt)
+
+            //clean hosturl on redirect from oauth
+            if (getJWTFromUrl()) {
+              if(window.history && window.history.replaceState){
+                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '') )
+              } else {
+                $window.location.search.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '')
+              }
+            }
+
+            return this.getUserFromJWT(jwt)
+          }
+
+          /**
+           * Unpacks JWT to see if session is valid.
+           */
+          createIframe(url: string): HTMLIFrameElement {
+            let iframe = document.createElement('iframe')
+
+            iframe.style.display = "none";
+            iframe.src = url
+            document.body.appendChild(iframe);
+
+            return iframe
+          };
 
           /**
            * Redirects or displays login window the page to the login site
@@ -155,16 +224,29 @@
            */
           logout() {
             const self = this;
+            // Create iframe to manually call the logout and remove gpoauth cookie
+            // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
+            // this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
 
-            $http.get(Config.IDP_BASE_URL + '/auth/revoke')
-            .then(response => {
-              window.location.href = Config.LOGOUT_URL ?
-                                      Config.LOGOUT_URL :
-                                      window.location.host
-            })
-            .catch((err: Error) => console.log(err))
-            //implicitly remove incase the idp is down and the revoke call does not work
-            .finally(() => self.removeAuth());
+            // Save JWT to send with final request to revoke it
+            const jwt = this.getJWT()
+            self.removeAuth() // purge the JWT
+
+            return $http({
+                      method: 'GET',
+                      url: `/revoke?sso=true`,
+                      headers: {
+                        Authorization: `Bearer ${jwt}`
+                      }
+                    })
+                    .then(() => {
+                      if(Config.LOGOUT_URL){
+                        window.location.href = Config.LOGOUT_URL
+                      } else {
+                        window.location.reload();
+                      }
+                    })
+                    .catch((err: Error) => console.log('Error logging out: ', err));
           };
 
           /**
@@ -190,38 +272,6 @@
             }
 
             return Q.promise
-          };
-
-          /**
-           * Unpacks JWT to see if session is valid.
-           *
-           * Side Effects:
-           *  - Will redirect user to login url if FORCE_LOGIN is set an no valid user is found
-           *
-           * @return {User} - the authenticated user or undefined
-           */
-          init(): User {
-            const jwt = this.getJWT();
-            if(jwt){
-               this.setAuth(jwt); // Save JWT in Auhorization Header
-
-            // No valid userdata found
-            } else {
-              // Redirect if settings set
-              if(Config.FORCE_LOGIN) this.forceLogin();
-            }
-
-            //clean hosturl on redirect from oauth
-            if (getJWTFromUrl()) {
-              if(window.history && window.history.replaceState){
-                window.history.replaceState( {} , 'Remove token from URL', $window.location.href.replace(/[\?\&\%3F]access_token=[^\&]*\&token_type=Bearer/, '') )
-              } else {
-                $window.location.search.replace(/[\?\&]access_token=[^\&]*\&token_type=Bearer/, '')
-              }
-            }
-
-            // return the user
-            return this.getUserFromJWT(jwt)
           };
 
           /**
@@ -307,23 +357,28 @@
                 if(user) {
                   q.resolve(user)
                 } else {
-                  // Case 1
+                  // Case 1 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: true
                   if(Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
                     // Resolve with user once they have logged in
                     $rootScope.$on('userAuthenticated', (event: ng.IAngularEvent, user: User) => {
                       q.resolve(user)
                     })
-                    self.forceLogin()
                   }
-                  // Case 2
+                  // Case 2 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: false
                   if(Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
-                    q.resolve(null) // or reject?
+                    q.resolve(null)
                   }
-                  // Case 3
+                  // Case 3 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: true
                   if(!Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
-                    self.forceLogin()
+                    addEventListener('message', (event: any) => {
+                      // Handle SSO login failure
+                      if(event.data === 'iframe:ssoFailed'){
+                        q.resolve(self.getUser())
+                      }
+                    })
+                    // q.resolve(null)
                   }
-                  // Case 4
+                  // Case 4 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: false
                   if(!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
                     q.resolve(null) // or reject?
                   }
@@ -505,6 +560,12 @@
           setAuth(jwt: string) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
+            // Pass the event to any parent page hosting this one
+            if(window.self != window.top){
+              window.parent.postMessage("iframe:userAuthenticated", '*');
+            }
+            $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
+
             // $http.defaults.useXDomain = true;
           };
 
@@ -514,7 +575,14 @@
           removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
+            // Pass the event to any parent page hosting this one
+            if(window.self != window.top){
+              window.parent.postMessage("userSignOut", '*');
+            }
+            // Send null user as well (backwards compatability)
+            $rootScope.$broadcast("userAuthenticated", null)
             $rootScope.$broadcast("userSignOut")
+
             // $http.defaults.useXDomain = false;
           };
         }
@@ -562,37 +630,25 @@
             minimal: '@'
           },
           replace: true,
-          template: [
-            '<div class="gpLoginCover" ng-if="requireLogin">' +
-            '   <div class="gpLoginWindow">'  +
-            '     <iframe src="/login"></iframe>' +
-            '   </div>' +
-            '</div>'
-          ].join(' '),
-          controller: function($scope, $element) {
+          template:
+            `<div class="gpLoginCover" ng-if="requireLogin">
+              <div class="gpLoginWindow">
+                <iframe src="/login?cachebuster=${(new Date()).getTime()}"></iframe>
+              </div>
+            </div>`,
+          controller: function($scope, $element, $timeout) {
             $scope.requireLogin = false;
-
-            function startAuthIntervalCheck(delay: number){
-              // Setup check for localstorage set and close iframe when set
-              const timeout = setInterval(function(){
-                AuthenticationService.check()
-                .then((user: any) => {
-                  if(user){
-                    // close iframe
-                    $scope.requireLogin = false;
-                    $rootScope.$broadcast("userAuthenticated", user)
-                    clearTimeout(timeout) // All Done here
-                    AuthenticationService.init()
-                  }
-                })
-              }, delay)
-            }
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
-              $scope.requireLogin = true;
-              startAuthIntervalCheck(500);
+              $timeout(function(){ $scope.requireLogin = true; })
             });
+
+            // Catch the request to display login modal
+            $scope.$on('userAuthenticated', function(){
+               $timeout(function(){ $scope.requireLogin = false })
+            });
+
           }
         };
       }
@@ -645,31 +701,24 @@
 
             '</div>'
         ].join(' '),
-        controller: function($scope, $element) {
+        controller: function($scope, $rootScope, $element) {
 
             if ($scope.minimal === 'true') $scope.minimal = true;
             if ($scope.minimal !== true) $scope.minimal = false;
 
-            $scope.idpUrl = Config.idmUrl;
-            // console.log("IDM Base Url: " + Config.idmUrl);
+            $scope.user = AuthenticationService.getUser();
 
-            AuthenticationService.getUser(function(user: any) {
-              $timeout(function() {
-                $scope.user = user;
-              }, 100);
+            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+              $timeout(function(){ $scope.user = user;})
             });
 
-            $scope.login = function() {
-                $scope.user = AuthenticationService.login();
-            };
+            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
+              $timeout(function(){ $scope.user = null; })
+            });
 
-            $scope.logout = function() {
-                $scope.user = AuthenticationService.logout();
-            };
+            $scope.login = function() { AuthenticationService.login(); };
 
-            $rootScope.$on('userAuthenticated', (event: Event, user: any) => {
-              $scope.user = user;
-            })
+            $scope.logout = function() { AuthenticationService.logout(); };
         }
       };
     }
@@ -713,23 +762,21 @@
               '  </div>',
               '</div>'
           ].join(' '),
-          controller: function($scope, $element) {
+          controller: function($scope: any, $rootScope: any, $element: ng.IRootElementService, $timeout: ng.ITimeoutService) {
 
-              $scope.idpUrl = Config.idmUrl;
+            $scope.user = AuthenticationService.getUser();
 
-              AuthenticationService.getUser(function(user: any /* TODO: lift User */) {
-                $timeout(function() {
-                  $scope.user = user;
-                }, 100);
-              });
+            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+              $timeout(function(){ $scope.user = user; })
+            });
 
-              $scope.login = function() {
-                  $scope.user = AuthenticationService.login();
-              };
+            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
+              $timeout(function(){ $scope.user = null; })
+            });
 
-              $scope.logout = function() {
-                  $scope.user = AuthenticationService.logout();
-              };
+            $scope.login = function() { AuthenticationService.login(); };
+
+            $scope.logout = function() { AuthenticationService.logout(); };
 
           }
       };
