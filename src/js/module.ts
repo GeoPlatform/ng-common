@@ -24,7 +24,7 @@
         }
 
         // General
-        if(!GeoPlatform.env && !GeoPlatform.ENV && GeoPlatform.NODE_ENV){
+        if(!GeoPlatform.env && !GeoPlatform.ENV && !GeoPlatform.NODE_ENV){
             missing(`"env", "ENV", or "NODE_ENV"`)
         }
         // if(!GeoPlatform.portalUrl){ missing(`"portalUrl"`) }
