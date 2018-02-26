@@ -243,11 +243,8 @@
                       }
                     })
                     .then(() => {
-                      if(Config.LOGOUT_URL){
-                        window.location.href = Config.LOGOUT_URL
-                      } else {
-                        window.location.reload();
-                      }
+                      if(Config.LOGOUT_URL) window.location.href = Config.LOGOUT_URL
+                      if(Config.FORCE_LOGIN) self.forceLogin();
                     })
                     .catch((err: Error) => console.log('Error logging out: ', err));
           };
