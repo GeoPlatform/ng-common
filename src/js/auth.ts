@@ -142,6 +142,8 @@
               // Handle SSO login failure
               if(event.data === 'iframe:ssoFailed'){
                 ssoIframe.remove()
+                // Force login only after SSO has failed
+                if(Config.FORCE_LOGIN) self.forceLogin()
               }
 
               // Handle User Authenticated
@@ -165,14 +167,7 @@
            */
           init(){
             const jwt = this.getJWT();
-            if(jwt){
-               this.setAuth(jwt); // Save JWT in Auhorization Header
-
-            // No valid userdata found
-            } else {
-              // Redirect if settings set
-              if(Config.FORCE_LOGIN) this.forceLogin();
-            }
+            if(jwt) this.setAuth(jwt)
 
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
@@ -362,23 +357,28 @@
                 if(user) {
                   q.resolve(user)
                 } else {
-                  // Case 1
+                  // Case 1 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: true
                   if(Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
                     // Resolve with user once they have logged in
                     $rootScope.$on('userAuthenticated', (event: ng.IAngularEvent, user: User) => {
                       q.resolve(user)
                     })
-                    self.forceLogin()
                   }
-                  // Case 2
+                  // Case 2 - ALLOWIFRAMELOGIN: true | FORCE_LOGIN: false
                   if(Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
-                    q.resolve(null) // or reject?
+                    q.resolve(null)
                   }
-                  // Case 3
+                  // Case 3 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: true
                   if(!Config.ALLOWIFRAMELOGIN && Config.FORCE_LOGIN){
-                    self.forceLogin()
+                    addEventListener('message', (event: any) => {
+                      // Handle SSO login failure
+                      if(event.data === 'iframe:ssoFailed'){
+                        q.resolve(self.getUser())
+                      }
+                    })
+                    // q.resolve(null)
                   }
-                  // Case 4
+                  // Case 4 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: false
                   if(!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
                     q.resolve(null) // or reject?
                   }
