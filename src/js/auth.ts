@@ -633,7 +633,7 @@
           template:
             `<div class="gpLoginCover" ng-if="requireLogin">
               <div class="gpLoginWindow">
-                <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading`)}&cachebuster=${(new Date()).getTime()}"></iframe>
+                <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
             </div>`,
           controller: function($scope, $element, $timeout) {
