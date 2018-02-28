@@ -182,7 +182,10 @@
           }
 
           /**
-           * Unpacks JWT to see if session is valid.
+           * Create an invisable iframe and appends it to the bottom of the page.
+           *
+           * @method createIframe
+           * @returns {HTMLIFrameElement}
            */
           createIframe(url: string): HTMLIFrameElement {
             let iframe = document.createElement('iframe')
@@ -240,11 +243,8 @@
                       }
                     })
                     .then(() => {
-                      if(Config.LOGOUT_URL){
-                        window.location.href = Config.LOGOUT_URL
-                      } else {
-                        window.location.reload();
-                      }
+                      if(Config.LOGOUT_URL) window.location.href = Config.LOGOUT_URL
+                      if(Config.FORCE_LOGIN) self.forceLogin();
                     })
                     .catch((err: Error) => console.log('Error logging out: ', err));
           };
@@ -631,13 +631,24 @@
           },
           replace: true,
           template:
-            `<div class="gpLoginCover" ng-if="requireLogin">
-              <div class="gpLoginWindow">
-                <iframe src="/login?cachebuster=${(new Date()).getTime()}"></iframe>
+            `<div class="gpLoginCover" ng-show="requireLogin">
+
+              <button class="btn btn-cancel gpLoginCancelIframe pull-right"
+                ng-show="!FORCE_LOGIN"
+                ng-click="cancel()">
+                Cancel
+                <span class="glyphicon glyphicon-remove-sign"></span>
+              </button>
+
+              <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->
+              <div class="gpLoginWindow" ng-if="requireLogin">
+                <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
+
             </div>`,
           controller: function($scope, $element, $timeout) {
             $scope.requireLogin = false;
+            $scope.FORCE_LOGIN = Config.FORCE_LOGIN;
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
@@ -648,6 +659,12 @@
             $scope.$on('userAuthenticated', function(){
                $timeout(function(){ $scope.requireLogin = false })
             });
+
+            $scope.cancel = function(){
+              console.log("CALLED")
+              $scope.requireLogin = false
+
+            }
 
           }
         };
@@ -693,8 +710,8 @@
             '      </div>' +
             '    </li>' +
             '    <li class="divider"></li>' +
-            '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' +
-            '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' +
+            '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Info</a></li>' +
+            '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/updatepw">Change Password</a></li>' +
             '    <li><a href ng-click="logout()">Sign Out</a></li>' +
             '  </ul>' +
 
@@ -703,22 +720,24 @@
         ].join(' '),
         controller: function($scope, $rootScope, $element) {
 
-            if ($scope.minimal === 'true') $scope.minimal = true;
-            if ($scope.minimal !== true) $scope.minimal = false;
+          $scope.IDP_BASE_URL = Config.IDP_BASE_URL
 
-            $scope.user = AuthenticationService.getUser();
+          if ($scope.minimal === 'true') $scope.minimal = true;
+          if ($scope.minimal !== true) $scope.minimal = false;
 
-            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
-              $timeout(function(){ $scope.user = user;})
-            });
+          $scope.user = AuthenticationService.getUser();
 
-            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
-              $timeout(function(){ $scope.user = null; })
-            });
+          $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+            $timeout(function(){ $scope.user = user;})
+          });
 
-            $scope.login = function() { AuthenticationService.login(); };
+          $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
+            $timeout(function(){ $scope.user = null; })
+          });
 
-            $scope.logout = function() { AuthenticationService.logout(); };
+          $scope.login = function() { AuthenticationService.login(); };
+
+          $scope.logout = function() { AuthenticationService.logout(); };
         }
       };
     }
@@ -754,16 +773,17 @@
               '  <hr/>',
               '  <div ng-if="user">',
               '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' +
-              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' +
+              '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Details</a>' +
               '  </div>',
               '  <div ng-if="!user">',
               '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' +
-              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' +
+              '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/register">Register</a>' +
               '  </div>',
               '</div>'
           ].join(' '),
           controller: function($scope: any, $rootScope: any, $element: ng.IRootElementService, $timeout: ng.ITimeoutService) {
 
+            $scope.IDP_BASE_URL = Config.IDP_BASE_URL
             $scope.user = AuthenticationService.getUser();
 
             $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
