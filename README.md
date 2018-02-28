@@ -114,18 +114,18 @@ Apps have the abilility to allow for authentication via iframe and keep the user
 ### Autentication Configuration
 The following are property that sould be found at the top level of the GeoPlatorm namespace:
 
-| property | required | description | values | default
+| property | required | description | type | default
 |---|---|---|---|---|
+| IDP_BASE_URL | yes | URL of the Oauth serice. | string | N/A |
 | AUTH_TYPE | no | Type of token to request from gpoauth.  | token, grant | grant |
-| ALLOWIFRAMELOGIN | no | Allow ng-common to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | true, false | false |
-| FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | true, false | false |
-| IDP_BASE_URL | yes* | URL of the Oauth serice. | N/A | N/A |
-| APP_ID | yes* | Id (client_id) of appliction registerd with the Oauth service provider. | N/A | N/A |
-| CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | N/A | /login |
-| LOGIN_URL | no | URL to redirect browser to when auth type is 'token'. | N/A | /login |
-| LOGOUT_URL | no | Url to redirec user to when they preform the logout action. | N/A | (will redirect to the portalUrl or root of application) |
+| ALLOWIFRAMELOGIN | no | Allow ng-common to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | boolean | false |
+| FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | boolean | false |
+| APP_ID | yes* | Id (client_id) of appliction registerd with the Oauth service provider. | string | N/A |
+| CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | string | /login |
+| LOGIN_URL | no | URL to redirect browser to when auth type is 'token'. | string | /login |
+| LOGOUT_URL | no | Url to redirec user to when they preform the logout action. | string | |
 
-\* : indicates required configuration when authorization is type 'token'.
+\* only required configuration when authorization is type 'token'.
 
 <br><br>
 ## Directives

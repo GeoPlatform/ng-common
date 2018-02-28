@@ -693,8 +693,8 @@
             '      </div>' +
             '    </li>' +
             '    <li class="divider"></li>' +
-            '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' +
-            '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' +
+            '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Info</a></li>' +
+            '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/updatepw">Change Password</a></li>' +
             '    <li><a href ng-click="logout()">Sign Out</a></li>' +
             '  </ul>' +
 
@@ -703,22 +703,24 @@
         ].join(' '),
         controller: function($scope, $rootScope, $element) {
 
-            if ($scope.minimal === 'true') $scope.minimal = true;
-            if ($scope.minimal !== true) $scope.minimal = false;
+          $scope.IDP_BASE_URL = Config.IDP_BASE_URL
 
-            $scope.user = AuthenticationService.getUser();
+          if ($scope.minimal === 'true') $scope.minimal = true;
+          if ($scope.minimal !== true) $scope.minimal = false;
 
-            $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
-              $timeout(function(){ $scope.user = user;})
-            });
+          $scope.user = AuthenticationService.getUser();
 
-            $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
-              $timeout(function(){ $scope.user = null; })
-            });
+          $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
+            $timeout(function(){ $scope.user = user;})
+          });
 
-            $scope.login = function() { AuthenticationService.login(); };
+          $rootScope.$on('userSignOut', function(event: ng.IAngularEvent){
+            $timeout(function(){ $scope.user = null; })
+          });
 
-            $scope.logout = function() { AuthenticationService.logout(); };
+          $scope.login = function() { AuthenticationService.login(); };
+
+          $scope.logout = function() { AuthenticationService.logout(); };
         }
       };
     }
@@ -754,16 +756,17 @@
               '  <hr/>',
               '  <div ng-if="user">',
               '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' +
-              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' +
+              '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Details</a>' +
               '  </div>',
               '  <div ng-if="!user">',
               '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' +
-              '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' +
+              '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/register">Register</a>' +
               '  </div>',
               '</div>'
           ].join(' '),
           controller: function($scope: any, $rootScope: any, $element: ng.IRootElementService, $timeout: ng.ITimeoutService) {
 
+            $scope.IDP_BASE_URL = Config.IDP_BASE_URL
             $scope.user = AuthenticationService.getUser();
 
             $rootScope.$on('userAuthenticated', function(event: ng.IAngularEvent, user: any){
