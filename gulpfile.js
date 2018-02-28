@@ -82,3 +82,9 @@ gulp.task('less', 'Compile less into a single app.css.', function() {
 
 
 gulp.task('default', ['jshint', 'js', 'less']);
+
+gulp.task('watch', function() {
+    gulp.watch('src/**/*.less', ['less']);
+    gulp.watch('src/**/*.js', ['default']);
+    gulp.watch('src/**/*.ts', ['default']);
+});
