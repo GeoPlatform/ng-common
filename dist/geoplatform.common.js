@@ -19,14 +19,15 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         if (!GeoPlatform.env && !GeoPlatform.ENV && !GeoPlatform.NODE_ENV) {
             missing("\"env\", \"ENV\", or \"NODE_ENV\"");
         }
-        // if(!GeoPlatform.portalUrl){ missing(`"portalUrl"`) }
         // Auth Settings
+        if (!GeoPlatform.IDP_BASE_URL) {
+            missing("\"IDP_BASE_URL\"");
+        }
         if (GeoPlatform.AUTH_TYPE && ['token', 'grant'].indexOf(GeoPlatform.AUTH_TYPE) === -1) {
             // Not set is ok as well
             invalid(GeoPlatform.AUTH_TYPE, 'token | grant');
         }
         if (GeoPlatform.AUTH_TYPE === 'token') {
-            if (!GeoPlatform.IDP_BASE_URL) missing('IDP_BASE_URL');
             if (!GeoPlatform.APP_ID) missing('APP_ID');
         }
         // Convert boolean implicits
@@ -1450,6 +1451,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(angular);
 
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
+
 (function (angular, Constants) {
     'use strict';
 
@@ -1712,95 +1802,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';
@@ -3990,9 +3991,10 @@ var __extends = undefined && undefined.__extends || function () {
                 minimal: '@'
             },
             replace: true,
-            template: "<div class=\"gpLoginCover\" ng-if=\"requireLogin\">\n              <div class=\"gpLoginWindow\">\n                <iframe src=\"/login?redirect_url=" + encodeURIComponent(window.location.origin + "/auth/loading?cachebuster=" + new Date().getTime()) + "&cachebuster=" + new Date().getTime() + "\"></iframe>\n              </div>\n            </div>",
+            template: "<div class=\"gpLoginCover\" ng-show=\"requireLogin\">\n\n              <button class=\"btn btn-cancel gpLoginCancelIframe pull-right\"\n                ng-show=\"!FORCE_LOGIN\"\n                ng-click=\"cancel()\">\n                Cancel\n                <span class=\"glyphicon glyphicon-remove-sign\"></span>\n              </button>\n\n              <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->\n              <div class=\"gpLoginWindow\" ng-if=\"requireLogin\">\n                <iframe src=\"/login?redirect_url=" + encodeURIComponent(window.location.origin + "/auth/loading?cachebuster=" + new Date().getTime()) + "&cachebuster=" + new Date().getTime() + "\"></iframe>\n              </div>\n\n            </div>",
             controller: ["$scope", "$element", "$timeout", function controller($scope, $element, $timeout) {
                 $scope.requireLogin = false;
+                $scope.FORCE_LOGIN = Config.FORCE_LOGIN;
                 // Catch the request to display login modal
                 $scope.$on('auth:requireLogin', function () {
                     $timeout(function () {
@@ -4005,6 +4007,10 @@ var __extends = undefined && undefined.__extends || function () {
                         $scope.requireLogin = false;
                     });
                 });
+                $scope.cancel = function () {
+                    console.log("CALLED");
+                    $scope.requireLogin = false;
+                };
             }]
         };
     }]).directive('gpLoginButton', ['$rootScope', '$timeout', 'AuthenticationService', 'GPConfig', function ($rootScope, $timeout, AuthenticationService, Config) {
@@ -4017,8 +4023,9 @@ var __extends = undefined && undefined.__extends || function () {
             //not logged in
             '  <a class="btn btn-link" ng-click="login()" ng-if="!user">Sign In</a>' +
             //logged in
-            '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a href="{{::idpUrl}}/modifyuser.html">Edit Info</a></li>' + '    <li><a href="{{::idpUrl}}/changepassword.html">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
+            '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' + '   aria-expanded="false" ng-if="user">' + '     <span class="glyphicon glyphicon-user"></span> ' + '     <span class="hidden-xs">{{::user.name}}</span> ' + '     <span class="caret"></span>' + '  </button>' + '  <ul class="dropdown-menu dropdown-menu-right" role="menu" ng-if="user">' + '    <li class="account-details">' + '      <div class="media">' + '        <div class="media-left">' + '          <div class="media-object">' + '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' + '          </div>' + '        </div>' + '        <div class="media-body">' + '          <div class="media-heading">{{::user.name}}</div>' + '          <div><em>{{::user.username}}</em></div>' + '          <div>{{::user.email}}</div>' + '          <div>{{::user.org}}</div>' + '        </div>' + '      </div>' + '    </li>' + '    <li class="divider"></li>' + '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Info</a></li>' + '    <li><a target="_blank" href="{{::IDP_BASE_URL}}/updatepw">Change Password</a></li>' + '    <li><a href ng-click="logout()">Sign Out</a></li>' + '  </ul>' + '</div>'].join(' '),
             controller: ["$scope", "$rootScope", "$element", function controller($scope, $rootScope, $element) {
+                $scope.IDP_BASE_URL = Config.IDP_BASE_URL;
                 if ($scope.minimal === 'true') $scope.minimal = true;
                 if ($scope.minimal !== true) $scope.minimal = false;
                 $scope.user = AuthenticationService.getUser();
@@ -4044,8 +4051,9 @@ var __extends = undefined && undefined.__extends || function () {
         return {
             scope: {},
             replace: true,
-            template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/modifyuser.html">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" href="{{::idpUrl}}/registeruser.html">Register</a>' + '  </div>', '</div>'].join(' '),
+            template: ['<div>' + '  <div class="media">', '    <div class="media-left">', '        <div class="media-object">', '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>', '        </div>', '    </div>', '    <div class="media-body" ng-if="user">', '       <div class="media-heading">{{::user.name}}</div>' + '       <div><small><em>{{::user.username}}</em></small></div>' + '       <div><small>{{::user.email}}</small></div>' + '       <div><small>{{::user.org}}</small></div>' + '    </div>', '    <div class="media-body" ng-if="!user">', '       <div class="media-heading">Please Sign In</div>' + '       <div><small>Sign in to your GeoPlatform account or register a new account.</small></div>' + '    </div>', '  </div>', '  <hr/>', '  <div ng-if="user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="logout()">Sign Out</button>' + '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/profile">Edit Details</a>' + '  </div>', '  <div ng-if="!user">', '    <button type="button" class="btn btn-sm btn-accent pull-right" ng-click="login()">Sign In</button>' + '    <a class="btn btn-sm btn-default" target="_blank" href="{{::IDP_BASE_URL}}/register">Register</a>' + '  </div>', '</div>'].join(' '),
             controller: ["$scope", "$rootScope", "$element", "$timeout", function controller($scope, $rootScope, $element, $timeout) {
+                $scope.IDP_BASE_URL = Config.IDP_BASE_URL;
                 $scope.user = AuthenticationService.getUser();
                 $rootScope.$on('userAuthenticated', function (event, user) {
                     $timeout(function () {

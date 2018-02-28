@@ -631,13 +631,24 @@
           },
           replace: true,
           template:
-            `<div class="gpLoginCover" ng-if="requireLogin">
-              <div class="gpLoginWindow">
+            `<div class="gpLoginCover" ng-show="requireLogin">
+
+              <button class="btn btn-cancel gpLoginCancelIframe pull-right"
+                ng-show="!FORCE_LOGIN"
+                ng-click="cancel()">
+                Cancel
+                <span class="glyphicon glyphicon-remove-sign"></span>
+              </button>
+
+              <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->
+              <div class="gpLoginWindow" ng-if="requireLogin">
                 <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
+
             </div>`,
           controller: function($scope, $element, $timeout) {
             $scope.requireLogin = false;
+            $scope.FORCE_LOGIN = Config.FORCE_LOGIN;
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
@@ -648,6 +659,12 @@
             $scope.$on('userAuthenticated', function(){
                $timeout(function(){ $scope.requireLogin = false })
             });
+
+            $scope.cancel = function(){
+              console.log("CALLED")
+              $scope.requireLogin = false
+
+            }
 
           }
         };
