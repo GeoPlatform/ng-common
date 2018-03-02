@@ -1,0 +1,688 @@
+.gpLoginCover {
+  position: relative;
+  top: 0;
+  left: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 5000;
+  width: 100vw;
+  height: 100vh;
+}
+
+.gpLoginCancelIframe {
+  z-index: 5001;
+  position: absolute;
+  right: 0px;
+}
+
+.gpLoginWindow {
+  top: 100px;
+  height: 60%;
+  width: 75%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5001;
+	border: 5px solid #cccccc;
+  border-radius: 10px;
+}
+
+.gpLoginWindow iframe {
+  width: 100%;
+  height: 100%
+}
+
+.gpLoginWindow .btn-cancel {
+  color: white;
+  background-color: red;
+}
+
+.gpLoginWindow .btn {
+  display: inline-block;
+  padding: 6px 12px;
+  margin-bottom: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.42857143;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  -ms-touch-action: manipulation;
+  touch-action: manipulation;
+  cursor: pointer;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+
+
+.gp-ui-card__body .text--supporting[card-details-carousel-activator] {
+    position: relative;
+    padding-left: 1.5em;
+    padding-right: 1.5em;
+}
+.gp-ui-card__details-activator {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 0 0.25em;
+    color: @color-gray-lt;
+    &.disabled {
+        color: #efefef;
+    }
+}
+.gp-ui-card__details-activator--left {
+    .gp-ui-card__details-activator;
+    left: 0;
+    background: linear-gradient( to left, #fff, #f5f5f5);
+    &:not(.disabled):hover {
+        background: linear-gradient( to left, #fff, #efefef);
+    }
+    // &.disabled {
+    //     color: #efefef;
+    // }
+}
+.gp-ui-card__details-activator--right {
+    .gp-ui-card__details-activator;
+    right: 0;
+    background: linear-gradient( to right, #fff, #f5f5f5);
+    &:not(.disabled):hover {
+        background: linear-gradient( to right, #fff, #efefef);
+    }
+    // &.disabled {
+    //     color: #efefef;
+    // }
+}
+
+
+.gp-colorpicker {
+    
+    margin-top:         .25em;
+    padding-right:      2em;
+
+    & > .rgb-form-group {
+        right:          0;
+        margin-top:     2px;
+        position:       absolute;
+
+        & > .form-control {
+            width:      2em;
+            padding:    0 0 0 .25em;
+            margin:     0 0 .25em 0;
+        }
+    }
+
+    & > .hex-form-group {
+        margin-bottom:  0;
+        min-width:      8.06em; //~129px
+
+        & > .form-control {
+            height:     1.375em;    // ~22px
+            padding:    2px 6px;
+        }
+    }
+
+
+    .gp-colorpicker__wrapper {
+        position:absolute;
+    }
+
+}
+
+/* color picker style overrides */
+.colorpicker.colorpicker-inline {
+
+    .dropdown-menu::before {
+        border: none;
+    }
+    .dropdown-menu::after {
+        display: none;
+    }
+
+    .dropdown-menu {
+        box-shadow: none;
+    }
+}
+
+
+.c-query-filter.card {
+
+    background: transparent;
+    box-shadow: none;
+    padding:    0;
+    font-size:  1em;
+    margin-bottom: 2em;
+
+    .card-title {
+        display:         flex;
+        justify-content: flex-start;
+        align-items:     center;
+        font-size:       0.875em;    //override default card-title style
+        margin-bottom:   0;
+        min-height:      2em;    //for those without collapse buttons
+        color:           lighten(@color-gray-dk, 15%);
+        border-bottom:   1px solid @color-gray-xlt;
+        text-transform:  uppercase;
+
+        .btn-link {
+            color: lighten(@color-gray-dk, 15%);
+        }
+    }
+
+    .c-facets {
+
+        font-size: 0.875rem;
+
+        & > .c-facet__value {
+            border-width:   0 0 0 2px;
+            border-color:   transparent;
+            border-style:   solid;
+            color:          @color-gray-md;
+            padding:        0.5em;
+            font-size:      1em; //override default c-facet__value style
+
+            &:hover {
+                background: fadeOut(@color-gray-xlt, 10%);
+                color:              @color-gray-dk;
+            }
+
+            &.active {
+                background: fadeOut(@color-active, 75%);
+                border-left-color:  @color-active;
+                color:              @color-gray-dk;
+            }
+
+            .badge { float: right; }
+        }
+
+        &.is-collapsed > .c-facet__value.active {
+            background-color: transparent;
+            border-color:     transparent;
+            color:            @color-gray-md;
+        }
+
+        //any inputs that aren't wrapped in a c-facet__value should have a bit of margin
+        .input-group-slick, select {
+            margin-top: 0.5em;
+        }
+        //otherwise, don't...
+        .c-facet__value > .input-group-slick,
+        .c-facet__value > select {
+            margin-top:     0;
+            margin-left:  -.5em;
+            margin-right: -.5em;
+        }
+    }
+
+}
+
+
+
+
+.c-facets {
+    // .u-text--sm;
+}
+
+.c-facets > .c-facet__value {
+
+    display:   block;
+    text-decoration: none;
+    cursor:    pointer;
+    padding:   @px-md;
+    font-size: 0.875em;
+}
+
+.c-facets > .c-facet__value.active {
+    background: @color-active;
+    color: @color-white;
+}
+
+// for list groups in browse filters
+.c-facets {
+
+    & > li > a,
+    & > .c-facet__value {
+        opacity:    1;
+        transition: opacity ease-in-out 0.5s;
+    }
+
+    &.is-collapsed li > a:not(.active),
+    &.is-collapsed > .c-facet__value:not(.active) {
+        opacity: 0;
+        height: 0;
+        padding: 0;
+        border: none;
+        margin-bottom: 0;
+        overflow: hidden;
+    }
+    &.is-collapsed li > a.active,
+    &.is-collapsed > .c-facet__value.active {
+        .t-fg--gray-dk;
+        background-color: transparent;
+    }
+}
+
+
+//override selected value styles when expanded for specific filters
+.c-filter__recommended-terms .c-facets > .c-facet__value.active {
+    background: transparent;
+    color: @color-gray-dk;
+}
+
+.c-facets > .c-facet__value .form-control {
+    //font-size: 1rem;    //override smaller size from parent
+}
+
+
+//this needs to go into an "angular-ext" less file when more things are added
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+  display: none !important;
+}
+
+
+
+
+
+header[gp-flex-header] {
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .brand {
+        flex: 1;
+        float: none;
+        padding: 1em;
+    }
+
+    .header__menu {
+        float: none;
+    }
+
+}
+/* ------------------------------------------------- *\
+    Notifications
+    ...
+\* ------------------------------------------------- */
+
+.notifications {
+    position: fixed;
+    z-index: 9999;
+    bottom: 1rem;
+    right:  1rem;
+    max-height: 50%;
+    overflow: auto;
+}
+
+
+.notification {
+
+    position: fixed;
+    z-index: 3000;
+    width: 30rem;
+    padding: 1rem 2rem;
+    opacity: 1;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 2px;
+
+    .notifications & {
+        position: relative;
+        margin-top: 0.5rem;
+        width: 20rem;
+        font-size: 0.8rem;
+        padding: 0.5rem 1rem;
+        max-height: 10rem;
+        overflow: auto;
+    }
+    
+    &.ng-hide-add, 
+    &.ng-hide-remove {
+        transition: all linear .5s;
+    }
+
+    &.ng-hide {
+        opacity: 0;
+    } 
+
+    .notification__actions {
+        text-align: right;
+
+        button, button.btn-link,
+        a, a.btn-link {
+            color: inherit;
+        }
+    }
+}
+
+.notification--br {
+    bottom: 2rem;
+    right:  1rem;
+}
+.notification--tc {
+    top: 5rem;
+    left: 50%;
+    margin-left: -15rem;
+}
+.notification--tr {
+    top: 5rem;
+    right: 1rem;
+}
+.notification--default {
+    border-color:   @color-gray-md;
+    background:     @color-gray-lt;
+    color:          @color-gray-dk;
+}
+.notification--success {
+    border-color:   darken(@color-success, 20%);
+    background:     lighten(@color-success, 30%); //CEE6CE
+    color:          darken(@color-success, 20%);
+}
+.notification--error {
+    border-color:   darken(@color-danger, 20%);
+    background:     lighten(@color-danger, 30%);
+    color:          darken(@color-danger, 20%);
+}
+.notification--info {
+    border-color:   darken(@color-info, 20%);
+    background:     lighten(@color-info, 30%);
+    color:          darken(@color-info, 20%);
+}
+
+/*  -------------------------------------------
+    PAGINATION COMPONENT STYLES 
+    ------------------------------------------- */
+
+.c-pagination {
+    display:         flex;
+    flex-direction:  row;
+    justify-content: flex-start;
+    align-items:     flex-start;
+    flex-wrap:       wrap;
+
+    .pagination {
+        margin-top: 0;
+        margin-bottom: 0.5em;
+    }
+
+    .c-pagination__total {
+        order: 1;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0.5em;
+    }
+
+    .c-pagination__page-size {
+        order: 2;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+
+        .dropdown {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.4em 0.5em;
+            background: #fefefe;
+        }
+
+    }
+
+    .c-pagination__pages {
+        order: 3;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: stretch;
+
+        & > * {
+            border-width: 1px 0 1px 1px;
+            border-style: solid;
+            border-color: #ddd;
+            background-color: #fefefe;
+
+            &:first-child {
+                border-radius: 4px 0 0 4px;
+            }
+            &:last-child {
+                border-width: 1px;
+                border-radius: 0 4px 4px 0;
+            }
+        }
+    }
+
+    .c-pagination__button {
+        flex-basis: 2.25em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 2.25em;
+        height: 2.25em;
+        color: @color-active;
+        cursor: pointer;
+
+        &:hover {
+            background-color: rgba(0,0,0,0.025);
+        }
+
+        &.is-disabled {
+            color: @color-gray-lt;
+            cursor: not-allowed;
+
+            &:hover {
+                background-color: transparent;
+            }
+        }
+    }
+
+    .c-pagination__page {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        white-space: nowrap;
+        overflow: hidden;
+        padding: 0 1em;
+        height: 2.25em; /* to match .c-pagination__button */
+    }
+
+}
+
+@media(min-width:768px) {
+
+    .c-pagination {
+        flex-direction:  row;
+        justify-content: flex-start;
+        align-items:     stretch;
+        flex-wrap:       wrap;
+        height: auto;
+
+        .c-pagination__total, 
+        .c-pagination__page-size, 
+        .c-pagination__pages {
+            padding: 0 1em 0 0;
+
+            &:last-child {
+                padding-right: 0;
+            }
+        }
+
+        .c-pagination__total, 
+        .c-pagination__page-size, 
+        .c-pagination__pages {
+            margin-bottom: 0.5em;
+        }
+
+        .c-pagination__total {
+            justify-content: center;
+            height: 2.25em; /* to align properly with .form-controls outside pagination */
+        }
+
+        .c-pagination__page-size {
+            justify-content: center;
+            margin-right: 0.5em;
+        }
+
+    }
+}
+
+
+
+/* -----------------------------------------
+    Progress Circle
+------------------------------------------ */
+.c-progress--circle {
+    font-size:  1em;
+    width:      80px;
+    height:     80px;
+    transform:  rotate(-90deg);
+}
+
+.c-progress__meter,
+.c-progress__value {
+    fill: none;
+}
+
+.c-progress__meter {
+    stroke: #f7f7f7;    //unfilled portion color
+}
+
+.c-progress__value {
+    stroke: #393;
+    stroke-linecap: round;
+    animation: progress 2s;
+}
+.c-progress__label {
+    font-size: 1.5em;
+    transform: rotate(90deg);   //compensate for parent rotation
+}
+
+.c-progress--circle--md .c-progress__meter {
+    stroke: @color-gray-xlt;
+}
+.c-progress--circle--dk .c-progress__meter {
+    stroke: @color-gray-lt;
+}
+.c-progress--circle--blue .c-progress__value {
+    stroke: @color-primary;
+}
+
+
+
+
+
+
+.c-kg-editor__header {
+    background: #fff;
+    margin:     1em 1%;
+    padding:    .5em 1em;
+    border:     1px solid @color-gray-xlt;
+    border-radius: 4px;
+}
+
+.c-kg-editor__content {
+    display: block;
+}
+
+.c-kg-editor .c-kg-editor__section {
+    padding: 1em;
+    border-bottom: 1px solid @color-gray-xlt;
+}
+
+@media(min-width: 1200px) {
+
+    .c-kg-editor .c-kg-editor__header {
+        padding: .5em 1.5em;
+    }
+
+    .c-kg-editor .c-kg-editor__section {
+        display:         flex;
+        justify-content: flex-start;
+        align-items:     flex-start;
+        flex-wrap:       wrap;
+        padding:         1em 2em 0;
+
+        & > h3, & > h4, & > h5, & > h6 { flex: 1 0 100%; }
+
+        kg-section {
+            flex: 0 0 48%;
+            &:nth-child(2n+2) { margin-right: 2%; }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+kg-section {
+    display:        block;
+    box-sizing:     border-box;
+    padding:        1em;
+    margin-bottom:  2em;
+    border-radius:  4px;
+    box-shadow:     0 0 2px rgba(0,0,0,0.2);
+    background-color:#fff;
+
+    .list-group-item {
+        display:         flex;
+        justify-content: space-between;
+        align-items:     stretch;
+
+        .btn:first-child {
+            font-size:          1.5em;
+            padding:            0.5em 0.5em;   //12px 12px at 1.5em
+            background-color:   lighten(@color-gray-xlt, 10%);
+            border-right:       1px solid @color-gray-xlt;
+            border-top-left-radius:     4px;
+            border-bottom-left-radius:  4px;
+
+            &:hover {
+                background-color: lighten(@color-gray-xlt, 5%);
+            }
+        }
+    }
+
+    .list-group-sm>.list-group-item {
+        padding: 0;
+    }
+
+    .list-group-item .description {
+        font-size:  0.875em;
+        display:    block;
+        line-height: 1.4;
+        height:     1.3em;
+        overflow:   hidden;
+        color:      @color-gray-md;
+    }
+
+
+    [uib-dropdown-menu].dropdown-menu {
+        font-size:    1em;          //override bootstrap default
+        left:         0;
+        right:        0;            //make span parent width
+        padding:      1.3em 1em 0;
+        top:          -1.5em;       //cover up triggering input when open
+        margin-left:  -1em;
+        margin-right: -1em;
+        display:      block;        //override bootstrap behavior for dd menu
+        z-index:      -1;           //sit behind triggering input until open
+        opacity:      0;            //animate using opacity
+        transition:   .2s linear opacity;
+
+    }
+
+    .dropdown.open [uib-dropdown-menu].dropdown-menu {
+        opacity: 1;
+        z-index: 1;     //sit on top of triggering input when open
+    }
+
+}
+
