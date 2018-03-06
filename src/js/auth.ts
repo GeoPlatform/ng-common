@@ -128,6 +128,19 @@
           constructor(){
             const self = this;
 
+            // Setup general event listeners that always run
+            addEventListener('message', (event: any) => {
+              // Handle User Authenticated
+              if(event.data === 'iframe:userAuthenticated'){
+                self.init() // will broadcast to angular (side-effect)
+              }
+
+              // Handle logout event
+              if(event.data === 'userSignOut'){
+                self.removeAuth()
+              }
+            })
+
             const user = self.init()
             if(!user) self.ssoCheck()
           }
@@ -135,7 +148,7 @@
           ssoCheck(){
             const self = this;
 
-            // Setup handler first
+            // Setup ssoIframe specific handlers
             addEventListener('message', (event: any) => {
               // Handle SSO login failure
               if(event.data === 'iframe:ssoFailed'){
@@ -147,12 +160,6 @@
               // Handle User Authenticated
               if(event.data === 'iframe:userAuthenticated'){
                 ssoIframe.remove()
-                self.init() // will broadcast to angular (side-effect)
-              }
-
-              // Handle logout event
-              if(event.data === 'userSignOut'){
-                $rootScope.$broadcast("userSignOut")
               }
             })
 

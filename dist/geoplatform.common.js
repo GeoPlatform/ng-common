@@ -3558,12 +3558,23 @@ var __extends = undefined && undefined.__extends || function () {
         var AuthService = /** @class */function () {
             function AuthService() {
                 var self = this;
+                // Setup general event listeners that always run
+                addEventListener('message', function (event) {
+                    // Handle User Authenticated
+                    if (event.data === 'iframe:userAuthenticated') {
+                        self.init(); // will broadcast to angular (side-effect)
+                    }
+                    // Handle logout event
+                    if (event.data === 'userSignOut') {
+                        self.removeAuth();
+                    }
+                });
                 var user = self.init();
                 if (!user) self.ssoCheck();
             }
             AuthService.prototype.ssoCheck = function () {
                 var self = this;
-                // Setup handler first
+                // Setup ssoIframe specific handlers
                 addEventListener('message', function (event) {
                     // Handle SSO login failure
                     if (event.data === 'iframe:ssoFailed') {
@@ -3574,11 +3585,6 @@ var __extends = undefined && undefined.__extends || function () {
                     // Handle User Authenticated
                     if (event.data === 'iframe:userAuthenticated') {
                         ssoIframe.remove();
-                        self.init(); // will broadcast to angular (side-effect)
-                    }
-                    // Handle logout event
-                    if (event.data === 'userSignOut') {
-                        $rootScope.$broadcast("userSignOut");
                     }
                 });
                 var ssoURL = "/login?sso=true&cachebuster=" + new Date().getTime();
