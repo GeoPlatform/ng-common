@@ -130,16 +130,27 @@
           constructor(){
             const self = this;
 
+            // Setup general event listeners that always run
+            addEventListener('message', (event: any) => {
+              // Handle User Authenticated
+              if(event.data === 'iframe:userAuthenticated'){
+                self.init() // will broadcast to angular (side-effect)
+              }
+
+              // Handle logout event
+              if(event.data === 'userSignOut'){
+                self.removeAuth()
+              }
+            })
+
             const user = self.init()
-            if(!user && (window.self === window.top))
-              self.ssoCheck()
+            if(!user) self.ssoCheck()
           }
 
           ssoCheck(){
             const self = this;
-            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
-            const ssoIframe = this.createIframe(ssoURL)
 
+            // Setup ssoIframe specific handlers
             addEventListener('message', (event: any) => {
               // Handle SSO login failure
               if(event.data === 'iframe:ssoFailed'){
@@ -151,14 +162,11 @@
               // Handle User Authenticated
               if(event.data === 'iframe:userAuthenticated'){
                 ssoIframe.remove()
-                self.init() // will broadcast to angular (side-effect)
-              }
-
-              // Handle logout event
-              if(event.data === 'userSignOut'){
-                $rootScope.$broadcast("userSignOut")
               }
             })
+
+            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
+            const ssoIframe = this.createIframe(ssoURL)
           }
 
           /**
@@ -562,12 +570,7 @@
           setAuth(jwt: string) {
             window.localStorage.gpoauthJWT = jwt;
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
-            // Pass the event to any parent page hosting this one
-            if(window.self != window.top){
-              window.parent.postMessage("iframe:userAuthenticated", '*');
-            }
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
-
             // $http.defaults.useXDomain = true;
           };
 
@@ -577,14 +580,9 @@
           removeAuth() {
             delete window.localStorage.gpoauthJWT;
             delete $http.defaults.headers.common.Authorization;
-            // Pass the event to any parent page hosting this one
-            if(window.self != window.top){
-              window.parent.postMessage("userSignOut", '*');
-            }
             // Send null user as well (backwards compatability)
             $rootScope.$broadcast("userAuthenticated", null)
             $rootScope.$broadcast("userSignOut")
-
             // $http.defaults.useXDomain = false;
           };
         }
