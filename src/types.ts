@@ -25,6 +25,7 @@ type GeoPlatform = {
   CALLBACK?: string
   LOGIN_URL?: string
   LOGOUT_URL?: string
+  ALLOW_DEV_EDITS?: boolean
 }
 
 // Declare assumed globals

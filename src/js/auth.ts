@@ -106,7 +106,9 @@
 
           isAuthorized(role: string) {
             let env = Config.env || Config.ENV || Config.NODE_ENV;
-            if(env === 'dev' || env === 'development') return true;
+            if((env === 'dev' || env === 'development') &&
+                typeof(Config.ALLOW_DEV_EDITS) !== 'undefined') 
+                return true;
 
             return this.groups &&
                     !!this.groups
