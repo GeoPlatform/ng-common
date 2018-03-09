@@ -82,7 +82,7 @@
           }
 
           toJSON() {
-            return JSON.parse(JSON.stringify(this));
+            return JSON.parse(JSON.stringify(Object.assign({}, this)));
           };
 
           clone() {
@@ -102,7 +102,7 @@
           isAuthorized(role: string) {
             let env = Config.env || Config.ENV || Config.NODE_ENV;
             if((env === 'dev' || env === 'development') &&
-                typeof(Config.ALLOW_DEV_EDITS) !== 'undefined') 
+                typeof(Config.ALLOW_DEV_EDITS) !== 'undefined')
                 return true;
 
             return this.groups &&
