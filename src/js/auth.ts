@@ -4,14 +4,6 @@
 
   'use strict';
 
-  //flag on whether we're in dev env
-  // function isDEV() {
-  //     return "localhost" === window.location.hostname ||
-  //         ~window.location.hostname.indexOf("192.168")||
-  //         ~window.location.hostname.indexOf("localhost")||
-  //         ~window.location.hostname.indexOf("10.0");
-  // }
-
   /**
    * Get token from query string
    *
@@ -57,14 +49,17 @@
     .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig',
       function($q: ng.IQService, $http: ng.IHttpService, $location: ng.ILocationService, $rootScope: ng.IRootScopeService, $window: ng.IWindowService, Config: GeoPlatform) {
 
-        //extend Storage prototype
-        Storage.prototype.setObject = function(key: string, value: any) {
-          this.setItem(key, btoa(JSON.stringify(value)));
+        /**
+         * Security wrapper for obfuscating values passed into local storage
+         */
+        Storage.prototype.saveToLocalStorage = function(key: string, value: any) {
+          this.setItem(key, btoa(value));
         };
-
-        Storage.prototype.getObject = function(key: string) {
-          var value = atob(this.getItem(key));
-          return value && JSON.parse(value);
+        Storage.prototype.getFromLocalStorage = function(key: string) {
+          const raw = this.getItem(key)
+          return raw ?
+                  atob(raw) :
+                  undefined;
         };
 
         class User {
@@ -469,7 +464,7 @@
            * @return {JWT | undefined} An object wih the following format:
            */
           getJWTfromLocalStorage(): string{
-            return window.localStorage.gpoauthJWT
+            return window.localStorage.getFromLocalStorage('gpoauthJWT')
           };
 
           /**
@@ -568,7 +563,8 @@
            * @param {JWT} jwt
            */
           setAuth(jwt: string) {
-            window.localStorage.gpoauthJWT = jwt;
+
+            window.localStorage.saveToLocalStorage('gpoauthJWT', jwt)
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
