@@ -6,7 +6,10 @@
         // value to the root (window) and returning it as well to
         // the AMD loader.
         define([], function() {
-            return (root.AuthenticatedComponent = factory());
+            if(!GeoPlatform) {
+                throw new Error("AuthenticatedComponent - 'GeoPlatform' global not defined!");
+            }
+            return (GeoPlatform.AuthenticatedComponent = root.AuthenticatedComponent = factory());
         });
     } else if(typeof module === "object" && module.exports) {
         // I've not encountered a need for this yet, since I haven't
