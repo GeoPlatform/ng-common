@@ -57,9 +57,13 @@
         };
         Storage.prototype.getFromLocalStorage = function(key: string) {
           const raw = this.getItem(key)
-          return raw ?
-                  atob(raw) :
-                  undefined;
+          try{
+            return raw ?
+                    atob(raw) :
+                    undefined;
+          } catch (e){ // Catch bad encoding or formally not encoded
+            return undefined;
+          }
         };
 
         class User {
