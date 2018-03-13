@@ -5,6 +5,7 @@ const pkg         = require('./package.json'),
       ngAnnotate  = require('gulp-ng-annotate'),
       babel       = require('gulp-babel'),
       es2015      = require('babel-preset-es2015'),
+      assign      = require('babel-plugin-transform-object-assign'),
       uglify      = require('gulp-uglify'),
       rename      = require('gulp-rename'),
       notify      = require('gulp-notify'),
@@ -44,7 +45,7 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         .pipe(tsProject())
         .pipe(srcmaps.init())
         .pipe(concat(pkg.name + '.js'))
-        .pipe(babel({presets: [es2015]}))
+        .pipe(babel({presets: [es2015], plugins: [assign]}))
         .pipe(ngAnnotate()).on('error', notify.onError("Error: <%= error.message %>"))
         .pipe(gulp.dest('dist/'))
         .pipe(uglify()).on('error', notify.onError("Error: <%= error.message %>"))

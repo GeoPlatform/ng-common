@@ -43,7 +43,10 @@
             return JSON.parse(val)
         }
 
-        GeoPlatform.ALLOWIFRAMELOGIN = toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false)
+        // IE-11 : no play nice with iframes and postMessage. Disable iframe login for IE-11 users
+        const isIE11 = !!(window as any).MSInputMethodContext && !!(document as any).documentMode;
+        GeoPlatform.ALLOWIFRAMELOGIN = !isIE11 && toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false)
+
         GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false)
 
         return GeoPlatform;

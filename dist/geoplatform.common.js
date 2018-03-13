@@ -1,5 +1,7 @@
 "use strict";
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 /// <reference path="../types.ts" />
@@ -35,7 +37,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         function toREALBoolean(val) {
             return JSON.parse(val);
         }
-        GeoPlatform.ALLOWIFRAMELOGIN = toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false);
+        // IE-11 : no play nice with iframes and postMessage. Disable iframe login for IE-11 users
+        var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
+        GeoPlatform.ALLOWIFRAMELOGIN = !isIE11 && toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false);
         GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false);
         return GeoPlatform;
     }());
@@ -3526,11 +3530,11 @@ var __extends = undefined && undefined.__extends || function () {
                 this.exp = opts.exp;
             }
             User.prototype.toJSON = function () {
-                return JSON.parse(JSON.stringify(Object.assign({}, this)));
+                return JSON.parse(JSON.stringify(_extends({}, this)));
             };
             ;
             User.prototype.clone = function () {
-                return Object.assign({}, this);
+                return _extends({}, this);
             };
             ;
             User.prototype.compare = function (arg) {
@@ -3704,7 +3708,7 @@ var __extends = undefined && undefined.__extends || function () {
              */
             AuthService.prototype.getUserFromJWT = function (jwt) {
                 var user = this.parseJwt(jwt);
-                return user ? new User(Object.assign({}, user, { id: user.sub })) : null;
+                return user ? new User(_extends({}, user, { id: user.sub })) : null;
             };
             /**
              * If the callback parameter is specified, this method
