@@ -247,7 +247,7 @@ hook3();    //dismiss
 
 ## Filters
 
-'fixLabel' : replaces underscores ('_') in text with spaces.
+'fixLabel' : replaces underscores in text with spaces.
 
 'pluralize' : returns plural version of a word
 
@@ -336,4 +336,98 @@ The Section Editor is how you display and manipulate Knowledge Graph property va
 </kg-section>
 ```
 
+## Authenticated Components
 
+NG-Common supports the GeoPlatform's OAuth and SSO mechanisms for authenticating users as well as providing convenience methods for enabling easier authorization of users in client applications.  
+
+In addition to the existing `AuthenticationService` which has been updated with OAuth support, a new `AuthenticatedComponent` has been
+introduced which allows Angular components to easily monitor and stay up to date with the user's current authenticated status.
+
+### Extend AuthenticatedComponent
+To make your Angular component authentication-aware, extend the
+`GeoPlatform.AuthenticatedComponent` class exposed by NG-Common.
+
+```javascript
+class MyComponent extends GeoPlatform.AuthenticatedComponent {
+
+    constructor($rootScope, AuthenticationService) {
+        super($rootScope, AuthenticationService);
+        //local constructor setup
+        //...
+    }
+
+    $onInit() {
+        super.$onInit();
+        //local initialization
+        //...
+    }
+
+    $onDestroy() {
+        super.$onDestroy();
+        //local cleanup
+        //...
+    }
+
+    onAuthEvent(event, user) {
+        super.onAuthEvent(event, user);
+        //local auth state handling
+        //...
+    }
+}
+```
+
+### Dependencies
+AuthenticatedComponent requires the Angular $rootScope and the NG-Common `AuthenticationService` passed into its constructor, so you will need to inject those into your component.  
+
+### Component Lifecycle
+If your component implements the Angular component lifecycle methods `$onInit` or `$onDestroy`, you must ensure your component calls the "super" version of those methods or else user state management will not work. See the example above for recommended boilerplate code.
+
+### Events
+When the user logs in or logs out of their GeoPlatform account, the
+AuthenticatedComponent receives a _userAuthenticated_ event from the Angular $rootScope through its `onAuthEvent` method.  You can override this method as needed to do additional state management, but make sure you call the super version of this method first.
+
+If the user is logged in, the _user_ parameter of the method will contain the user's information, including which roles they have been granted. Otherwise, the _user_ parameter will be null, indicating their is currently no authenticated user.
+
+### Auth State
+AuthenticatedComponent provides several convenience methods and properties for getting the current user authentication state.
+
+#### _isAuthenticated()_
+This method returns a boolean indicating whether or not their is a user object being managed (ie, there is a user logged in).
+
+```javascript
+if(this.isAuthenticated()) {
+    console.log("User is logged in");
+}
+```
+
+#### _canUserEdit(item)_
+This method returns a boolean indicating whether or not the user is either the owner of the specified GeoPlatform Item object or has been granted an editor role.  If no item is specified, only the editor role check is performed.
+
+```javascript
+let map = { type: "Map", ... };
+if(this.canUserEdit(map)) {
+    console.log("User can edit or delete the map");
+}
+```
+
+#### _isAuthorOf(item)_
+This method returns a boolean indicating whether or not the user is the owner of the specified GeoPlatform Item object.
+
+```javascript
+let map = { type: "Map", createdBy: "test_user", ... };
+if(this.isAuthorOf(map)) {
+    console.log("User is the creator of the map");
+}
+```
+
+#### _authState_
+It also provides a local member variable called `authState` that contains the current user object and a flag indicating the user's authorization status.
+
+```javascript
+if(this.authState.user) {
+    console.log(this.authState.user.username + " is logged in");
+    if(this.authState.authorized) {
+        console.log("... and is authorized to edit items");
+    }
+}
+```
