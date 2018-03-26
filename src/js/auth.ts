@@ -72,6 +72,7 @@
           name: string
           email: string
           org: string
+          roles: string
           groups: orgGroupArray
           exp: number
 
@@ -82,6 +83,7 @@
             this.email = opts.email
             this.org = opts.orgs[0] && opts.orgs[0].name
             this.groups = opts.groups
+            this.roles = opts.roles
             this.exp = opts.exp
           }
 
@@ -143,7 +145,7 @@
             })
 
             const user = self.init()
-            if(!user) self.ssoCheck()
+            if(!user && Config.AUTH_TYPE === 'grant') self.ssoCheck()
           }
 
           ssoCheck(){
@@ -274,7 +276,7 @@
             //check to make sure we can make called
             if (this.getJWT()) {
               $http.get(Config.IDP_BASE_URL + '/api/profile')
-                .then(response =>  Q.resolve(response))
+                .then(response =>  Q.resolve(response.data))
                 .catch(err => Q.reject(err))
             } else {
               Q.reject(null)
@@ -385,7 +387,7 @@
                         q.resolve(self.getUser())
                       }
                     })
-                    // q.resolve(null)
+                    q.resolve(null)
                   }
                   // Case 4 - ALLOWIFRAMELOGIN: false | FORCE_LOGIN: false
                   if(!Config.ALLOWIFRAMELOGIN && !Config.FORCE_LOGIN){
@@ -435,14 +437,18 @@
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
           checkWithClient(originalJWT: string){
-            return $http.get('/checktoken')
-                    .then(resp => {
-                      const header = resp.headers('Authorization')
-                      const newJWT = header && header.replace('Bearer ','')
-                      if(newJWT) this.setAuth(newJWT);
+            if(Config.AUTH_TYPE === 'token'){
+              return $q.when(null)
+            } else {
+              return $http.get('/checktoken')
+                .then(resp => {
+                  const header = resp.headers('Authorization')
+                  const newJWT = header && header.replace('Bearer ','')
+                  if(newJWT) this.setAuth(newJWT);
 
-                      return newJWT ? newJWT : originalJWT;
-                    })
+                  return newJWT ? newJWT : originalJWT;
+                })
+            }
           }
 
           //=====================================================
@@ -601,14 +607,13 @@
       // Interceptor
       return {
         response: function(resp: ng.IHttpResponse<any>) {
+          const AuthenticationService = $injector.get('AuthenticationService')
           const jwt = getJWTFromUrl();
           const authHeader = resp.headers('Authorization');
 
           if(jwt){
-            const AuthenticationService = $injector.get('AuthenticationService')
             AuthenticationService.setAuth(jwt);
           } else if (authHeader) {
-            const AuthenticationService = $injector.get('AuthenticationService')
             const token = authHeader.replace('Bearer', '').trim();
             AuthenticationService.setAuth(token);
           }
