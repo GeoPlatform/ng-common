@@ -11,7 +11,8 @@
 
         $onInit () {
             super.$onInit();
-            this.value       = null;    //input from user for "created by" value
+
+            this.value = null;
             this.collapse    = true;    //hide show controls
             this.limitToUser = false;   //filter using current user
             this.modelOptions = {
@@ -21,10 +22,19 @@
                   'blur': 0
                 }
             };
+
+            this.listener = this.service.on(this.service.events.LOADING, () => {
+                if(this.value !== this.service.getCreatedBy()) {
+                    this.value = this.service.getCreatedBy();
+                    this.limitToUser = false;   //toggle "mine" off
+                }
+            });
         }
 
         $onDestroy () {
             super.$onDestroy();
+            this.listener();
+            this.listener    = null;
             this.value       = null;
             this.collapse    = null;
             this.limitToUser = null;
