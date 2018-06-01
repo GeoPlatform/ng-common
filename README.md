@@ -4,6 +4,14 @@ Angular directives and services for GeoPlatform web applications
 
 ## Reference in Another Project
 
+
+__Add from CDN__
+
+Major versions are made avaliable from CDN sources. You can include them in the following way:
+```html
+<script src="http://dyk46gk69472z.cloudfront.net/gp.common/1.6.0/geoplatform.common.min.js"></script>
+```
+
 __Add as a Bower dependency__
 
 ```json
@@ -14,7 +22,7 @@ __Add as a Bower dependency__
 }
 ```
 
-Note: _version number_ should be that of the current release version of this project.  It is advised to __never__ reference any non-release tag or branch, such as "develop" or "master", when adding this project as a dependency in another.
+Note: _version number_ should be that of the current release version of this project.  It is advised to __never__ reference any no?n-release tag or branch, such as "develop" or "master", when adding this project as a dependency in another.
 
 
 
@@ -85,7 +93,10 @@ Token or implicit type authentication does not require or use a back end service
 
 #### grant
 Grant type authentiction require a back end service (like node-gpoauth) to handle recieving JWT and related tokens from the OAuth provider.
-<br><br>
+<br>
+
+> **NOTE**:
+> For security reasons the JWT stored in local storage is scrambled. Passing the encoded value in the Authorization header will not validate server side.
 
 ### iFrame Authentication
 Apps have the abilility to allow for authentication via iframe and keep the user from having to redirect to the oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
@@ -338,7 +349,7 @@ The Section Editor is how you display and manipulate Knowledge Graph property va
 
 ## Authenticated Components
 
-NG-Common supports the GeoPlatform's OAuth and SSO mechanisms for authenticating users as well as providing convenience methods for enabling easier authorization of users in client applications.  
+NG-Common supports the GeoPlatform's OAuth and SSO mechanisms for authenticating users as well as providing convenience methods for enabling easier authorization of users in client applications.
 
 In addition to the existing `AuthenticationService` which has been updated with OAuth support, a new `AuthenticatedComponent` has been
 introduced which allows Angular components to easily monitor and stay up to date with the user's current authenticated status.
@@ -377,7 +388,7 @@ class MyComponent extends GeoPlatform.AuthenticatedComponent {
 ```
 
 ### Dependencies
-AuthenticatedComponent requires the Angular $rootScope and the NG-Common `AuthenticationService` passed into its constructor, so you will need to inject those into your component.  
+AuthenticatedComponent requires the Angular $rootScope and the NG-Common `AuthenticationService` passed into its constructor, so you will need to inject those into your component.
 
 ### Component Lifecycle
 If your component implements the Angular component lifecycle methods `$onInit` or `$onDestroy`, you must ensure your component calls the "super" version of those methods or else user state management will not work. See the example above for recommended boilerplate code.
@@ -431,3 +442,9 @@ if(this.authState.user) {
     }
 }
 ```
+
+
+## Deploy to CDN
+The files in this repository are served from a CDN provider via AWS CloudFront.
+
+To upload a CDN version simply run `uploadToCDN.sh` with the version number.
