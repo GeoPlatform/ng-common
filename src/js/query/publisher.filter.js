@@ -133,7 +133,7 @@
                                 ng-class="{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
                             {{value.label}}
                         </a>
-                        <div class="c-facet__value t-fg--gray-md"
+                        <div class="c-facet__value disabled t-fg--gray-md"
                             ng-if="$ctrl.additionalValueCount">
                             <em>plus {{$ctrl.additionalValueCount}} more options</em>
                         </div>

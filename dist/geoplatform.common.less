@@ -186,7 +186,9 @@
             padding:        0.5em;
             font-size:      1em; //override default c-facet__value style
 
-            &:hover {
+            &.disabled { cursor: default; }
+
+            &:not(.disabled):hover {
                 background: fadeOut(@color-gray-xlt, 10%);
                 color:              @color-gray-dk;
             }
