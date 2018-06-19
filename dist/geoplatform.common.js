@@ -219,95 +219,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return AuthenticatedComponent;
 });
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular) {
     "use strict";
 
@@ -723,7 +634,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                         $element.attr('src', null);
                     } else if (map.thumbnail.contentData) {
                         var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (map.thumbnail.mediaType || 'image/png') + ';base64,' + map.thumbnail.contentData + ');';
-                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        //if directive is on a responsive item (aka, in a gp-ui-card),
                         // ignore thumbnail dimensions. Otherwise, use them
                         if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
                             style += 'width:' + (map.thumbnail.width || '32') + 'px;' + 'height:' + (map.thumbnail.height || '32') + 'px;';
@@ -761,12 +672,20 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             }],
             link: function link($scope, $element, $attrs) {
                 var item = $scope.item;
+                if (!item) {
+                    $scope.hasThumbnail = !!$scope.fallback;
+                    if ($scope.fallback) {
+                        //if no item was provided but a fallback img was, use that
+                        $element.find('img').attr('src', $scope.fallback);
+                    }
+                    return;
+                }
                 (item.$promise || $q.resolve(item)).then(function (obj) {
                     var url = $scope.fallback;
                     //maps
                     if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";else if (obj.assetType && obj.assetType === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.assetId + "/thumbnail";else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;else if (obj.thumbnail && obj.thumbnail.contentData) {
                         var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
-                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        //if directive is on a responsive item (aka, in a gp-ui-card),
                         // ignore thumbnail dimensions. Otherwise, use them
                         if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
                             style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
@@ -1563,6 +1482,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         };
     });
 })(angular);
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';

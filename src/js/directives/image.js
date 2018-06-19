@@ -1,5 +1,5 @@
 (function(angular, Constants) {
-    
+
     "use strict";
 
     angular.module("gp-common")
@@ -32,10 +32,10 @@
                 if(map.$promise && !map.$resolved) {
 
                     map.$promise
-                    .then(  (m) => { 
+                    .then(  (m) => {
                         if(typeof(m.thumbnail) === 'string')    //old map model
-                            $element.attr('src', getUrl(m)); 
-                        else 
+                            $element.attr('src', getUrl(m));
+                        else
                             buildThumbnail(m);                  //open map model
                     })
                     .catch( (e) => { $element.attr('src', null); });
@@ -43,7 +43,7 @@
                 } else {
                     if(typeof(map.thumbnail) === 'string')    //old map model
                         $element.attr('src', getUrl(map));
-                    else 
+                    else
                         buildThumbnail(map);
                 }
 
@@ -53,14 +53,14 @@
 
                     } else if(map.thumbnail.contentData) {
 
-                        var style = 
-                            'background-size:contain;' + 
-                            'background-repeat:no-repeat;' + 
-                            'background-image: url(data:' + 
-                                (map.thumbnail.mediaType||'image/png') + ';base64,' + 
+                        var style =
+                            'background-size:contain;' +
+                            'background-repeat:no-repeat;' +
+                            'background-image: url(data:' +
+                                (map.thumbnail.mediaType||'image/png') + ';base64,' +
                                 map.thumbnail.contentData + ');';
 
-                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        //if directive is on a responsive item (aka, in a gp-ui-card),
                         // ignore thumbnail dimensions. Otherwise, use them
                         if($element.attr('class').indexOf('embed-responsive-item') < 0) {
                             style += 'width:' + (map.thumbnail.width||'32') + 'px;' +
@@ -71,7 +71,7 @@
 
                     } else if(map.thumbnail.url) {
                         $element.attr('src', map.thumbnail.url);
-                    } else 
+                    } else
                         $element.attr('src', null);
 
                 }
@@ -84,7 +84,7 @@
                     else if(url.indexOf("http") !== 0) {
                         if(url[0] !== '/')
                             url = Constants.ualUrl + '/' + url;
-                        else 
+                        else
                             url = Constants.ualUrl + url;
                     }
                     return url;
@@ -95,7 +95,7 @@
     }])
 
 
-    
+
     .directive('itemThumbnail', ['$q', function($q) {
         return {
             restrict: "E",
@@ -118,14 +118,22 @@
                 if($scope.isLink) {
                     $scope.elName = 'a';
                 }
-            }, 
+            },
             link: function($scope, $element, $attrs) {
 
                 let item = $scope.item;
+                if(!item) {
+                    $scope.hasThumbnail = !!$scope.fallback;
+                    if($scope.fallback) {
+                        //if no item was provided but a fallback img was, use that
+                        $element.find('img').attr('src', $scope.fallback);
+                    }
+                    return;
+                }
                 (item.$promise || $q.resolve(item)).then( (obj) => {
 
                     let url = $scope.fallback;
-                
+
                     //maps
                     if(obj.type && obj.type === 'Map')
                         url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";
@@ -137,15 +145,15 @@
                         url = obj.thumbnail.url;
                     //other thumbnail'ed items with base64 content
                     else if(obj.thumbnail && obj.thumbnail.contentData) {
-                        
-                        var style = 
-                            'background-size:contain;' + 
-                            'background-repeat:no-repeat;' + 
-                            'background-image: url(data:' + 
-                                (obj.thumbnail.mediaType||'image/png') + ';base64,' + 
+
+                        var style =
+                            'background-size:contain;' +
+                            'background-repeat:no-repeat;' +
+                            'background-image: url(data:' +
+                                (obj.thumbnail.mediaType||'image/png') + ';base64,' +
                                 obj.thumbnail.contentData + ');';
 
-                        //if directive is on a responsive item (aka, in a gp-ui-card), 
+                        //if directive is on a responsive item (aka, in a gp-ui-card),
                         // ignore thumbnail dimensions. Otherwise, use them
                         if($element.attr('class').indexOf('embed-responsive-item') < 0) {
                             style += 'width:' + (obj.thumbnail.width||'32') + 'px;' +
@@ -154,7 +162,7 @@
 
                         $element.find('img').attr('style', style);
                     }
-                    
+
                     $scope.hasThumbnail = !!url;
                     $element.find('img').attr('src', url);
 
@@ -162,10 +170,10 @@
                         //$element is a.media because of 'replace:true'
                         $element.attr('href', $scope.link).attr('target', '_blank');
                     }
-            
+
                 })
-                .catch( (e) => { 
-                    $element.find('img').attr('src', $scope.fallback); 
+                .catch( (e) => {
+                    $element.find('img').attr('src', $scope.fallback);
                 });
             }
         };
