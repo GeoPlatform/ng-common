@@ -150,24 +150,25 @@
 
           ssoCheck(){
             const self = this;
+            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
+            const ssoIframe = this.createIframe(ssoURL)
 
             // Setup ssoIframe specific handlers
             addEventListener('message', (event: any) => {
               // Handle SSO login failure
               if(event.data === 'iframe:ssoFailed'){
-                ssoIframe.remove()
+                if(ssoIframe && ssoIframe.remove) // IE 11 - gotcha
+                  ssoIframe.remove()
                 // Force login only after SSO has failed
                 if(Config.FORCE_LOGIN) self.forceLogin()
               }
 
               // Handle User Authenticated
               if(event.data === 'iframe:userAuthenticated'){
-                ssoIframe.remove()
+                if(ssoIframe && ssoIframe.remove) // IE 11 - gotcha
+                  ssoIframe.remove()
               }
             })
-
-            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
-            const ssoIframe = this.createIframe(ssoURL)
           }
 
           /**
