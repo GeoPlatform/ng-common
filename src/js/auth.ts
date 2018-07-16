@@ -606,21 +606,26 @@
      */
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptor
-      return {
-        response: function(resp: ng.IHttpResponse<any>) {
-          const AuthenticationService = $injector.get('AuthenticationService')
-          const jwt = getJWTFromUrl();
-          const authHeader = resp.headers('Authorization');
+      function respHandler(resp: ng.IHttpResponse<any>) {
+        const AuthenticationService = $injector.get('AuthenticationService')
+        const jwt = getJWTFromUrl();
+        const authHeader = resp.headers('Authorization');
 
-          if(jwt){
-            AuthenticationService.setAuth(jwt);
-          } else if (authHeader) {
-            const token = authHeader.replace('Bearer', '').trim();
-            AuthenticationService.setAuth(token);
-          }
-
-          return resp;
+        if(jwt){
+          AuthenticationService.setAuth(jwt);
+        } else if (authHeader) {
+          const token = authHeader.replace('Bearer', '').trim();
+          AuthenticationService.setAuth(token);
         }
+
+        return resp;
+      }
+
+      // Apply handler to all responses (regular and error as to not miss
+      // tokens passed from node-gpoauth even on 4XX and 5XX responses)
+      return {
+        response: respHandler,
+        responseError: respHandler
       };
     })
 
