@@ -621,11 +621,20 @@
         return resp;
       }
 
+      //in order for $http to resolve error responses, the responseErrorHandler
+      // needs to reject the response.  But it also should update the auth token
+      // before doing so in case the token was refreshed as a part of the bad request
+      function respErrorHandler(resp: ng.IHttpResponse<any>) {
+          respHandler(resp);
+          let $q = $injector.get('$q');
+          return $q.reject(resp);
+      }
+
       // Apply handler to all responses (regular and error as to not miss
       // tokens passed from node-gpoauth even on 4XX and 5XX responses)
       return {
         response: respHandler,
-        responseError: respHandler
+        responseError: respErrorHandler
       };
     })
 
