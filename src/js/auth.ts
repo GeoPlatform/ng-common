@@ -220,9 +220,9 @@
             // Check implicit we need to actually redirect them
             if(Config.AUTH_TYPE === 'token') {
               window.location.href = Config.IDP_BASE_URL +
-                      '/auth/authorize?client_id=' + Config.APP_ID +
-                      '&response_type=' + Config.AUTH_TYPE +
-                      '&redirect_uri=' + encodeURIComponent(Config.CALLBACK || '/login')
+                      `/auth/authorize?client_id=${Config.APP_ID}` +
+                      `&response_type=${Config.AUTH_TYPE}` +
+                      `&redirect_uri=${encodeURIComponent(Config.CALLBACK || '/login')}`
 
             // Otherwise pop up the login modal
             } else {
@@ -232,8 +232,8 @@
 
                 // Redirect login
               } else {
-                window.location.href = Config.LOGIN_URL || '/login' +
-                                    '?redirect_url=${encodeURIComponent(window.location.href)}'
+                window.location.href = Config.LOGIN_URL
+                                || `/login?redirect_url=${encodeURIComponent(window.location.href)}`
               }
             }
           };
