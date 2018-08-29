@@ -1,4 +1,5 @@
-/// <reference path="../types.ts" />
+/// <reference path="../types.d.ts" />
+/// <reference path="../commonNG.ts" />
 
 (function(jQuery, angular) {
 

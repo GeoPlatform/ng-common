@@ -1,4 +1,5 @@
-/// <reference path="../types.ts" />
+/// <reference path="../types.d.ts" />
+/// <reference path="../commonNG.ts" />
 
 (function(angular) {
 
@@ -47,36 +48,19 @@
     * to get current auth status.
     */
     .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig',
-      function($q: ng.IQService, $http: ng.IHttpService, $location: ng.ILocationService, $rootScope: ng.IRootScopeService, $window: ng.IWindowService, Config: GeoPlatform) {
+      function($q: ng.IQService, $http: ng.IHttpService, $location: ng.ILocationService, $rootScope: ng.IRootScopeService, $window: ng.IWindowService, Config: ngcommon.GeoPlatform) {
 
-        /**
-         * Security wrapper for obfuscating values passed into local storage
-         */
-        Storage.prototype.saveToLocalStorage = function(key: string, value: any) {
-          this.setItem(key, btoa(value));
-        };
-        Storage.prototype.getFromLocalStorage = function(key: string) {
-          const raw = this.getItem(key)
-          try{
-            return raw ?
-                    atob(raw) :
-                    undefined;
-          } catch (e){ // Catch bad encoding or formally not encoded
-            return undefined;
-          }
-        };
-
-        class User {
+        class User implements ngcommon.User {
           id: string
           username: string
           name: string
           email: string
           org: string
           roles: string
-          groups: orgGroupArray
+          groups: [{_id: string, name: string}]
           exp: number
 
-          constructor(opts: JWT) {
+          constructor(opts: ngcommon.JWT) {
             this.id = opts.sub
             this.username = opts.username
             this.name = opts.name
@@ -119,12 +103,14 @@
           };
         }
 
-        type userOrNothin = User | null | undefined
+        type userOrNothin = User
+                          | null
+                          | undefined
 
         /**
          * Authentication Service
          */
-        class AuthService {
+        class AuthService implements ngcommon.AuthService {
 
           iframe: HTMLIFrameElement
 
@@ -148,7 +134,25 @@
             if(!user && Config.AUTH_TYPE === 'grant') self.ssoCheck()
           }
 
-          ssoCheck(){
+        /**
+         * Security wrapper for obfuscating values passed into local storage
+         */
+        private saveToLocalStorage(key: string, value: any) {
+          localStorage.setItem(key, btoa(value));
+        };
+
+        getFromLocalStorage(key: string) {
+          const raw = localStorage.getItem(key)
+          try{
+            return raw ?
+                    atob(raw) :
+                    undefined;
+          } catch (e){ // Catch bad encoding or formally not encoded
+            return undefined;
+          }
+        };
+
+          private ssoCheck(){
             const self = this;
             const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
             const ssoIframe = this.createIframe(ssoURL)
@@ -177,7 +181,7 @@
            *
            * @method init
            */
-          init(){
+          private init(){
             const jwt = this.getJWT();
             if(jwt) this.setAuth(jwt)
 
@@ -199,7 +203,7 @@
            * @method createIframe
            * @returns {HTMLIFrameElement}
            */
-          createIframe(url: string): HTMLIFrameElement {
+          private createIframe(url: string): HTMLIFrameElement {
             let iframe = document.createElement('iframe')
 
             iframe.style.display = "none";
@@ -216,9 +220,9 @@
             // Check implicit we need to actually redirect them
             if(Config.AUTH_TYPE === 'token') {
               window.location.href = Config.IDP_BASE_URL +
-                      '/auth/authorize?client_id=' + Config.APP_ID +
-                      '&response_type=' + Config.AUTH_TYPE +
-                      '&redirect_uri=' + encodeURIComponent(Config.CALLBACK || '/login')
+                      `/auth/authorize?client_id=${Config.APP_ID}` +
+                      `&response_type=${Config.AUTH_TYPE}` +
+                      `&redirect_uri=${encodeURIComponent(Config.CALLBACK || '/login')}`
 
             // Otherwise pop up the login modal
             } else {
@@ -228,8 +232,8 @@
 
                 // Redirect login
               } else {
-                window.location.href = Config.LOGIN_URL || `/login` +
-                                    `?redirect_url=${encodeURIComponent(window.location.href)}`
+                window.location.href = Config.LOGIN_URL
+                                || `/login?redirect_url=${encodeURIComponent(window.location.href)}`
               }
             }
           };
@@ -271,19 +275,19 @@
           /**
            * Get protected user profile
            */
-          getOauthProfile() {
-            const Q = $q.defer();
+          getOauthProfile(): ng.IPromise<ngcommon.UserProfile> {
+            const Q = $q.defer<ngcommon.UserProfile>();
 
             //check to make sure we can make called
             if (this.getJWT()) {
-              $http.get(Config.IDP_BASE_URL + '/api/profile')
+              $http.get<ngcommon.UserProfile>(Config.IDP_BASE_URL + '/api/profile')
                 .then(response =>  Q.resolve(response.data))
                 .catch(err => Q.reject(err))
             } else {
               Q.reject(null)
             }
 
-            return Q.promise
+            return Q.promise;
           };
 
           /**
@@ -311,7 +315,7 @@
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
-          getUser(callback?: (user: User) => undefined): userOrNothin {
+          getUser(callback?: (user: User) => any): userOrNothin {
             const jwt = this.getJWT();
             // If callback provided we can treat async and call server
             if(callback && typeof(callback) === 'function'){
@@ -360,9 +364,9 @@
            *
            * @returns {Promise<User>} User - the authenticated user
            */
-          getUserQ() {
+          getUserQ(): ng.IPromise<ngcommon.User | null> {
             const self = this;
-            const q = $q.defer()
+            const q = $q.defer<ngcommon.User | null>()
 
             this.check()
               .then(user => {
@@ -401,13 +405,6 @@
             return q.promise
           };
 
-          /**
-           * Check function being used by some front end apps already.
-           * (wrapper for getUser)
-           *
-           * @method check
-           * @returns {User} - ng-common user object or null
-           */
           check(): ng.IPromise<User>{
             const jwt = this.getJWT();
 
@@ -437,7 +434,7 @@
            *
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
-          checkWithClient(originalJWT: string){
+          checkWithClient(originalJWT: string): ng.IPromise<string> {
             if(Config.AUTH_TYPE === 'token'){
               return $q.when(null)
             } else {
@@ -474,8 +471,8 @@
            *
            * @return {JWT | undefined} An object wih the following format:
            */
-          getJWTfromLocalStorage(): string{
-            return window.localStorage.getFromLocalStorage('gpoauthJWT')
+          getJWTfromLocalStorage(): string {
+            return this.getFromLocalStorage('gpoauthJWT')
           };
 
           /**
@@ -504,8 +501,8 @@
            *
            * @return  {undefined}
            */
-          clearLocalStorageJWT(){
-            delete window.localStorage.gpoauthJWT;
+          private clearLocalStorageJWT(): void {
+            localStorage.removeItem('gpoauthJWT')
           };
 
           /**
@@ -516,7 +513,7 @@
            *
            * @return {boolean}
            */
-          isExpired(jwt: string){
+          isExpired(jwt: string): boolean {
             const parsedJWT = this.parseJwt(jwt)
             if(parsedJWT){
               const now = (new Date()).getTime() / 1000;
@@ -529,7 +526,7 @@
            * Is the JWT an implicit JWT?
            * @param jwt
            */
-          isImplicitJWT(jwt: string){
+          isImplicitJWT(jwt: string): boolean {
             const parsedJWT = this.parseJwt(jwt)
             return parsedJWT && parsedJWT.implicit;
           }
@@ -541,7 +538,7 @@
            *
            * @return {Object} the parsed payload in the JWT
            */
-          parseJwt(token: string): JWT {
+          parseJwt(token: string): ngcommon.JWT {
             var parsed;
             if (token) {
               try {
@@ -561,7 +558,7 @@
            *  Signature validation is the only truly save method. This is done
            *  automatically in the node-gpoauth module.
            */
-          validateJwt(token: string) {
+          validateJwt(token: string): boolean {
             var parsed = this.parseJwt(token);
             var valid = (parsed && parsed.exp && parsed.exp * 1000 > Date.now()) ? true : false;
             return valid;
@@ -573,9 +570,8 @@
            *
            * @param {JWT} jwt
            */
-          setAuth(jwt: string) {
-
-            window.localStorage.saveToLocalStorage('gpoauthJWT', jwt)
+          private setAuth(jwt: string): void {
+            this.saveToLocalStorage('gpoauthJWT', jwt)
             $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
@@ -584,8 +580,8 @@
           /**
            * Purge the JWT from localStorage and authorization headers.
            */
-          removeAuth() {
-            delete window.localStorage.gpoauthJWT;
+          private removeAuth(): void {
+            localStorage.removeItem('gpoauthJWT')
             delete $http.defaults.headers.common.Authorization;
             // Send null user as well (backwards compatability)
             $rootScope.$broadcast("userAuthenticated", null)
@@ -595,7 +591,6 @@
         }
 
         return new AuthService();
-
       }
     ])
 
