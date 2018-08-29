@@ -662,7 +662,7 @@
 
               <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->
               <div class="gpLoginWindow" ng-if="requireLogin">
-                <iframe src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
+                <iframe id="gpLoginIFrame" src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
               </div>
 
             </div>`,
