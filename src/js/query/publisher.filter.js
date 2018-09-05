@@ -4,89 +4,104 @@
 
     const PUBLISHER_FACET = 'publishers';
 
+    class PublisherFilter {
+
+        constructor($http) {
+            this.$http = $http;
+        }
+
+        $onInit () {
+            this.collapse = true;
+            this.updateValues();
+        }
+
+        $onDestroy () {
+            this.values = null;
+            this.$http = null;
+        }
+
+        getSelected() { return this.service.getAgencies() || []; }
+
+        hasSelections () { return this.getSelected().length; }
+
+        isSelected (value) { return ~this.getSelected().indexOf(value.id); }
+
+        toggle (value) {
+            let selected =  this.getSelected();
+            let idx =       selected.indexOf(value.id);
+            if(idx >= 0)    selected.splice(idx, 1);
+            else            selected.push(value.id);
+            this.service.setAgencies(selected);
+        }
+
+        /**
+         * @param {object} value - publisher being toggled selected/unselected
+         */
+        deselectOutside (value) {
+            //remove selected item that is outside current filtered set of options
+            this.outsideResults = (this.outsideResults || []).filter( v => v.id !== value.id );
+            this.toggle(value);
+        }
+
+        clear () {
+            let selected = this.getSelected();
+            if(!selected || !selected.length)
+                this.collapse = !this.collapse; //toggle collapsed state
+            else
+                this.service.setAgencies([]);
+        }
+
+        getCount (value) {
+            var facet = this.service.getFacet(PUBLISHER_FACET);
+            if(!facet) return '';
+            var valObj = facet.buckets.find(function(v) { return v.label===value.id; });
+            if(!valObj) return '';
+            return valObj.count;
+        }
+
+        updateValues (query) {
+
+            let params = {
+                type:'org:Organization',
+                sort: 'label,asc',
+                q: query,
+                size: 20,
+                bust: new Date().getTime()
+            };
+            return this.$http.get(Constants.ualUrl + '/api/items', { params: params })
+            .then( (response) => {
+
+                let total = response.data.totalResults;
+                let newValues = response.data.results.slice(0);
+                this.additionalValueCount = total - newValues.length;
+
+                let selections = this.service.getAgencies();
+                this.outsideResults = (this.values||[]).filter( v => {
+                    //find existing values that are selected
+                    return ~selections.indexOf(v.id) &&
+                        // but not in new set of values
+                        !newValues.filter( nv => nv.id === v.id).length;
+                });
+
+                this.values = newValues;
+
+            }, (response) => {
+                console.log("(" + response.status + ") " + response.statusText);
+            })
+            .catch( arg => {
+                let e = (arg.data) ? arg.data : arg;
+                let code = (arg.status) ? arg.status : 500;
+                console.log("(" + code + ") " + e.message);
+            });
+        }
+    }
+
     angular.module('gp-common').component('publisherFilter', {
         bindings: {
             name: '@',      //name of this filter parameter,
             service: "<"
         },
-        controller: function($http) {
-
-            this.$onInit = function() {
-                this.collapse   = true;
-                this.updateValues();
-            };
-
-            this.$onDestroy = function() {
-                this.values = null;
-            };
-
-            this.hasSelections = function() {
-                return (this.service.getAgencies() || []).length;
-            };
-
-            this.isSelected = function(value) {
-                let selected =    this.service.getAgencies() || [];
-                return ~selected.indexOf(value.id);
-            };
-
-            this.toggle = function(value) {
-                let selected =  this.service.getAgencies() || [];
-                let idx =       selected.indexOf(value.id);
-                if(idx >= 0)    selected.splice(idx, 1);
-                else            selected.push(value.id);
-                this.service.setAgencies(selected);
-            };
-
-            this.clear = function() {
-                let selected = this.service.getAgencies() || [];
-                if(!selected || !selected.length)
-                    this.collapse = !this.collapse; //toggle collapsed state
-                else
-                    this.service.setAgencies([]);
-            };
-
-            this.getCount = function(value) {
-                var facet = this.service.getFacet(PUBLISHER_FACET);
-                if(!facet) return '';
-                var valObj = facet.buckets.find(function(v) { return v.label===value.id; });
-                if(!valObj) return '';
-                return valObj.count;
-            };
-
-            this.updateValues = function(query) {
-
-                return $http.get(Constants.ualUrl + '/api/items', {
-                    params: {
-                        type:'org:Organization',
-                        sort: 'label,asc',
-                        q: query,
-                        size: 20,
-                        bust: new Date().getTime()
-                    }
-                }).then( (response) => {
-
-                    let total = response.data.totalResults;
-                    let newValues = response.data.results.slice(0);
-                    this.additionalValueCount = total - newValues.length;
-
-                    let selections = this.service.getAgencies();
-                    if(selections && selections.length && this.values && this.values.length) {
-                        let existing = this.values.filter( v => {
-                            //find existing values that are selected
-                            return ~selections.indexOf(v.id) &&
-                                // but not in new set of values
-                                !newValues.filter( nv => nv.id === v.id).length;
-                        });
-                        newValues = existing.concat(newValues);
-                    }
-
-                    this.values = newValues;
-
-                }, (response) => {
-                    console.log("(" + response.status + ") " + response.statusText);
-                });
-            };
-        },
+        controller: PublisherFilter,
         template:
         `
             <div class="card c-query-filter">
@@ -103,11 +118,11 @@
 
                         <div class="c-facet__value">
                             <div class="input-group-slick">
-                                <input name="scheme-typeahead" type="text" class="form-control"
+                                <input name="publisher-typeahead" type="text" class="form-control"
                                     ng-model="$ctrl.typeaheadValue"
                                     ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                     ng-model-options="{debounce:200}"
-                                    placeholder="Search by name">
+                                    placeholder="Find a Publisher by name...">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"
@@ -137,6 +152,20 @@
                             ng-if="$ctrl.additionalValueCount">
                             <em>plus {{$ctrl.additionalValueCount}} more options</em>
                         </div>
+
+
+
+                        <div class="c-facet__value disabled" ng-if="$ctrl.outsideResults.length">
+                            <em>The following selections are not in the above results</em>
+                        </div>
+
+                        <a ng-repeat="pub in $ctrl.outsideResults track by $index"
+                            class="c-facet__value active" ng-click="$ctrl.deselectOutside(pub)">
+                            <span class="badge pull-right">{{$ctrl.getCount(pub)}}</span>
+                            <span class="glyphicon glyphicon-check"></span>
+                            {{pub.label || "Untitled Organization"}}
+                        </a>
+
                     </div>
                 </div>
             </div>
