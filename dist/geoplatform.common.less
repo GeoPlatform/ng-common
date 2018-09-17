@@ -182,7 +182,7 @@
             border-width:   0 0 0 2px;
             border-color:   transparent;
             border-style:   solid;
-            color:          @color-gray-md;
+            color:          darken(@color-gray-md, 5%);
             padding:        0.5em;
             font-size:      1em; //override default c-facet__value style
 
@@ -199,13 +199,16 @@
                 color:              @color-gray-dk;
             }
 
-            .badge { float: right; }
+            .badge {
+                float: right;
+                background-color: @color-gray-md;
+            }
         }
 
         &.is-collapsed > .c-facet__value.active {
             background-color: transparent;
             border-color:     transparent;
-            color:            @color-gray-md;
+            color:            darken(@color-gray-md, 5%);
         }
 
         //any inputs that aren't wrapped in a c-facet__value should have a bit of margin
@@ -296,6 +299,8 @@ header[gp-flex-header] {
     justify-content: space-between;
     align-items: center;
 
+
+
     .brand {
         flex: 1;
         float: none;
@@ -307,6 +312,39 @@ header[gp-flex-header] {
     }
 
 }
+
+header.app-header {
+
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1em;
+
+    .brand,
+    h1.brand,
+    h2.brand,
+    h3.brand,
+    h4.brand,
+    h5.brand,
+    h6.brand {
+        order: 1;
+        float: none;
+        margin: 0;
+        font-size: 1.125rem;
+    }
+
+    .header__menu {
+        order: 2;
+        float: none;
+    }
+
+    .gpLoginCover {
+        position: absolute;
+        z-index: 9999;
+    }
+}
+
 /* ------------------------------------------------- *\
     Notifications
     ...

@@ -88,9 +88,12 @@
         }
 
         select (item) {
-            item._selected = true;  //update status to show it's already _selected
-            this.values.push(item); //append selection to list
-            this.update();          //update overall browse query with new selection
+            let found = this.values.find( it => it.uri === item.uri );
+            if(!found) {
+                item._selected = true;  //update status to show it's already _selected
+                this.values.push(item); //append selection to list
+                this.update();          //update overall browse query with new selection
+            }
         }
 
         getOptions () {
@@ -232,6 +235,7 @@
                 <h5 class="card-title">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}"
+                        aria-label="Toggle collapsed state of this filter"
                         ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
                         <span class="glyphicon"
                             ng-class="{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}"></span>
@@ -240,28 +244,6 @@
                 </h5>
 
                 <div class="c-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">
-
-                    <!--
-                    <div class="c-facet__value">
-
-                        <div class="input-group-slick">
-                            <input name="termQuery" type="text" class="form-control"
-                              ng-model="$ctrl.termQuery"
-                              typeahead-on-select="$ctrl.onSelection($item, $model, $label, $event)"
-                              uib-typeahead="opt as ' (' + opt.context + ') ' + opt.label for opt in $ctrl.getOptions($viewValue)"
-                              typeahead-loading="$ctrl.displayOpts.fetching"
-                              typeahead-no-results="$ctrl.displayOpts.empty"
-                              ng-model-options="{ debounce: 250 }"
-                              typeahead-min-length="2"
-                              typeahead-editable="false"
-                              placeholder="Find a concept">
-                            <span class="glyphicon glyphicon-hourglass spin" ng-if="$ctrl.displayOpts.fetching"></span>
-                        </div>
-
-                        <div ng-show="$ctrl.displayOpts.empty">No Results Found</div>
-
-                    </div>
-                    -->
 
                     <div ng-hide="$ctrl.displayOpts.collapse">
 
@@ -272,7 +254,8 @@
                                 ng-model="$ctrl.termQuery"
                                 ng-model-options="{ debounce: 250 }"
                                 ng-change="$ctrl.getOptions()"
-                                placeholder="Find concepts">
+                                placeholder="Find concepts"
+                                aria-label="Find concepts">
                             <span class="glyphicon glyphicon-remove" ng-if="$ctrl.displayOpts.suggest"
                                 ng-click="$ctrl.hideSuggested()"></span>
                         </div>
@@ -303,11 +286,14 @@
 
 
                     <!-- selected terms -->
-                    <div ng-repeat="term in $ctrl.values" class="c-facet__value active"
+                    <div ng-repeat="term in $ctrl.values track by $index" class="c-facet__value active"
                         title="Remove this term from the query"
                         ng-click="$ctrl.removeValue($index)">
 
                         <div class="u-break--all t-text--strong u-pd-bottom--sm">
+                            <button type="button" class="btn btn-sm btn-link pull-right">
+                                <span class="glyphicon glyphicon-remove t-fg--danger"></span>
+                            </button>
                             <span class="glyphicon glyphicon-check"></span>
                             {{term.prefLabel}}
                         </div>

@@ -1,22 +1,22 @@
 (function(jQuery, angular) {
-    
-    "use strict"; 
-    
+
+    "use strict";
+
     angular.module("gp-common")
 
 
     /**
      * Header directive for GeoPlatform Angular-based web applications
-     * 
+     *
      * Uses transclusion to inject links into the nav-menu which floats to the right.
      * The menu already provides a "Home" link (to app home) and Sign In/User Info button.
-     * The home link is not enabled by default but can be shown using 'show-home-link="true"' 
+     * The home link is not enabled by default but can be shown using 'show-home-link="true"'
      * parameter on the directive.
      *
      * Note: any links transcluded should reference '$parent.user' to access authenticated user info
-     * 
+     *
      * ex:
-     * 
+     *
      *   <div gp-header brand="Map Manager" show-home-link="true" class="navbar-fixed-top">
      *     <li><a href="#/maps">Maps</a></li>
      *     <li><a href="#/galleries">Galleries</a></li>
@@ -36,37 +36,37 @@
             transclude: true,
             replace: true,
             template: [
-                '<header>',
-                '  <div class="container-fluid">',
-                '    <div class="row">',
-                '      <div class="col-md-12">',
-                '        <ul role="menu" class="header__menu" gp-header-menu>',
-                '          <li ng-if="showHomeLink">',
+                '<header class="app-header">',
+                // '  <div class="container-fluid">',
+                // '    <div class="row">',
+                // '      <div class="col-md-12">',
+                '       <ul role="menu" class="header__menu" gp-header-menu>',
+                '          <li ng-if="showHomeLink" role="menuitem">',
                 '            <a href="#/goHome">',
                 '                <span class="glyphicon glyphicon-home"></span> ',
                 '                <span class="hidden-xs hidden-sm">Home</span>',
                 '            </a>',
                 '          </li>',
                 '          <div class="transcluded"></div>',
-                '          <li><span gp-login-button></span></li>',
+                '          <li role="menuitem"><span gp-login-button></span></li>',
                 '        </ul>',
-                '        <h4 class="brand">',
+                '        <h1 class="brand">',
                 '          <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">',
                 '            <span class="icon-gp"></span>',
                 '            <span class="hidden-xs">GeoPlatform</span>',
                 '          </a>',
                 '          {{brand}}',
-                '        </h4>',
-                '      </div>',
-                '    </div>',
-                '  </div>',
+                '        </h1>',
+                // '      </div>',
+                // '    </div>',
+                // '  </div>',
                 '  <gp-login-modal></gp-login-modal>',
                 '</header>',
             ].join(' '),
 
             // controller: function($rootScope, $scope, $element) {
             //     $scope.portalUrl = $rootScope.portalUrl;
-            // }, 
+            // },
 
             link: function($scope, $element, $attrs, ctrl, transcludeFn) {
 
@@ -75,25 +75,25 @@
                 $scope.portalUrl = Config.portalUrl;
 
                 AuthenticationService.getUserQ().then(function(user) {
-                    $scope.user = user;    
+                    $scope.user = user;
                 });
-                
+
                 $element.find('.transcluded').replaceWith(transcludeFn());
-            }            
+            }
 
         };
 
     }])
 
 
-    
+
     /**
      * Header Menu
      *
-     * Monitors the current page URL and updates the header links 
+     * Monitors the current page URL and updates the header links
      * to highlight whichever one is associated with the current page
      *
-     * Usage: 
+     * Usage:
      *
      *  <ul role="menu" class="header__menu" gp-header-menu>
      *      <li><a href="#/maps">Maps</a></li>
@@ -105,7 +105,7 @@
     .directive('gpHeaderMenu', ['$location', function($location) {
 
         //default href for "home" link in header__menu
-        //uses 'goHome' to avoid angular-route issues with empty hash not 
+        //uses 'goHome' to avoid angular-route issues with empty hash not
         // triggering a page reload. Relies upon the "otherwise" condition
         // being configured inside a routeProvider within the application.
         var homeLink = 'goHome';
@@ -113,16 +113,16 @@
         function update($element) {
 
             var path = $location.path();
-            
+
             if(path === '/' || path === '/#' || path === '/#/')
                 path = homeLink;
 
-            if(path[0] === '/') 
+            if(path[0] === '/')
                 path = path.substring(1);
 
             var menu = $element;
             menu.find('li.active').removeClass('active');
-            
+
             var link = menu.find('li > a[href="#/' + path + '"]');
             if(link.length) {
                 //check if link is within a dropdown in the header menu
@@ -135,7 +135,7 @@
                     link.parent().addClass('active');
                 }
             }
-            
+
             menu.find('li > a').each(function(i,a) {
                 var $a = $(a), href = $a.attr('href');
                 if(!href) return;
@@ -150,7 +150,7 @@
                 homeHref: '@'
             },
             restrict: "A",
-            
+
             controller: function($rootScope, $scope, $element) {
                 if($scope.homeHref)
                     homeLink = $scope.homeHref;
@@ -173,7 +173,7 @@
 
     /**
      *
-     * Usage: 
+     * Usage:
      *
      *    <div ng-cloak gp-flex-header show-home-link="true" brand="Application Name">
      *      <li><a>Menu Item</a></li>
@@ -194,7 +194,7 @@
             restrict: "AE",
             transclude: true,
             replace: true,
-            template: 
+            template:
             `
                 <header>
                     <h4 class="brand">
@@ -207,7 +207,7 @@
                     <ul role="menu" class="header__menu" gp-header-menu>
                         <li ng-if="showHomeLink">
                             <a href="/">
-                                <span class="glyphicon glyphicon-home"></span> 
+                                <span class="glyphicon glyphicon-home"></span>
                                 <span class="hidden-xs hidden-sm">Home</span>
                             </a>
                         </li>
@@ -224,11 +224,11 @@
                 $scope.portalUrl = Config.portalUrl;
 
                 AuthenticationService.getUserQ().then(function(user) {
-                    $scope.user = user;    
+                    $scope.user = user;
                 });
-                
+
                 $element.find('.transcluded').replaceWith(transcludeFn());
-            }            
+            }
 
         };
 

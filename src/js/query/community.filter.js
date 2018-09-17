@@ -106,7 +106,8 @@
                                     ng-model="$ctrl.typeaheadValue"
                                     ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                     ng-model-options="{debounce:200}"
-                                    placeholder="Search by name">
+                                    placeholder="Search by name"
+                                    aria-label="Find a community by name">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"

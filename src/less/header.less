@@ -14,6 +14,8 @@ header[gp-flex-header] {
     justify-content: space-between;
     align-items: center;
 
+
+
     .brand {
         flex: 1;
         float: none;
@@ -24,4 +26,36 @@ header[gp-flex-header] {
         float: none;
     }
 
+}
+
+header.app-header {
+
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1em;
+
+    .brand,
+    h1.brand,
+    h2.brand,
+    h3.brand,
+    h4.brand,
+    h5.brand,
+    h6.brand {
+        order: 1;
+        float: none;
+        margin: 0;
+        font-size: 1.125rem;
+    }
+
+    .header__menu {
+        order: 2;
+        float: none;
+    }
+
+    .gpLoginCover {
+        position: absolute;
+        z-index: 9999;
+    }
 }

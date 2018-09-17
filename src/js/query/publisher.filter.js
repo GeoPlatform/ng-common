@@ -122,7 +122,8 @@
                                     ng-model="$ctrl.typeaheadValue"
                                     ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                     ng-model-options="{debounce:200}"
-                                    placeholder="Find a Publisher by name...">
+                                    placeholder="Find a Publisher by name..."
+                                    aria-label="Find a publisher by name">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"

@@ -209,7 +209,8 @@
                                     ng-model-options="{ debounce: 250 }"
                                     typeahead-min-length="2"
                                     typeahead-editable="false"
-                                    placeholder="Filter Themes by Scheme...">
+                                    placeholder="Filter Themes by Scheme..."
+                                    aria-label="Find scheme by name to filter theme options">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear selected Scheme"
                                     ng-if="$ctrl.scheme"
@@ -224,7 +225,8 @@
                                     ng-model="$ctrl.typeaheadValue"
                                     ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                     ng-model-options="{debounce:200}"
-                                    placeholder="Find a Theme by name...">
+                                    placeholder="Find a Theme by name..."
+                                    aria-label="Find a theme by name">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"
