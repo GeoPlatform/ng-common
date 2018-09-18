@@ -79,7 +79,7 @@
         `
             <div class="card c-query-filter" ng-if="$ctrl.value">
 
-                <h5 class="card-title">Find Similar</h5>
+                <div class="card-title">Find Similar</div>
                 <div class="card-content">
 
                     <p class="u-text--sm">Searching for {{$ctrl.type}}s similar to the following: </p>

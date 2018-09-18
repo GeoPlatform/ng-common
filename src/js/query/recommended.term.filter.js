@@ -232,7 +232,7 @@
         `
             <div class="card c-query-filter c-filter__recommended-terms">
 
-                <h5 class="card-title">
+                <div class="card-title">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}"
                         aria-label="Toggle collapsed state of this filter"
@@ -241,7 +241,7 @@
                             ng-class="{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}"></span>
                     </button>
                     <span>Filter using Semantic Concepts</span>
-                </h5>
+                </div>
 
                 <div class="c-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">
 

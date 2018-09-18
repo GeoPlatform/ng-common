@@ -37,29 +37,23 @@
             replace: true,
             template: [
                 '<header class="app-header">',
-                // '  <div class="container-fluid">',
-                // '    <div class="row">',
-                // '      <div class="col-md-12">',
-                '       <ul role="menu" class="header__menu" gp-header-menu>',
-                '          <li ng-if="showHomeLink" role="menuitem">',
-                '            <a href="#/goHome">',
-                '                <span class="glyphicon glyphicon-home"></span> ',
-                '                <span class="hidden-xs hidden-sm">Home</span>',
-                '            </a>',
-                '          </li>',
-                '          <div class="transcluded"></div>',
-                '          <li role="menuitem"><span gp-login-button></span></li>',
-                '        </ul>',
-                '        <h1 class="brand">',
-                '          <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">',
-                '            <span class="icon-gp"></span>',
-                '            <span class="hidden-xs">GeoPlatform</span>',
-                '          </a>',
-                '          {{brand}}',
-                '        </h1>',
-                // '      </div>',
-                // '    </div>',
-                // '  </div>',
+                '  <ul role="menu" class="header__menu" gp-header-menu>',
+                '    <li ng-if="showHomeLink" role="menuitem">',
+                '      <a href="#/goHome">',
+                '        <span class="glyphicon glyphicon-home"></span> ',
+                '        <span class="hidden-xs hidden-sm">Home</span>',
+                '      </a>',
+                '    </li>',
+                '    <div class="transcluded"></div>',
+                '    <li role="menuitem"><span gp-login-button></span></li>',
+                '  </ul>',
+                '  <h1 class="brand">',
+                '    <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">',
+                '      <span class="icon-gp"></span>',
+                '      <span class="hidden-xs">GeoPlatform</span>',
+                '    </a>',
+                '    {{brand}}',
+                '  </h1>',
                 '  <gp-login-modal></gp-login-modal>',
                 '</header>',
             ].join(' '),
@@ -196,23 +190,23 @@
             replace: true,
             template:
             `
-                <header>
-                    <h4 class="brand">
+                <header class="app-header">
+                    <h1 class="brand">
                         <a href="{{portalUrl}}" title="Go to the GeoPlatform Home Page">
                             <span class="icon-gp"></span>
                             <span class="hidden-xs">GeoPlatform</span>
                         </a>
                         {{brand}}
-                    </h4>
+                    </h1>
                     <ul role="menu" class="header__menu" gp-header-menu>
-                        <li ng-if="showHomeLink">
+                        <li ng-if="showHomeLink" role="menuitem">
                             <a href="/">
                                 <span class="glyphicon glyphicon-home"></span>
                                 <span class="hidden-xs hidden-sm">Home</span>
                             </a>
                         </li>
                         <div class="transcluded"></div>
-                        <li><span gp-login-button></span></li>
+                        <li role="menuitem"><span gp-login-button></span></li>
                     </ul>
                 </header>
             `,
