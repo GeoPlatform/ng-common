@@ -1,5 +1,5 @@
-# ng-common
-Angular directives and services for GeoPlatform web applications
+# GeoPlatform NgCommon Library
+Angular directives, components, and services for GeoPlatform web applications
 
 
 ## Reference in Another Project
@@ -9,20 +9,22 @@ __Add from CDN__
 
 Major versions are made avaliable from CDN sources. You can include them in the following way:
 ```html
-<script src="http://dyk46gk69472z.cloudfront.net/gp.common/1.6.0/geoplatform.common.min.js"></script>
+<script src="https://s3.amazonaws.com/geoplatform-cdn/gp.common/VERSION/geoplatform.common.min.js"></script>
 ```
 
-__Add as a Bower dependency__
+__Add as an NPM dependency__
 
 ```json
-"dependencies": {
-
-    "gp.common": "GeoPlatform/ng-common#<version number>",
-
+{
+    "name": "myns-myapp",
+    "main": "index.js",
+    "dependencies": {
+       "geoplatform.common": "git+https://github.com/GeoPlatform/ng-common.git#VERSION",
+    }
 }
 ```
 
-Note: _version number_ should be that of the current release version of this project.  It is advised to __never__ reference any no?n-release tag or branch, such as "develop" or "master", when adding this project as a dependency in another.
+Note: _VERSION_ should be that of the current release version of this project with a value following the pattern _MAJOR_._MINOR_._PATCH_ (e.g., "1.0.0").  It is advised to __never__ reference any non-release tag or branch, such as "develop" or "master", when adding this project as a dependency in your application as those branches can and will change over the course of a release or between releases.
 
 
 
@@ -30,10 +32,8 @@ __Include the JavaScript__
 
 ```html
 <!doctype html>
-<html ng="app">
-  <head>
-    <!-- head contents -->
-  </head>
+<html ng="app" lang="en-us">
+  <head> <!-- head contents --> </head>
   <body>
     <!-- body contents -->
 
@@ -51,7 +51,7 @@ __Include the JavaScript__
         };
     </script>
 
-    <script src="/path/to/gp.common/dist/geoplatform.common.min.js"></script>
+    <script src="node_modules/geoplatform.common/dist/geoplatform.common.min.js"></script>
 
   </body>
 </html>
@@ -60,11 +60,11 @@ __Include the JavaScript__
 *Note: Environment configuration for the IDM/IDP and Portal URLs must be in place before including this JS file, encapsulated within a 'GeoPlatform' object (see above).*
 
 __Include the Less__
-Unlike the Geoplatform style project, ng-common does not compile source less into CSS, but it does concatenate the source Less files into one which can be included in other projects for compilation. **Be sure to include it after the style project's Less import(s).**
+Unlike the GeoPlatform Style library, NgCommon does not compile source less into CSS, but it does concatenate the source less files into one which can be included in other projects for compilation. **Be sure to include it after the style project's Less import(s).**
 
 ```less
-@import "relative/path/to/gp.style/src/less/platform.less";
-@import "relative/path/to/gp.common/dist/geoplatform.common.less";
+@import "node_modules/geoplatform.style/src/less/platform.less";
+@import "node_modules/geoplatform.common/dist/geoplatform.common.less";
 ```
 
 __Inject the Module__
@@ -79,33 +79,35 @@ The folling are values that can/should be set in the GeoPlatform global namespac
 | property | required | description | values | default
 |---|---|---|---|---|
 | portalUrl | yes | FQDN of GeoPlatform portal URL | N/A | N/A |
-|env \| ENV \| NODE_ENV | yes | Enviroment flag to run ng-common with. Some features (like authentication) may be disabled or preform differently in a development vs production enviroment | dev, development, prod, prd, sit, test | N/A |
+|env, ENV, NODE_ENV | yes (one of) | Environment flag to run NgCommon with. Some features (like authentication) may be disabled or preform differently in a development vs production environment | dev, development, prod, prd, sit, test | N/A |
 
 > See additonal configurations in the Authentication section
 
 <br><br>
 ## Authentication
-ng-common has an interface for authenticating and verifying user identitiy against gpoauth OAuth service. Ng-common will automatically direct a user to the oauth provider and then back to the application with an accessToken/JWT. The recieved JWT will be sent with all subsequent requests and should allow users to access resources avaliable to them.
+NgCommon has an interface for authenticating and verifying user identity against gpoauth OAuth service. Ng-common will automatically direct a user to the Oauth provider and then back to the application with an accessToken/JWT. The received JWT will be sent with all subsequent requests and should allow users to access resources available to them.
 
 There are two major types of authentication:
-#### token (implicit)
-Token or implicit type authentication does not require or use a back end service for authentication. The entire authentication process will be handled between the Oauth provider and front end application hosting ng-common.
 
-#### grant
-Grant type authentiction require a back end service (like node-gpoauth) to handle recieving JWT and related tokens from the OAuth provider.
-<br>
+#### Token (implicit)
+Token or implicit type authentication does not require or use a back end service for authentication. The entire authentication process will be handled between the Oauth provider and front end application hosting NgCommon.
+
+#### Grant
+Grant type authentication require a back end service (like node-gpoauth) to handle receiving JWT and related tokens from the OAuth provider.
+
+
 
 > **NOTE**:
 > For security reasons the JWT stored in local storage is scrambled. Passing the encoded value in the Authorization header will not validate server side.
 
-### iFrame Authentication
-Apps have the abilility to allow for authentication via iframe and keep the user from having to redirect to the oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
+### IFRAME Authentication
+Apps have the ability to allow for authentication via iframe and keep the user from having to redirect to the Oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
 
 **Events related to a authentication are:**
 
 | name | description | args |
 |---|---|---|
-| userAuthenticated | Is called when a user has authenticated and the iframe authenticaiton window is closed, or user has signed out. In the later case null will be passed for the user argument. | **event**: the event, <br> **user**: User object (or null) |
+| userAuthenticated | Is called when a user has authenticated and the iframe authentication window is closed, or user has signed out. In the later case null will be passed for the user argument. | **event**: the event **user**: User object (or null) |
 | userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | **event**: the event |
 
 **Example:**
@@ -120,16 +122,17 @@ Apps have the abilility to allow for authentication via iframe and keep the user
         })
     });
 ```
-<br><br>
 
-### Autentication Configuration
+
+
+### Authentication Configuration
 The following are property that sould be found at the top level of the GeoPlatorm namespace:
 
 | property | required | description | type | default
 |---|---|---|---|---|
 | IDP_BASE_URL | yes | URL of the Oauth serice. | string | N/A |
 | AUTH_TYPE | no | Type of token to request from gpoauth.  | token, grant | grant |
-| ALLOWIFRAMELOGIN | no | Allow ng-common to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | boolean | false |
+| ALLOWIFRAMELOGIN | no | Allow NgCommon to use an ifame instead of redirect for authenticating a user. This will allow users to retain their in-memory edits while authenticating. | boolean | false |
 | FORCE_LOGIN | no | Should user be forced to redirct or show login screen when its detected that they are unauthenticated | boolean | false |
 | APP_ID | yes* | Id (client_id) of appliction registerd with the Oauth service provider. | string | N/A |
 | CALLBACK | no | URL to call back when re-directed from oauth authentication loop. | string | /login |
@@ -138,8 +141,8 @@ The following are property that sould be found at the top level of the GeoPlator
 
 \* only required configuration when authorization is type 'token'.
 
-<br><br>
-## Directives
+
+## AngularJS Directives
 
 ### Header
 
@@ -147,12 +150,12 @@ Contents of the `gp-header` element will be transcluded into the menu generated 
 
 ```html
 <div gp-header brand="App Title" show-home-link="true">
-  <li><a href="#/page1">Page 1</a></li>
-  <li><a href="#/page2">Page 2</a></li>
+  <li role="menuitem"><a href="#/page1">Page 1</a></li>
+  <li role="menuitem"><a href="#/page2">Page 2</a></li>
 </div>
 ```
 
-**Note:** Any class names set upon the `gp-header` element will be automatically applied to the resulting HTML generated by the directive (useful when implementing fixed headers using `.navbar-fixed`).
+>**Note:** Any class names set upon the `gp-header` element will be automatically applied to the resulting HTML generated by the directive (useful when implementing fixed headers using `.navbar-fixed`).
 
 
 ### Header Menu
@@ -160,12 +163,14 @@ This is used by `gp-header` but can also be used separately.  Watches route chan
 
 ```html
 <ul role="menu" class="header__menu" gp-header-menu>
-  <li><a href="#/page1">Page 1</a></li>
-  <li><a href="#/page2">Page 2</a></li>
+  <li role="menuitem"><a href="#/page1">Page 1</a></li>
+  <li role="menuitem"><a href="#/page2">Page 2</a></li>
 </ul>
 ```
 
-**Note:** Only works when applied to a `UL` element.
+> **Note:** Only works when applied to a `UL` element.
+
+> **Accessibility:** Make sure to set 'role="menuitem"' on any transcluded menu items to ensure your application is accessible for users using screenreaders.
 
 
 ### Sign In Button
@@ -173,7 +178,7 @@ Uses the Authentication Service and displays either a "Sign In" button or a butt
 
 ```html
 <span gp-login-button></span>
-`
+```
 
 
 
@@ -183,12 +188,12 @@ Will resize the element to fill the page minus the `header` element's height.
 
 ```html
 <body>
-  <header>...</header>
+  <header class="app-header">...</header>
   <div class="myClass" gp-resize></div>
 </body>
 ```
 
-**Note:** Does not support `footer` element's heights at this time.
+> **Note:** Does not support `footer` element's heights at this time.
 
 
 ### Responsive Helper
@@ -256,7 +261,7 @@ hook3();    //dismiss
 
 ```
 
-## Filters
+## AngularJS Filters
 
 'fixLabel' : replaces underscores in text with spaces.
 
@@ -444,7 +449,8 @@ if(this.authState.user) {
 ```
 
 
-## Deploy to CDN
-The files in this repository are served from a CDN provider via AWS CloudFront.
+## Query Service
+Read the [Service docs](src/js/services/README.md) for info on how to use the provided BrowseObjects service.
 
-To upload a CDN version simply run `uploadToCDN.sh` with the version number.
+## Query Filters
+Read the [Query Filters documentation](src/js/query/README.md) for info on how to use the provided query filters.
