@@ -223,14 +223,14 @@
                             <div class="input-group-slick">
                                 <input name="scheme-typeahead" type="text" class="form-control"
                                     ng-model="$ctrl.typeaheadValue"
-                                    ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
+                                    ng-change="$ctrl.onKeywordsChange($ctrl.typeaheadValue)"
                                     ng-model-options="{debounce:200}"
                                     placeholder="Find a Theme by name..."
                                     aria-label="Find a theme by name">
                                 <span class="glyphicon glyphicon-remove"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"
-                                    ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
+                                    ng-click="$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)">
                                 </span>
                             </div>
                         </div>
@@ -253,7 +253,10 @@
 
                         <div class="c-facet__value disabled t-fg--gray-md"
                             ng-if="$ctrl.additionalValueCount">
-                            <em>plus {{$ctrl.additionalValueCount}} more options</em>
+                            <em>
+                                plus {{$ctrl.additionalValueCount}} more options;
+                                use search box to limit options
+                            </em>
                         </div>
 
 
