@@ -316,7 +316,8 @@
                 ERROR:              eventKey + 'error',
                 SELECTED_ADDED:     eventKey + 'selected:added',
                 SELECTED_REMOVED:   eventKey + 'selected:removed',
-                SIMILARITY:         eventKey + 'similarTo'
+                SIMILARITY:         eventKey + 'similarTo',
+                CLEARED:            eventKey + 'cleared'
             },
 
             /**
@@ -391,6 +392,12 @@
                 angular.forEach(opts, (value, key) => { setOption(key, value, false); });
                 if(fire) _doUpdate(true);
             },
+
+            /**
+             * @param {string} name - name of query parameter
+             * @return {any} value of specified query parameter
+             */
+            getQueryOption: function(name) { return _options[name]; },
 
             /**
              * @param {string} text - free text query
@@ -598,6 +605,7 @@
                     else _options[prop] = null;
                 }
 
+                notify(this.events.CLEARED);
                 if(refresh || typeof(refresh) === 'undefined')
                     _doUpdate(true);
             },
@@ -743,6 +751,7 @@
                     sort: "modified,desc", order: "asc",
                     facets: {}
                 };
+                notify(this.events.CLEARED);
 
                 _facets = [];
                 _selectedFacets = [];

@@ -29,18 +29,37 @@
                 size: 5,
                 sizeOptions: [5, 10, 20]
             };
+
+            //listen to service for loading event so we can track if the user
+            // has cleared the entire set of constraints outside of each filter
+            // component
+            this.listener = this.service.on(this.service.events.LOADING, () => {
+                let value = this.service.getQueryOption(PARAMETER);
+                if(!value || !value.length) this.values = [];
+                else {
+                    if(typeof(value.push) === 'undefined')
+                        value = value.split(',');
+                    if(value.length !== this.values.length) {
+                        console.log("[WARN] RecommendedTermFilter - service and filter " +
+                            "have differing numbers of selected terms (" +
+                            value.length + " vs " + this.values.length + ")");
+                    }
+                }
+            });
         }
 
         $onDestroy () {
-            this.$timeout = null;
-            this.displayOpts = null;
-            this.values     = null;
-            this.suggested  = null;
-            this.service    = null;
-            this.termService = null;
-            this.termQuery  = null;
-            this.paging     = null;
-            this.eventHandlers = null;
+            this.listener();
+            this.listener       = null;
+            this.$timeout       = null;
+            this.displayOpts    = null;
+            this.values         = null;
+            this.suggested      = null;
+            this.service        = null;
+            this.termService    = null;
+            this.termQuery      = null;
+            this.paging         = null;
+            this.eventHandlers  = null;
         }
 
 

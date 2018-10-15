@@ -220,95 +220,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return AuthenticatedComponent;
 });
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular, Constants) {
     'use strict';
 
@@ -571,6 +482,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular) {
     "use strict";
@@ -2114,6 +2114,7 @@ var __extends = undefined && undefined.__extends || function () {
             this.$timeout = $timeout;
         }
         RecommendedTermFilter.prototype.$onInit = function () {
+            var _this = this;
             this.displayOpts = {
                 fetching: false,
                 empty: false,
@@ -2128,8 +2129,22 @@ var __extends = undefined && undefined.__extends || function () {
                 size: 5,
                 sizeOptions: [5, 10, 20]
             };
+            //listen to service for loading event so we can track if the user
+            // has cleared the entire set of constraints outside of each filter
+            // component
+            this.listener = this.service.on(this.service.events.LOADING, function () {
+                var value = _this.service.getQueryOption(PARAMETER);
+                if (!value || !value.length) _this.values = [];else {
+                    if (typeof value.push === 'undefined') value = value.split(',');
+                    if (value.length !== _this.values.length) {
+                        console.log("[WARN] RecommendedTermFilter - service and filter " + "have differing numbers of selected terms (" + value.length + " vs " + _this.values.length + ")");
+                    }
+                }
+            });
         };
         RecommendedTermFilter.prototype.$onDestroy = function () {
+            this.listener();
+            this.listener = null;
             this.$timeout = null;
             this.displayOpts = null;
             this.values = null;
@@ -2310,6 +2325,7 @@ var __extends = undefined && undefined.__extends || function () {
 (function (angular) {
     'use strict';
 
+    var PARAMETER = 'similarTo';
     angular.module('gp-common').component('similarityFilter', {
         bindings: {
             //type of object being searched (ie, Layer, Map)
@@ -2326,14 +2342,22 @@ var __extends = undefined && undefined.__extends || function () {
                 this.value = null;
                 this.useMap = false;
                 var evtName = this.service.events.SIMILARITY;
-                this.listener = this.service.on(evtName, function (event, layer) {
+                this.applyListener = this.service.on(evtName, function (event, layer) {
                     _this.value = layer;
-                    _this.service.applyOption('similarTo', _this.value.id, true);
+                    _this.service.applyOption(PARAMETER, _this.value.id, true);
+                });
+                //listen to service for loading event so we can track if the user
+                // has cleared the entire set of constraints outside of each filter
+                // component
+                this.checkListener = this.service.on(this.service.events.LOADING, function () {
+                    var value = _this.service.getQueryOption(PARAMETER);
+                    if (!value) _this.value = null;
                 });
                 if (!this.type) this.type = "item";
             };
             this.$onDestroy = function () {
-                this.listener(); //dispose of listener
+                this.applyListener(); //dispose of listeners
+                this.checkListener(); //...
                 this.collapse = null;
                 this.value = null;
                 this.service = null;
@@ -2345,23 +2369,23 @@ var __extends = undefined && undefined.__extends || function () {
             this.clearValue = function () {
                 if (this.useMap) {
                     this.useMap = false;
-                    this.service.applyOption('similarTo', this.value.id, true);
+                    this.service.applyOption(PARAMETER, this.value.id, true);
                 } else {
                     this.value = null;
-                    this.service.applyOption('similarTo', null, true);
+                    this.service.applyOption(PARAMETER, null, true);
                 }
             };
             this.toggleCurrentMap = function (bool) {
                 if (this.useMap) {
                     this.useMap = false;
                     if (this.value) {
-                        this.service.applyOption('similarTo', this.value.id, true);
+                        this.service.applyOption(PARAMETER, this.value.id, true);
                     } else {
-                        this.service.applyOption('similarTo', false, true);
+                        this.service.applyOption(PARAMETER, false, true);
                     }
                 } else {
                     this.useMap = true;
-                    this.service.applyOption('similarTo', this.mapId, true);
+                    this.service.applyOption(PARAMETER, this.mapId, true);
                 }
             };
         },
@@ -2539,7 +2563,7 @@ var __extends = undefined && undefined.__extends || function () {
             service: '<'
         },
         controller: ThemesFilter,
-        template: "\n            <div class=\"card c-query-filter c-browse-filter\">\n                <div class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span>Filter by Themes</span>\n                </div>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"theme-filter-schemes\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.scheme\"\n                                    typeahead-on-select=\"$ctrl.onSchemeSelection($item, $model, $label, $event)\"\n                                    uib-typeahead=\"opt as opt.label for opt in $ctrl.fetchSchemes($viewValue)\"\n                                    typeahead-loading=\"$ctrl.areSchemesLoading\"\n                                    typeahead-no-results=\"$ctrl.noSchemeResults\"\n                                    ng-model-options=\"{ debounce: 250 }\"\n                                    typeahead-min-length=\"2\"\n                                    typeahead-editable=\"false\"\n                                    placeholder=\"Filter Themes by Scheme...\"\n                                    aria-label=\"Find scheme by name to filter theme options\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear selected Scheme\"\n                                    ng-if=\"$ctrl.scheme\"\n                                    ng-click=\"$ctrl.onSchemeChange($ctrl.scheme=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.onKeywordsChange($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Find a Theme by name...\"\n                                    aria-label=\"Find a theme by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Theme\n                        </a>\n                        <a ng-repeat=\"theme in $ctrl.values track by $index\"\n                            class=\"c-facet__value\" ng-click=\"$ctrl.toggle(theme)\"\n                            ng-class=\"{active:$ctrl.isSelected(theme)}\">\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(theme),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(theme)}\"></span>\n                            {{theme.label || \"Untitled Theme\"}}\n                        </a>\n\n                        <div class=\"c-facet__value disabled t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>plus {{$ctrl.additionalValueCount}} more options</em>\n                        </div>\n\n\n                        <div class=\"c-facet__value disabled\" ng-if=\"$ctrl.outsideResults.length\">\n                            <em>The following selections are not in the above results</em>\n                        </div>\n\n                        <a ng-repeat=\"theme in $ctrl.outsideResults track by $index\"\n                            class=\"c-facet__value active\" ng-click=\"$ctrl.deselectOutside(theme)\">\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                            <span class=\"glyphicon glyphicon-check\"></span>\n                            {{theme.label || \"Untitled Theme\"}}\n                        </a>\n\n                    </div>\n                </div>\n            </div>\n        "
+        template: "\n            <div class=\"card c-query-filter c-browse-filter\">\n                <div class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.collapse?'Expand':'Collapse'}}\"\n                        ng-click=\"$ctrl.collapse = !$ctrl.collapse\">\n                        <span class=\"glyphicon\" ng-class=\"{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}\"></span>\n                    </button>\n                    <span>Filter by Themes</span>\n                </div>\n                <div class=\"card-content\">\n                    <div class=\"c-facets\" ng-class=\"{'is-collapsed':$ctrl.collapse}\">\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"theme-filter-schemes\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.scheme\"\n                                    typeahead-on-select=\"$ctrl.onSchemeSelection($item, $model, $label, $event)\"\n                                    uib-typeahead=\"opt as opt.label for opt in $ctrl.fetchSchemes($viewValue)\"\n                                    typeahead-loading=\"$ctrl.areSchemesLoading\"\n                                    typeahead-no-results=\"$ctrl.noSchemeResults\"\n                                    ng-model-options=\"{ debounce: 250 }\"\n                                    typeahead-min-length=\"2\"\n                                    typeahead-editable=\"false\"\n                                    placeholder=\"Filter Themes by Scheme...\"\n                                    aria-label=\"Find scheme by name to filter theme options\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear selected Scheme\"\n                                    ng-if=\"$ctrl.scheme\"\n                                    ng-click=\"$ctrl.onSchemeChange($ctrl.scheme=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <div class=\"c-facet__value\">\n                            <div class=\"input-group-slick\">\n                                <input name=\"scheme-typeahead\" type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.typeaheadValue\"\n                                    ng-change=\"$ctrl.onKeywordsChange($ctrl.typeaheadValue)\"\n                                    ng-model-options=\"{debounce:200}\"\n                                    placeholder=\"Find a Theme by name...\"\n                                    aria-label=\"Find a theme by name\">\n                                <span class=\"glyphicon glyphicon-remove\"\n                                    title=\"Clear query\"\n                                    ng-if=\"$ctrl.typeaheadValue.length\"\n                                    ng-click=\"$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)\">\n                                </span>\n                            </div>\n                        </div>\n\n                        <a class=\"c-facet__value\" ng-click=\"$ctrl.clear()\"\n                            ng-class=\"{active:!$ctrl.hasSelections()}\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}\">\n                            </span>\n                            Any Theme\n                        </a>\n                        <a ng-repeat=\"theme in $ctrl.values track by $index\"\n                            class=\"c-facet__value\" ng-click=\"$ctrl.toggle(theme)\"\n                            ng-class=\"{active:$ctrl.isSelected(theme)}\">\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-check':$ctrl.isSelected(theme),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(theme)}\"></span>\n                            {{theme.label || \"Untitled Theme\"}}\n                        </a>\n\n                        <div class=\"c-facet__value disabled t-fg--gray-md\"\n                            ng-if=\"$ctrl.additionalValueCount\">\n                            <em>\n                                plus {{$ctrl.additionalValueCount}} more options;\n                                use search box to limit options\n                            </em>\n                        </div>\n\n\n                        <div class=\"c-facet__value disabled\" ng-if=\"$ctrl.outsideResults.length\">\n                            <em>The following selections are not in the above results</em>\n                        </div>\n\n                        <a ng-repeat=\"theme in $ctrl.outsideResults track by $index\"\n                            class=\"c-facet__value active\" ng-click=\"$ctrl.deselectOutside(theme)\">\n                            <span class=\"badge pull-right\">{{$ctrl.getCount(theme)}}</span>\n                            <span class=\"glyphicon glyphicon-check\"></span>\n                            {{theme.label || \"Untitled Theme\"}}\n                        </a>\n\n                    </div>\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
 
@@ -2751,7 +2775,8 @@ var __extends = undefined && undefined.__extends || function () {
                 ERROR: eventKey + 'error',
                 SELECTED_ADDED: eventKey + 'selected:added',
                 SELECTED_REMOVED: eventKey + 'selected:removed',
-                SIMILARITY: eventKey + 'similarTo'
+                SIMILARITY: eventKey + 'similarTo',
+                CLEARED: eventKey + 'cleared'
             },
             /**
              * @return {bool}
@@ -2826,6 +2851,13 @@ var __extends = undefined && undefined.__extends || function () {
                     setOption(key, value, false);
                 });
                 if (fire) _doUpdate(true);
+            },
+            /**
+             * @param {string} name - name of query parameter
+             * @return {any} value of specified query parameter
+             */
+            getQueryOption: function getQueryOption(name) {
+                return _options[name];
             },
             /**
              * @param {string} text - free text query
@@ -3049,6 +3081,7 @@ var __extends = undefined && undefined.__extends || function () {
                     if (!_options.hasOwnProperty(prop)) continue;
                     if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
                 }
+                notify(this.events.CLEARED);
                 if (refresh || typeof refresh === 'undefined') _doUpdate(true);
             },
             /*
@@ -3168,6 +3201,7 @@ var __extends = undefined && undefined.__extends || function () {
                     sort: "modified,desc", order: "asc",
                     facets: {}
                 };
+                notify(this.events.CLEARED);
                 _facets = [];
                 _selectedFacets = [];
                 _results = [];
