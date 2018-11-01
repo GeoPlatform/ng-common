@@ -75,7 +75,7 @@
                 let newValues = response.data.results.slice(0);
                 this.additionalValueCount = total - newValues.length;
 
-                let selections = this.service.getAgencies();
+                let selections = this.getSelected();
                 this.outsideResults = (this.values||[]).filter( v => {
                     //find existing values that are selected
                     return ~selections.indexOf(v.id) &&

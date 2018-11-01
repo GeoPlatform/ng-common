@@ -220,95 +220,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return AuthenticatedComponent;
 });
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular) {
     "use strict";
 
@@ -1573,6 +1484,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(angular);
 
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
+
 (function (angular, Constants) {
     'use strict';
 
@@ -2071,7 +2071,7 @@ var __extends = undefined && undefined.__extends || function () {
                 var total = response.data.totalResults;
                 var newValues = response.data.results.slice(0);
                 _this.additionalValueCount = total - newValues.length;
-                var selections = _this.service.getAgencies();
+                var selections = _this.getSelected();
                 _this.outsideResults = (_this.values || []).filter(function (v) {
                     //find existing values that are selected
                     return ~selections.indexOf(v.id) &&
@@ -2114,6 +2114,7 @@ var __extends = undefined && undefined.__extends || function () {
             this.$timeout = $timeout;
         }
         RecommendedTermFilter.prototype.$onInit = function () {
+            var _this = this;
             this.displayOpts = {
                 fetching: false,
                 empty: false,
@@ -2128,8 +2129,22 @@ var __extends = undefined && undefined.__extends || function () {
                 size: 5,
                 sizeOptions: [5, 10, 20]
             };
+            //listen to service for loading event so we can track if the user
+            // has cleared the entire set of constraints outside of each filter
+            // component
+            this.listener = this.service.on(this.service.events.LOADING, function () {
+                var value = _this.service.getQueryOption(PARAMETER);
+                if (!value || !value.length) _this.values = [];else {
+                    if (typeof value.push === 'undefined') value = value.split(',');
+                    if (value.length !== _this.values.length) {
+                        console.log("[WARN] RecommendedTermFilter - service and filter " + "have differing numbers of selected terms (" + value.length + " vs " + _this.values.length + ")");
+                    }
+                }
+            });
         };
         RecommendedTermFilter.prototype.$onDestroy = function () {
+            this.listener();
+            this.listener = null;
             this.$timeout = null;
             this.displayOpts = null;
             this.values = null;
@@ -2310,6 +2325,7 @@ var __extends = undefined && undefined.__extends || function () {
 (function (angular) {
     'use strict';
 
+    var PARAMETER = 'similarTo';
     angular.module('gp-common').component('similarityFilter', {
         bindings: {
             //type of object being searched (ie, Layer, Map)
@@ -2326,14 +2342,22 @@ var __extends = undefined && undefined.__extends || function () {
                 this.value = null;
                 this.useMap = false;
                 var evtName = this.service.events.SIMILARITY;
-                this.listener = this.service.on(evtName, function (event, layer) {
+                this.applyListener = this.service.on(evtName, function (event, layer) {
                     _this.value = layer;
-                    _this.service.applyOption('similarTo', _this.value.id, true);
+                    _this.service.applyOption(PARAMETER, _this.value.id, true);
+                });
+                //listen to service for loading event so we can track if the user
+                // has cleared the entire set of constraints outside of each filter
+                // component
+                this.checkListener = this.service.on(this.service.events.LOADING, function () {
+                    var value = _this.service.getQueryOption(PARAMETER);
+                    if (!value) _this.value = null;
                 });
                 if (!this.type) this.type = "item";
             };
             this.$onDestroy = function () {
-                this.listener(); //dispose of listener
+                this.applyListener(); //dispose of listeners
+                this.checkListener(); //...
                 this.collapse = null;
                 this.value = null;
                 this.service = null;
@@ -2345,23 +2369,23 @@ var __extends = undefined && undefined.__extends || function () {
             this.clearValue = function () {
                 if (this.useMap) {
                     this.useMap = false;
-                    this.service.applyOption('similarTo', this.value.id, true);
+                    this.service.applyOption(PARAMETER, this.value.id, true);
                 } else {
                     this.value = null;
-                    this.service.applyOption('similarTo', null, true);
+                    this.service.applyOption(PARAMETER, null, true);
                 }
             };
             this.toggleCurrentMap = function (bool) {
                 if (this.useMap) {
                     this.useMap = false;
                     if (this.value) {
-                        this.service.applyOption('similarTo', this.value.id, true);
+                        this.service.applyOption(PARAMETER, this.value.id, true);
                     } else {
-                        this.service.applyOption('similarTo', false, true);
+                        this.service.applyOption(PARAMETER, false, true);
                     }
                 } else {
                     this.useMap = true;
-                    this.service.applyOption('similarTo', this.mapId, true);
+                    this.service.applyOption(PARAMETER, this.mapId, true);
                 }
             };
         },
@@ -2751,7 +2775,8 @@ var __extends = undefined && undefined.__extends || function () {
                 ERROR: eventKey + 'error',
                 SELECTED_ADDED: eventKey + 'selected:added',
                 SELECTED_REMOVED: eventKey + 'selected:removed',
-                SIMILARITY: eventKey + 'similarTo'
+                SIMILARITY: eventKey + 'similarTo',
+                CLEARED: eventKey + 'cleared'
             },
             /**
              * @return {bool}
@@ -2826,6 +2851,13 @@ var __extends = undefined && undefined.__extends || function () {
                     setOption(key, value, false);
                 });
                 if (fire) _doUpdate(true);
+            },
+            /**
+             * @param {string} name - name of query parameter
+             * @return {any} value of specified query parameter
+             */
+            getQueryOption: function getQueryOption(name) {
+                return _options[name];
             },
             /**
              * @param {string} text - free text query
@@ -3049,6 +3081,7 @@ var __extends = undefined && undefined.__extends || function () {
                     if (!_options.hasOwnProperty(prop)) continue;
                     if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
                 }
+                notify(this.events.CLEARED);
                 if (refresh || typeof refresh === 'undefined') _doUpdate(true);
             },
             /*
@@ -3168,6 +3201,7 @@ var __extends = undefined && undefined.__extends || function () {
                     sort: "modified,desc", order: "asc",
                     facets: {}
                 };
+                notify(this.events.CLEARED);
                 _facets = [];
                 _selectedFacets = [];
                 _results = [];

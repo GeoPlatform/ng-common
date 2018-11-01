@@ -3,6 +3,8 @@
 
     'use strict';
 
+    const PARAMETER = 'similarTo';
+
     angular.module('gp-common').component('similarityFilter', {
         bindings: {
 
@@ -24,9 +26,17 @@
                 this.useMap     = false;
 
                 let evtName     = this.service.events.SIMILARITY;
-                this.listener   = this.service.on(evtName, (event, layer) => {
+                this.applyListener   = this.service.on(evtName, (event, layer) => {
                     this.value  = layer;
-                    this.service.applyOption('similarTo', this.value.id, true);
+                    this.service.applyOption(PARAMETER, this.value.id, true);
+                });
+
+                //listen to service for loading event so we can track if the user
+                // has cleared the entire set of constraints outside of each filter
+                // component
+                this.checkListener = this.service.on(this.service.events.LOADING, () => {
+                    let value = this.service.getQueryOption(PARAMETER);
+                    if(!value) this.value = null;
                 });
 
                 if(!this.type)
@@ -34,11 +44,12 @@
             };
 
             this.$onDestroy = function() {
-                this.listener();    //dispose of listener
-                this.collapse   = null;
-                this.value      = null;
-                this.service    = null;
-                this.mapId      = null;
+                this.applyListener();    //dispose of listeners
+                this.checkListener();    //...
+                this.collapse = null;
+                this.value    = null;
+                this.service  = null;
+                this.mapId    = null;
             };
 
             this.hasSelections = function() {
@@ -49,10 +60,10 @@
 
                 if(this.useMap) {
                     this.useMap = false;
-                    this.service.applyOption('similarTo', this.value.id, true);
+                    this.service.applyOption(PARAMETER, this.value.id, true);
                 } else {
                     this.value = null;
-                    this.service.applyOption('similarTo', null, true);
+                    this.service.applyOption(PARAMETER, null, true);
                 }
 
             };
@@ -63,14 +74,14 @@
                     this.useMap = false;
 
                     if(this.value) {
-                        this.service.applyOption('similarTo', this.value.id, true);
+                        this.service.applyOption(PARAMETER, this.value.id, true);
                     } else {
-                        this.service.applyOption('similarTo', false, true);
+                        this.service.applyOption(PARAMETER, false, true);
                     }
 
                 } else {
                     this.useMap = true;
-                    this.service.applyOption('similarTo', this.mapId, true);
+                    this.service.applyOption(PARAMETER, this.mapId, true);
                 }
             };
 
