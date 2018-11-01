@@ -1,6 +1,6 @@
 {
   "name": "geoplatform.common",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "private": true,
   "repository": {
     "type": "git",
