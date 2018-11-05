@@ -679,18 +679,24 @@
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
-              $timeout(function(){ $scope.requireLogin = true; })
+              $timeout(function(){
+                $scope.requireLogin = true;
+                $rootScope.$broadcast('auth:iframeLoginShow')
+              })
             });
 
             // Catch the request to display login modal
             $scope.$on('userAuthenticated', function(){
-               $timeout(function(){ $scope.requireLogin = false })
+               $timeout(function(){
+                $scope.requireLogin = false
+                $rootScope.$broadcast('auth:iframeLoginHide')
+              })
             });
 
             $scope.cancel = function(){
               console.log("CALLED")
               $scope.requireLogin = false
-
+              $rootScope.$broadcast('auth:iframeLoginHide')
             }
 
           }
