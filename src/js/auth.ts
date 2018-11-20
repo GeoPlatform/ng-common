@@ -572,7 +572,6 @@
            */
           private setAuth(jwt: string): void {
             this.saveToLocalStorage('gpoauthJWT', jwt)
-            $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
           };
@@ -600,7 +599,19 @@
      * requests
      */
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
-      // Interceptor
+      // Interceptors
+
+      // Request Handler
+      function requestHandler(config: ng.IRequestConfig){
+        // Add the token from Local-storage to the outgoing request
+        const AuthenticationService = $injector.get('AuthenticationService')
+        const token = AuthenticationService.getJWT();
+        config.headers['Authorization'] = token ? `Bearer ${token}` : '';
+
+        return config;
+      }
+
+      // Generic Response Handler
       function respHandler(resp: ng.IHttpResponse<any>) {
         const AuthenticationService = $injector.get('AuthenticationService')
         const jwt = getJWTFromUrl();
@@ -628,6 +639,7 @@
       // Apply handler to all responses (regular and error as to not miss
       // tokens passed from node-gpoauth even on 4XX and 5XX responses)
       return {
+        request: requestHandler,
         response: respHandler,
         responseError: respErrorHandler
       };
@@ -667,18 +679,24 @@
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
-              $timeout(function(){ $scope.requireLogin = true; })
+              $timeout(function(){
+                $scope.requireLogin = true;
+                $rootScope.$broadcast('auth:iframeLoginShow')
+              })
             });
 
             // Catch the request to display login modal
             $scope.$on('userAuthenticated', function(){
-               $timeout(function(){ $scope.requireLogin = false })
+               $timeout(function(){
+                $scope.requireLogin = false
+                $rootScope.$broadcast('auth:iframeLoginHide')
+              })
             });
 
             $scope.cancel = function(){
               console.log("CALLED")
               $scope.requireLogin = false
-
+              $rootScope.$broadcast('auth:iframeLoginHide')
             }
 
           }
