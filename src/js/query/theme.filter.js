@@ -82,7 +82,7 @@
          */
         getCount(value) {
             var facet = this.service.getFacet('themes');
-            if(!facet) return '';
+            if(!facet || !facet.buckets || !facet.buckets.length) return '';
             var valObj = facet.buckets.find(function(v) { return v.label===value.id; });
             if(!valObj) return '';
             return valObj.count;
