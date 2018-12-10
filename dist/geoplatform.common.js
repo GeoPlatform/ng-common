@@ -220,95 +220,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return AuthenticatedComponent;
 });
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular) {
     "use strict";
 
@@ -1572,6 +1483,95 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         };
     });
 })(angular);
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';
@@ -4147,7 +4147,6 @@ var __extends = undefined && undefined.__extends || function () {
              */
             AuthService.prototype.setAuth = function (jwt) {
                 this.saveToLocalStorage('gpoauthJWT', jwt);
-                $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
                 $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
                 // $http.defaults.useXDomain = true;
             };
@@ -4168,7 +4167,16 @@ var __extends = undefined && undefined.__extends || function () {
         }();
         return new AuthService();
     }]).factory('ng-common-AuthenticationInterceptor', ["$injector", "$window", function ($injector, $window) {
-        // Interceptor
+        // Interceptors
+        // Request Handler
+        function requestHandler(config) {
+            // Add the token from Local-storage to the outgoing request
+            var AuthenticationService = $injector.get('AuthenticationService');
+            var token = AuthenticationService.getJWT();
+            config.headers['Authorization'] = token ? "Bearer " + token : '';
+            return config;
+        }
+        // Generic Response Handler
         function respHandler(resp) {
             var AuthenticationService = $injector.get('AuthenticationService');
             var jwt = getJWTFromUrl();
@@ -4192,6 +4200,7 @@ var __extends = undefined && undefined.__extends || function () {
         // Apply handler to all responses (regular and error as to not miss
         // tokens passed from node-gpoauth even on 4XX and 5XX responses)
         return {
+            request: requestHandler,
             response: respHandler,
             responseError: respErrorHandler
         };
@@ -4211,17 +4220,20 @@ var __extends = undefined && undefined.__extends || function () {
                 $scope.$on('auth:requireLogin', function () {
                     $timeout(function () {
                         $scope.requireLogin = true;
+                        $rootScope.$broadcast('auth:iframeLoginShow');
                     });
                 });
                 // Catch the request to display login modal
                 $scope.$on('userAuthenticated', function () {
                     $timeout(function () {
                         $scope.requireLogin = false;
+                        $rootScope.$broadcast('auth:iframeLoginHide');
                     });
                 });
                 $scope.cancel = function () {
                     console.log("CALLED");
                     $scope.requireLogin = false;
+                    $rootScope.$broadcast('auth:iframeLoginHide');
                 };
             }]
         };
