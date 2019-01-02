@@ -6,9 +6,10 @@
 /// <reference path="../node_modules/@types/angular-route/index.d.ts" />
 
 declare const jQuery: JQLite
+declare const RPMService: any
 
 // ============== AngularJS augments ==========
 
 interface IInjectorService {
     get<T>(name: string, caller?: string): T;
-  }
+}

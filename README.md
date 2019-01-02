@@ -80,6 +80,8 @@ The folling are values that can/should be set in the GeoPlatform global namespac
 |---|---|---|---|---|
 | portalUrl | yes | FQDN of GeoPlatform portal URL | N/A | N/A |
 |env, ENV, NODE_ENV | yes (one of) | Environment flag to run NgCommon with. Some features (like authentication) may be disabled or preform differently in a development vs production environment | dev, development, prod, prd, sit, test | N/A |
+| loadRPM | no | Load [RPM](http://geoplatform-cdn.s3-website-us-east-1.amazonaws.com/gp.rpm/stable/docs/jsdocs/index.html) library into browser if not already loaded. | true, false | false |
+| rpmVersion | no | version of RPM lib to load (RPM-JS will only be loaed if it is not already loaded) | latest, stable, 0.1.0, 0.1.4, etc. | latest |
 
 > See additonal configurations in the Authentication section
 

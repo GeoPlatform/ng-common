@@ -182,6 +182,20 @@
            * @method init
            */
           private init(){
+            const self = this;
+            // Delay init until RPMService is loaded
+            if(!RPMService && Config.loadRPM){
+              const script = document.createElement('script');
+              script.onload = function () {
+                  //do stuff with the script
+                  self.init();
+              };
+              script.src = `https://s3.amazonaws.com/geoplatform-cdn/gp.rpm/${Config.RPMVersion || 'stable'}/js/gp.rpm.browser.js`;
+
+              document.head.appendChild(script);
+              return // skip init() till RPM is loaded
+            }
+
             const jwt = this.getJWT();
             if(jwt) this.setAuth(jwt)
 
@@ -571,6 +585,9 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
+            if(RPMService && jwt.length)
+              RPMService().setUserId(this.parseJwt(jwt).sub)
+
             this.saveToLocalStorage('gpoauthJWT', jwt)
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
