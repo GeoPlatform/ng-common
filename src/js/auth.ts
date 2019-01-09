@@ -184,7 +184,7 @@
           private init(){
             const self = this;
             // Delay init until RPMService is loaded
-            if(!RPMService && Config.loadRPM){
+            if(typeof RPMService != 'undefined' && Config.loadRPM){
               const script = document.createElement('script');
               script.onload = function () {
                   //do stuff with the script
