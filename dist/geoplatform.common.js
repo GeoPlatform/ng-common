@@ -3669,6 +3669,9 @@ var __extends = undefined && undefined.__extends || function () {
         return res && res[1];
     }
     ;
+    function RPMLoaded() {
+        return typeof RPMService != 'undefined';
+    }
     /**
      * GeoPlatform Common Module Authentication Support
      *
@@ -3787,7 +3790,7 @@ var __extends = undefined && undefined.__extends || function () {
             AuthService.prototype.init = function () {
                 var self = this;
                 // Delay init until RPMService is loaded
-                if (typeof RPMService != 'undefined' && Config.loadRPM) {
+                if (RPMLoaded() && Config.loadRPM) {
                     var script = document.createElement('script');
                     script.onload = function () {
                         //do stuff with the script
@@ -4158,7 +4161,10 @@ var __extends = undefined && undefined.__extends || function () {
              * @param {JWT} jwt
              */
             AuthService.prototype.setAuth = function (jwt) {
-                if (RPMService && jwt.length) RPMService().setUserId(this.parseJwt(jwt).sub);
+                if (RPMLoaded() && jwt.length) {
+                    var parsedJWT = this.parseJwt(jwt);
+                    parsedJWT ? RPMService().setUserId(parsedJWT.sub) : null;
+                }
                 this.saveToLocalStorage('gpoauthJWT', jwt);
                 $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
                 // $http.defaults.useXDomain = true;

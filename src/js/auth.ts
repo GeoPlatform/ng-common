@@ -20,6 +20,10 @@
     return res && res[1];
   };
 
+  function RPMLoaded():  boolean {
+   return typeof RPMService != 'undefined'
+  }
+
   /**
    * GeoPlatform Common Module Authentication Support
    *
@@ -184,7 +188,7 @@
           private init(){
             const self = this;
             // Delay init until RPMService is loaded
-            if(typeof RPMService != 'undefined' && Config.loadRPM){
+            if(RPMLoaded() && Config.loadRPM){
               const script = document.createElement('script');
               script.onload = function () {
                   //do stuff with the script
@@ -585,8 +589,12 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
-            if(RPMService && jwt.length)
-              RPMService().setUserId(this.parseJwt(jwt).sub)
+            if(RPMLoaded() && jwt.length){
+              const parsedJWT = this.parseJwt(jwt)
+              parsedJWT ?
+                  RPMService().setUserId(parsedJWT.sub) :
+                  null;
+            }
 
             this.saveToLocalStorage('gpoauthJWT', jwt)
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
