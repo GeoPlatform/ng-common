@@ -220,268 +220,94 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     return AuthenticatedComponent;
 });
 
-(function (angular, Constants) {
-    'use strict';
+(function (jQuery, angular) {
+    "use strict";
 
-    var KGEditor = /** @class */function () {
-        KGEditor.$inject = ["$rootScope", "$element", "KGFields", "KGHelper"];
-        function KGEditor($rootScope, $element, KGFields, KGHelper) {
-            'ngInject';
-
-            this.$rootScope = $rootScope;
-            this.$element = $element;
-            this.fields = KGFields.slice(0);
-            this.helper = KGHelper;
-        }
-        KGEditor.prototype.$onInit = function () {
-            this.displayOptions = {};
-            this.completion = 0;
-            this.service = this.helper.getService(this.ngModel.type);
-            this.descriptions = {
-                purpose: 'The intended use or reason for the Object (i.e., layer, map, gallery) e.g., environmental impact of an oil spill.',
-                'function': 'The business actions, activities, or tasks this Object is intended to support (i.e., the role it plays in supporting an activity).  e.g., environmental impact assessment.',
-                audience: 'The group of people for which this Object was intended to be used. e.g., general public, disaster recovery personnel, Congress.',
-                community: 'The GeoPlatform community this Object was produced for. e.g., "Ecosystems and Biodiversity" community',
-                place: 'The central locale or common names for the place where the Subjects of the Object occur. e.g.,  USA/Gulf Coast',
-                category: 'The type or category of the Object.  e.g., topographic map, elevation layer',
-                primarySubject: 'The selected things, events, or concepts forming part of or represented by the Object. e.g., Deep Water Horizon oil rig, oil slick extent, oil slick movement over time, predicted oil slick movement, impacted sites, impact severity.',
-                secondarySubject: 'Second-order subjects derived by machine processing/ analysis of the target Object',
-                primaryTopic: 'The central branch of knowledge or theme pertaining to the thing, concept, situation, issue, or event of interest. e.g., environmental impact of oil spill.',
-                secondaryTopic: 'Second-order topics derived by machine processing/ analysis of the target Object'
-            };
-            if (!this.ngModel.classifiers) this.ngModel.classifiers = {};
-            this.calculatePercentage();
+    angular.module("gp-common").filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
         };
-        KGEditor.prototype.$onDestroy = function () {
-            this.$rootScope = null;
-            this.ngModel = null;
-            this.helper = null;
-            this.fields = null;
-            this.service = null;
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
         };
-        /**
-         * @param {string} property - name of KG property being modified
-         * @param {array[object]} values - new values to assign to the property (includes old values)
-         */
-        KGEditor.prototype.onChange = function (property, values) {
-            // console.log("Changed " + property + " with " + (values?values.length:0) + " values");
-            this.ngModel.classifiers[property] = values;
-            this.calculatePercentage();
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
         };
-        /**
-         * @param {string} classifier - KG property whose value has been activated
-         * @param {object} value - selected value being activated
-         */
-        KGEditor.prototype.onValueClick = function (classifier, value) {
-            if (this.onActivate) {
-                this.onActivate({ classifier: classifier, value: value });
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
             }
+            return 0;
         };
-        /**
-         *
-         */
-        KGEditor.prototype.calculatePercentage = function () {
-            this.completion = this.helper.calculate(this.ngModel.classifiers);
+    }).filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
         };
-        return KGEditor;
-    }();
-    angular.module('gp-common-kg').component('kgEditor', {
-        require: {
-            // formCtrl: '^form', 
-            ngModelCtrl: 'ngModel'
-        },
-        bindings: {
-            ngModel: '=',
-            onActivate: '&' //function to invoke on KG item activation (click)
-        },
-        controller: KGEditor,
-        template: "\n            <div class=\"c-kg-editor\">\n                <div class=\"c-kg-editor__header l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"flex-1\">\n                        <h4>Knowledge Graph</h4>\n                        <div class=\"u-text--sm\">\n                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items \n                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>, \n                            <em>Fitness for Use</em>, and <em>Social Context</em>. \n                            <br>\n                            <br>\n                            Knowledge graphs are used to answer questions about items, such as:\n                            <ul>\n                            <li>Why was the item created?</li>\n                            <li>Why is it useful for others?</li>\n                            <li>Why is it appropriate to be used?</li>\n                            </ul>\n                        </div>\n                    </div>\n                    <gp-progress-circle ng-model=\"$ctrl.completion\" class=\"u-mg-left--xlg u-mg-right--xlg\"></gp-progress-circle>\n                </div>\n\n                <div class=\"c-kg-editor__content\">\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Purpose</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.purposes\"\n                            on-change=\"$ctrl.onChange('purposes', values)\"\n                            on-activate=\"$ctrl.onValueClick('purposes', value)\"\n                            type=\"Purpose\"\n                            label=\"Purpose\" \n                            description=\"{{$ctrl.descriptions.purpose}}\">\n                        </kg-section>\n                    </div>\n\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Scope</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primaryTopics\"\n                            on-change=\"$ctrl.onChange('primaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('primaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Primary Topics\" \n                            description=\"{{$ctrl.descriptions.primaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondaryTopics\"\n                            on-change=\"$ctrl.onChange('secondaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Secondary Topics\" \n                            description=\"{{$ctrl.descriptions.secondaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primarySubjects\"\n                            on-change=\"$ctrl.onChange('primarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('primarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Primary Subjects\" \n                            description=\"{{$ctrl.descriptions.primarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondarySubjects\"\n                            on-change=\"$ctrl.onChange('secondarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Secondary Subjects\" \n                            description=\"{{$ctrl.descriptions.secondarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.categories\"\n                            on-change=\"$ctrl.onChange('categories', values)\"\n                            on-activate=\"$ctrl.onValueClick('categories', value)\"\n                            type=\"Category\" \n                            label=\"Categories\" \n                            description=\"{{$ctrl.descriptions.category}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.communities\"\n                            on-change=\"$ctrl.onChange('communities', values)\"\n                            on-activate=\"$ctrl.onValueClick('communities', value)\"\n                            type=\"Community\" \n                            label=\"Communities\" \n                            description=\"{{$ctrl.descriptions.community}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.places\"\n                            on-change=\"$ctrl.onChange('places', values)\"\n                            on-activate=\"$ctrl.onValueClick('places', value)\"\n                            type=\"Place\" \n                            label=\"Places\" \n                            description=\"{{$ctrl.descriptions.place}}\">\n                        </kg-section> \n                    </div> \n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Fitness for Use</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.functions\"\n                            on-change=\"$ctrl.onChange('functions', values)\"\n                            on-activate=\"$ctrl.onValueClick('functions', value)\"\n                            type=\"Function\" \n                            label=\"Function\" \n                            description=\"{{$ctrl.descriptions.function}}\">\n                        </kg-section>\n                    </div>\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Social Context</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.audiences\"\n                            on-change=\"$ctrl.onChange('audiences', values)\"\n                            on-activate=\"$ctrl.onValueClick('audiences', value)\"\n                            type=\"Audience\" \n                            label=\"Audiences\" \n                            description=\"{{$ctrl.descriptions.audience}}\">\n                        </kg-section>\n                    </div>\n\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
-(function (angular, Constants) {
-    'use strict';
-
-    var SectionController = /** @class */function () {
-        SectionController.$inject = ["$timeout", "RecommenderService"];
-        function SectionController($timeout, RecommenderService) {
-            'ngInject';
-
-            this.$timeout = $timeout;
-            // this.service = RecommenderService;
-        }
-        SectionController.prototype.$onInit = function () {
-            this.noResults = false;
-            this.query = '';
-            this.displayOptions = {
-                fetching: false,
-                showSuggested: false
-            };
-            this.paging = {
-                start: 0,
-                size: 5,
-                sizeOptions: [5, 10, 20]
-            };
-            this.updateCache();
-            //default section description if one was not provided
-            if (!this.description) this.description = '<em>No description provided</em>';
-        };
-        /**
-         * Update cache when bound 'ngModel' is actually assigned in the component lifecycle
-         */
-        SectionController.prototype.$onChanges = function () {
-            this.updateCache();
-        };
-        SectionController.prototype.$onDestroy = function () {
-            this.eventHandlers = null;
-            this.clearOptions();
-            this.selected = null;
-            this.service = null;
-            this.$timeout = null;
-        };
-        /**
-         *
-         * @param {object} item - selected value being activated (clicked on for navigation)
-         */
-        SectionController.prototype.activate = function (item) {
-            if (this.onActivate) this.onActivate({ value: item });
-        };
-        SectionController.prototype.on = function (event, callback) {
-            this.eventHandlers = this.eventHandlers || {};
-            this.eventHandlers[event] = this.eventHandlers[event] || [];
-            this.eventHandlers[event].push(callback);
-        };
-        SectionController.prototype.notify = function (event, data) {
-            if (!this.eventHandlers || !this.eventHandlers[event]) return;
-            angular.forEach(this.eventHandlers[event], function (handler) {
-                try {
-                    handler(data);
-                } catch (e) {}
-            });
-        };
-        /**
-         * @param {string} query - keywords provided by user input
-         * @return {Promise} resolving an array of results
-         */
-        SectionController.prototype.fetchOptions = function (query) {
-            var _this = this;
-            //need this timeout or else 'this.query' isn't being 
-            // seen as having the same value as 'query'
-            this.$timeout(function () {
-                _this.query = query;
-            }, 10);
-            this.displayOptions.fetching = true;
-            var params = {
-                type: this.type,
-                q: query,
-                page: Math.floor(this.paging.start / this.paging.size),
-                size: this.paging.size
-            };
-            // if(this.forType)
-            //     params['for'] = this.forType;
-            return this.service.query(params).$promise.then(function (response) {
-                _this.paging.total = response.totalResults;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-                _this.suggested = response.results.map(function (result) {
-                    result._selected = _this.isSelected(result);
-                    return result;
-                });
-                _this.displayOptions.showSuggested = true;
-                return _this.suggested;
-            }).catch(function (e) {
-                _this.paging.total = 0;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-                _this.suggested = [];
-                return _this.suggested;
-            }).finally(function () {
-                return _this.displayOptions.fetching = false;
-            });
-        };
-        SectionController.prototype.clearQuery = function () {
-            this.query = '';
-            this.fetchOptions(this.query);
-        };
-        SectionController.prototype.clearOptions = function () {
-            //clear query and available options
-            this.query = '';
-            this.suggested = null;
-            //reset paging
-            this.paging.start = 0;
-            this.paging.total = 0;
-            // this.notify('gp:browse:suggestions:pagination', this.paging);
-            //hide available options
-            this.displayOptions.showSuggested = false;
-        };
-        /**
-         * @param {integer} index - position in selected array of item removed
-         */
-        SectionController.prototype.remove = function (index) {
-            var removed = this.ngModel[index].uri;
-            this.ngModel.splice(index, 1);
-            //remove from suggested list if one is populated (being shown)
-            if (this.suggested && this.suggested.length) {
-                var found = this.suggested.find(function (it) {
-                    return it.uri === removed;
-                });
-                if (found) found._selected = false;
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
             }
-            this.updateCache(); //update cache of selected ids
-            if (this.onChange) this.onChange({ values: this.ngModel }); //notify others of change
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
         };
-        /**
-         * @param {object} value - item being checked for selection
-         * @return {boolean}
-         */
-        SectionController.prototype.isSelected = function (value) {
-            return value._selected || ~this.selected.indexOf(value.uri);
-        };
-        /**
-         * @param {object} value - item being selected
-         */
-        SectionController.prototype.selectValue = function (value) {
-            if (value._selected) return; //already selected
-            value._selected = true;
-            this.ngModel = this.ngModel || [];
-            this.ngModel.push(value);
-            this.updateCache();
-            if (this.onChange) this.onChange({ values: this.ngModel });
-        };
-        SectionController.prototype.updateCache = function () {
-            this.selected = (this.ngModel || []).map(function (o) {
-                return o.uri;
-            });
-        };
-        SectionController.prototype.onDropdownToggled = function (open) {
-            if (!open) this.clearOptions();
-        };
-        /* -------- pagination methods ----------- */
-        SectionController.prototype.getPagination = function () {
-            return this.paging;
-        };
-        SectionController.prototype.start = function (index) {
-            this.paging.start = index;
-            this.fetchOptions(this.query);
-        };
-        SectionController.prototype.size = function (value) {
-            this.paging.size = value;
-            this.fetchOptions(this.query);
-        };
-        return SectionController;
-    }();
-    angular.module('gp-common-kg').component('kgSection', {
-        bindings: {
-            ngModel: '<',
-            service: '<',
-            label: '@',
-            description: '@',
-            type: '@',
-            onChange: '&?',
-            onActivate: '&?' //fire when selected value link is clicked
-        },
-        controller: SectionController,
-        template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
-})(angular, GeoPlatform);
+})(jQuery, angular);
 
 (function (angular) {
     "use strict";
@@ -1747,1055 +1573,268 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(angular);
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
 (function (angular, Constants) {
-    "use strict";
-    //fields list sent to MDR in order to have these properties for display in search results
-
-    var FIELDS = ['created', 'modified', 'publishers', 'themes', 'description', 'extent'];
-    //facets list sent to MDR in order to get aggregation numbers
-    var FACETS = ['types', 'themes', 'publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy'];
-    var SORT_OPTIONS = [{ value: "label,asc", label: "Name (A-Z)" }, { value: "label,desc", label: "Name (Z-A)" }, { value: "type,asc", label: "Type (A-Z)" }, { value: "type,desc", label: "Type (Z-A)" }, { value: "modified,desc", label: "Most recently modified" }, { value: "modified,asc", label: "Least recently modified" }, { value: "_score,desc", label: "Relevance" }];
-    //list of _options variables for mapping to parameters
-    var VAR_TYPES = 'types';
-    var VAR_THEMES = 'themes';
-    var VAR_PUBLISHERS = 'publishers';
-    var VAR_USED_BY = 'usedBy';
-    var VAR_USER = 'user';
-    var VAR_CREATED_BY = 'createdBy';
-    var VAR_SERVICE_TYPES = 'serviceTypes';
-    var VAR_SCHEMES = 'schemes';
-    var VAR_VISIBILITY = "visibility";
-    var VAR_QUERY = 'query';
-    var VAR_EXTENT = 'bbox';
-    var VAR_MODIFIED_BEFORE = 'modified.max';
-    var VAR_MODIFIED_AFTER = 'modified.min';
-    var VAR_RESOURCE_TYPES = 'resourceTypes';
-    //parameter names for various query constraints used in requests to MDR for results
-    var PARAMETER_TYPE = 'type';
-    var PARAMETER_THEME = 'theme.id';
-    var PARAMETER_PUBLISHER = 'publisher.id';
-    var PARAMETER_USED_BY = 'usedBy.id';
-    var PARAMETER_CREATED_BY = 'createdBy';
-    var PARAMETER_CONTRIBUTED_BY = 'contributedBy';
-    var PARAMETER_CREATOR = 'creator.id';
-    var PARAMETER_SVC_TYPE = 'serviceType.id';
-    var PARAMETER_IN_SCHEME = 'scheme.id';
-    var PARAMETER_VISIBILITY = 'visibility';
-    var PARAMETER_QUERY = 'q';
-    var PARAMETER_EXTENT = 'extent';
-    var PARAMETER_MODIFIED_BEFORE = 'modified.max';
-    var PARAMETER_MODIFIED_AFTER = 'modified.min';
-    var PARAMETER_RESOURCE_TYPES = 'resourceType';
-    // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
-    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USED_BY, parameter: PARAMETER_USED_BY }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }, { option: VAR_MODIFIED_BEFORE, parameter: PARAMETER_MODIFIED_BEFORE }, { option: VAR_MODIFIED_AFTER, parameter: PARAMETER_MODIFIED_AFTER }, { option: VAR_RESOURCE_TYPES, parameter: PARAMETER_RESOURCE_TYPES }];
-    var PAGE_SIZE_BASE_10 = [10, 20, 50, 100];
-    var PAGE_SIZE_BASE_12 = [12, 24, 48, 96];
-    /**
-     *
-     *
-     */
-    function BrowseObjectsService($rootScope, $timeout, $resource, options) {
-        /* -------- private data ----------- */
-        var url = options && options.url ? options.url + "/:id" : Constants.ualUrl + '/api/items/:id';
-        var eventKey = 'gp:browse:' + (options && options.key ? options.key : 'objects') + ":";
-        var svc = $resource(url, { id: '@id' }, {
-            query: {
-                isArray: false
-            }
-        });
-        var _pageSizeBase = PAGE_SIZE_BASE_10.slice(0);
-        if (options && options.pageSizeBase && options.pageSizeBase === 12) _pageSizeBase = PAGE_SIZE_BASE_12.slice(0);
-        var _options = {
-            start: 0,
-            size: _pageSizeBase[0],
-            total: 0,
-            sort: options && options.sort ? options.sort : "modified,desc",
-            facets: {}
-        };
-        //list of field names to request in response
-        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
-        //list of facet names to request
-        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
-        var _facets = [];
-        var _selectedFacets = [];
-        var _results = [];
-        var _dirtyPromise = null;
-        var _isLoading = false;
-        var _selected = [];
-        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
-        /**
-         *
-         */
-        function notify(eventName, arg) {
-            // console.log("Notifying of " + eventName + " with " + arg);
-            $rootScope.$broadcast(eventName, arg);
-        }
-        /**
-         * when marked as dirty, debounce for rapid fire events like onKeyUp
-         */
-        function dirty(delay, resetStart) {
-            var doReset = typeof resetStart === 'undefined' || resetStart === true;
-            if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-            _dirtyPromise = $timeout(function () {
-                _dirtyPromise = null;
-                _doUpdate(doReset);
-            }, delay || 100);
-        }
-        /**
-         *
-         */
-        function _doUpdate(resetStart) {
-            if (resetStart) _options.start = 0;
-            _isLoading = true;
-            notify(eventKey + 'querying');
-            var params = {};
-            // -------- QUERY FILTERS --------
-            //create a temporary options object
-            var opts = angular.copy(_options);
-            //apply options as parameters
-            angular.forEach(PARAM_OPTIONS, function (po) {
-                var name = po.parameter;
-                var value = opts[po.option];
-                var isSet = value !== null && typeof value !== 'undefined';
-                var isArr = isSet && typeof value.push !== 'undefined';
-                if (isSet && (!isArr || value.length)) {
-                    params[name] = isArr ? value.join(',') : value;
-                } else {
-                    delete params[name];
-                }
-                delete opts[po.option]; //remove from temp opts
-            });
-            //apply remaining options to query
-            // these are not keyed with specific parameters (ie, custom params)
-            angular.forEach(opts, function (value, name) {
-                if (value !== null && typeof value !== 'undefined') {
-                    var isArr = typeof value.push !== 'undefined';
-                    params[name] = isArr ? value.join(',') : value;
-                } else {
-                    //make sure it doesn't get sent if no value provided
-                    delete params[name];
-                }
-            });
-            // -------- QUERY FILTERS --------
-            var arr = [];
-            for (var k in _options.facets) {
-                if (_options.facets.hasOwnProperty(k)) {
-                    //encode commas in facet name since it's used to separate multiple
-                    // facet values
-                    arr.push(k + ":" + _options.facets[k].replace(/,/g, '%2C'));
-                }
-            }
-            _selectedFacets = arr;
-            var start = _options.start;
-            if (isNaN(start)) start = 0;else start = start * 1;
-            params.page = Math.floor(start / _options.size);
-            params.size = _options.size;
-            params.sort = _options.sort;
-            if (arr.length) params.facets = arr.join(',');
-            //prevent CORS cache bug in Chrome
-            params.bust = new Date().getTime();
-            //request facets
-            params.includeFacet = _requestFacets.join(',');
-            //request fields
-            params.fields = _fields.join(',');
-            svc.query(params).$promise.then(function (response) {
-                _results = response.results;
-                _facets = response.facets || [];
-                //auto select objects if user has marked it as selected previously
-                // this is needed to maintain selections across pagination pages
-                _selected.each(function (id) {
-                    var map = _results.find(function (map) {
-                        return map._id === id;
-                    });
-                    if (map) map.selected = true;
-                });
-                //will trigger update on pagination directive
-                _options.total = response.totalResults;
-                _isLoading = false;
-                notify(eventKey + 'results');
-                notify(eventKey + 'pagination');
-            }).catch(function (response) {
-                _isLoading = false;
-                //fallback
-                var obj = { error: "An Error Occurred", message: "No details provided" };
-                //http response error
-                if (response && response.data) obj = response.data;else if (response && response.message) obj = response;
-                //serialized json
-                if (typeof obj === 'string') {
-                    try {
-                        obj = JSON.parse(obj);
-                    } catch (e) {
-                        obj.message = "Bad response from server";
-                    }
-                }
-                var error = {
-                    label: obj.error || "An Error Occurred",
-                    message: obj.message || "No details provided"
-                };
-                notify(eventKey + 'error', error);
-            });
-        }
-        function setOption(name, value, fire) {
-            _options[name] = value;
-            if (typeof fire === 'undefined' || !!fire) {
-                var delay = 500;
-                if (value === null || value === undefined) delay = 0;
-                if (value && typeof value.push !== 'undefined' && value.length) delay = 0; //arrays
-                else if (value && value.length) delay = 0; //strings
-                dirty(delay);
-            }
-        }
-        /* ------------ public api ------------- */
-        return {
-            events: {
-                LOADING: eventKey + 'querying',
-                RESULTS: eventKey + 'results',
-                PAGINATION: eventKey + 'pagination',
-                SELECTED: eventKey + 'selected',
-                ERROR: eventKey + 'error',
-                SELECTED_ADDED: eventKey + 'selected:added',
-                SELECTED_REMOVED: eventKey + 'selected:removed',
-                SIMILARITY: eventKey + 'similarTo',
-                CLEARED: eventKey + 'cleared'
-            },
-            /**
-             * @return {bool}
-             */
-            getLoadingStatus: function getLoadingStatus() {
-                return _isLoading;
-            },
-            /**
-             * NOTE: Make sure event names are prefixed with
-             *  eventKey + ''
-             * @param {string} eventName
-             * @param {function} listener
-             */
-            on: function on(eventName, listener) {
-                // if(eventName.indexOf(eventKey + ":") !== 0)
-                //     eventName = eventKey + '' + eventName;
-                return $rootScope.$on(eventName, listener);
-            },
-            /**
-             * @param {string} eventName
-             * @param {*} args
-             */
-            trigger: function trigger(eventName, args) {
-                notify(eventName, args);
-            },
-            /**
-             * @return {array[object]}
-             */
-            getResults: function getResults() {
-                return _results;
-            },
-            /**
-             * @return {array[string]} list of facet names
-             */
-            getFacetNames: function getFacetNames() {
-                return FACETS.slice(0);
-            },
-            /**
-             * @return {object} in form of <facet>: [<values>]
-             */
-            getFacets: function getFacets() {
-                return _facets;
-            },
-            /**
-             * @param {string} name
-             * @return {object|null}
-             */
-            getFacet: function getFacet(name) {
-                if (_facets) {
-                    return _facets.find(function (facet) {
-                        return facet.name === name;
-                    });
-                }
-                return null;
-            },
-            addFacet: function addFacet(name) {
-                _requestFacets.push(name);
-            },
-            applyConstraints: function applyConstraints(obj) {
-                for (var p in obj) {
-                    if (obj.hasOwnProperty(p)) {
-                        _options[p] = obj[p];
-                    }
-                }
-                _doUpdate(true);
-            },
-            applyOption: function applyOption(key, value, fire) {
-                setOption(key, value, fire);
-            },
-            applyOptions: function applyOptions(opts, fire) {
-                angular.forEach(opts, function (value, key) {
-                    setOption(key, value, false);
-                });
-                if (fire) _doUpdate(true);
-            },
-            /**
-             * @param {string} name - name of query parameter
-             * @return {any} value of specified query parameter
-             */
-            getQueryOption: function getQueryOption(name) {
-                return _options[name];
-            },
-            /**
-             * @param {string} text - free text query
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setQuery: function setQuery(text, fireUpdate) {
-                setOption(VAR_QUERY, text, fireUpdate);
-            },
-            getQuery: function getQuery() {
-                return _options[VAR_QUERY];
-            },
-            /**
-             * @param {array[string]} types - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setTypes: function setTypes(types, fireUpdate) {
-                setOption(VAR_TYPES, types, fireUpdate);
-            },
-            getTypes: function getTypes() {
-                return _options[VAR_TYPES];
-            },
-            /**
-             * @param {string} userId - identifier of user
-             * @param {boolean} fireUpdate -
-             */
-            setUser: function setUser(userId, fireUpdate) {
-                setOption(VAR_USER, userId, fireUpdate);
-            },
-            getUser: function getUser() {
-                return _options[VAR_USER];
-            },
-            /**
-             * @param {array[string]} creators - ids of creators
-             * @param {boolean} fireUpdate -
-             */
-            setCreatedBy: function setCreatedBy(creators, fireUpdate) {
-                setOption(VAR_CREATED_BY, creators, fireUpdate);
-            },
-            getCreatedBy: function getCreatedBy() {
-                return _options[VAR_CREATED_BY];
-            },
-            /**
-             * @param {array[string]} themes - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setThemes: function setThemes(themes, fireUpdate) {
-                setOption(VAR_THEMES, themes, fireUpdate);
-            },
-            getThemes: function getThemes() {
-                return _options[VAR_THEMES];
-            },
-            /**
-             * @param {array[string]} publishers - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setAgencies: function setAgencies(publishers, fireUpdate) {
-                setOption(VAR_PUBLISHERS, publishers, fireUpdate);
-            },
-            getAgencies: function getAgencies() {
-                return _options[VAR_PUBLISHERS];
-            },
-            /**
-             * @param {array[string]} ids - ids of agents using this item
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setUsedBy: function setUsedBy(ids, fireUpdate) {
-                setOption(VAR_USED_BY, ids, fireUpdate);
-            },
-            getUsedBy: function getUsedBy() {
-                return _options[VAR_USED_BY];
-            },
-            /**
-             * @param {array[string]} svcTypes - ids
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setServiceTypes: function setServiceTypes(svcTypes, fireUpdate) {
-                setOption(VAR_SERVICE_TYPES, svcTypes, fireUpdate);
-            },
-            getServiceTypes: function getServiceTypes() {
-                return _options[VAR_SERVICE_TYPES];
-            },
-            /**
-             * @param {array[string]} resTypes - uris
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setResourceTypes: function setResourceTypes(resTypes, fireUpdate) {
-                setOption(VAR_RESOURCE_TYPES, resTypes, fireUpdate);
-            },
-            getResourceTypes: function getResourceTypes() {
-                return _options[VAR_RESOURCE_TYPES];
-            },
-            /**
-             * @param {array[string]} schemes - ids
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setSchemes: function setSchemes(schemes, fireUpdate) {
-                setOption(VAR_SCHEMES, schemes, fireUpdate);
-            },
-            getSchemes: function getSchemes() {
-                return _options[VAR_SCHEMES];
-            },
-            /**
-             * @param {string} visibility - one of 'public' or 'private'
-             * @param {boolean} fireUpdate
-             */
-            setVisibility: function setVisibility(visibility, fireUpdate) {
-                setOption(VAR_VISIBILITY, visibility, fireUpdate);
-            },
-            getVisibility: function getVisibility() {
-                return _options[VAR_VISIBILITY];
-            },
-            /**
-             * @param {Date} date - date to compare against
-             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
-             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
-             */
-            setModified: function setModified(date, beforeOrAfter, fireUpdate) {
-                //if no date was supplied, consider it "unset" for both properties
-                if (!date) {
-                    setOption(VAR_MODIFIED_BEFORE, null, false);
-                    setOption(VAR_MODIFIED_AFTER, null, true);
-                    return;
-                }
-                var dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
-                var prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER; //property being set
-                var oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE; //unset opposite property
-                var arg = date && date.getTime ? date.getTime() : date;
-                setOption(oppProp, null, false);
-                setOption(prop, arg, true);
-            },
-            getModified: function getModified() {
-                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
-            },
-            /**
-             * @param {string} bboxStr - form of "minx,miny,maxx,maxy"
-             * @param {boolean} fireUpdate
-             */
-            setExtent: function setExtent(bboxStr) {
-                setOption(VAR_EXTENT, bboxStr, true);
-            },
-            /** @return {string} bbox string or null if not set */
-            getExtent: function getExtent() {
-                return _options[VAR_EXTENT];
-            },
-            /**
-             * @return {array} list of selected items from current search results
-             */
-            getSelected: function getSelected() {
-                return _selected;
-            },
-            /**
-             * @param {array} arr - list of items to select in current search results
-             */
-            setSelected: function setSelected(arr) {
-                _selected = arr;
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * @param {string} id - identifier of item in current search results to add to selected list
-             */
-            select: function select(id) {
-                var finder = function finder(l) {
-                    return l.id === id;
-                };
-                var existing = _selected.find(finder);
-                if (existing) {
-                    var idx = _selected.indexOf(existing);
-                    if (idx >= 0) {
-                        _selected.splice(idx, 1);
-                        notify(eventKey + 'selected:removed', existing);
-                    }
-                } else {
-                    var obj = _results.find(finder);
-                    if (obj) {
-                        if (_onSelectFn) {
-                            _onSelectFn(id, function (err, item) {
-                                if (item) {
-                                    _selected.unshift(item);
-                                    notify(eventKey + 'selected:added', item);
-                                }
-                            });
-                        } else {
-                            _selected.unshift(obj);
-                            notify(eventKey + 'selected:added', obj);
-                        }
-                    }
-                }
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * @param {string} id - identifier of item to check
-             * @return {boolean} true if selected, false otherwise
-             */
-            isSelected: function isSelected(id) {
-                return _selected.find(function (obj) {
-                    return obj.id === id;
-                });
-            },
-            /**
-             * select all items in current page of results
-             */
-            selectAll: function selectAll() {
-                var _this = this;
-                angular.forEach(_results, function (obj) {
-                    if (!_this.isSelected(obj.id)) _selected.unshift(obj);
-                });
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * empty list of selected items
-             */
-            clearSelected: function clearSelected() {
-                _selected = [];
-                notify(this.events.SELECTED, []);
-            },
-            /**
-             *
-             */
-            clear: function clear(refresh) {
-                for (var prop in _options) {
-                    if (!_options.hasOwnProperty(prop)) continue;
-                    if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
-                }
-                notify(this.events.CLEARED);
-                if (refresh || typeof refresh === 'undefined') _doUpdate(true);
-            },
-            /*
-             * @param {string} category - name of facet
-             * @param {string} value - value of facet
-             */
-            setFacet: function setFacet(category, value) {
-                var f = _options.facets[category];
-                if (!f) _options.facets[category] = value;else {
-                    if (f === value) {
-                        //unset it
-                        delete _options.facets[category];
-                    } else {
-                        //set it
-                        _options.facets[category] = value;
-                    }
-                }
-                _doUpdate(true);
-            },
-            /**
-             * @param {array[string]} fields - list of field names to request for each search result
-             */
-            setFields: function setFields(fields) {
-                if (fields && typeof fields.push !== 'undefined') _fields = fields;
-            },
-            /**
-             * @param {int} start - beginning index of results to request
-             * @param {bool} andUpdate - trigger update (default is true)
-             */
-            start: function start(_start, andUpdate) {
-                _options.start = _start;
-                if (andUpdate && andUpdate === true) _doUpdate(false);
-            },
-            /**
-             * @param {int} size - page size to request
-             * @param {bool} andUpdate - trigger update (default is true)
-             */
-            size: function size(_size, andUpdate) {
-                _options.size = _size;
-                //find out which page in the new scheme the current first-result of current page
-                // will show up in, and set start so that it shows up with the new page size
-                var page = Math.floor(_options.start * 1 / _options.size * 1);
-                _options.start = page * (_options.size * 1);
-                if (andUpdate && andUpdate === true) _doUpdate(false);
-            },
-            /**
-             * @param {int} size - number of items to return in each page of results
-             */
-            pageSize: function pageSize(size) {
-                this.size(size, true);
-            },
-            /**
-             * @param {string} sort - form of <field>,<dir>
-             */
-            sort: function sort(_sort) {
-                _options.sort = _sort;
-                _doUpdate(false);
-            },
-            /**
-             * return {object} containing start index, page size, and total results
-             */
-            getPagination: function getPagination() {
-                return {
-                    start: _options.start,
-                    size: _options.size,
-                    pageSize: _options.size,
-                    total: _options.total,
-                    sizeOptions: _pageSizeBase
-                };
-            },
-            /**
-             * @return {array} list of key-value pairs of sort options
-             */
-            getSortOptions: function getSortOptions() {
-                return SORT_OPTIONS.slice(0);
-            },
-            /**
-             * @return {string} sorting parameter (field,order)
-             */
-            getSortValue: function getSortValue() {
-                return _options.sort;
-            },
-            /**
-             * @return {object} clone of the current set of query options
-             */
-            getQueryOptions: function getQueryOptions() {
-                return jQuery.extend({}, _options);
-            },
-            /**
-             *
-             */
-            hasQueryOptions: function hasQueryOptions() {
-                var result = false;
-                for (var k in _options) {
-                    if (_options.hasOwnProperty(k)) {
-                        if ('start' === k || 'size' === k || 'total' === k || 'sort' === k || 'order' === k || 'within' === k || 'facets' === k) continue;
-                        if (_selectedFacets.length) result = true;
-                        if (typeof _options[k] !== 'undefined' && _options[k] !== null) {
-                            result = true;
-                        }
-                    }
-                }
-                return result;
-            },
-            /**
-             * Triggers a refresh of current search results
-             * @param {boolean} resetStart - reset 'start' to 0 flag
-             */
-            update: function update(resetStart) {
-                dirty(0, resetStart);
-            },
-            reset: function reset() {
-                _options = {
-                    start: 0,
-                    size: _pageSizeBase[0],
-                    total: 0,
-                    sort: "modified,desc", order: "asc",
-                    facets: {}
-                };
-                notify(this.events.CLEARED);
-                _facets = [];
-                _selectedFacets = [];
-                _results = [];
-                _isLoading = false;
-                _selected = [];
-                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-                _dirtyPromise = null;
-            },
-            destroy: function destroy() {
-                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-            }
-        };
-    }
-    /**
-     * Factory for creating instances of BrowseObjectsService
-     */
-    function BrowseServiceFactory($rootScope, $timeout, $resource) {
-        return function (options) {
-            var svc = BrowseObjectsService($rootScope, $timeout, $resource, options);
-            if (options && options.params) svc.applyOptions(options.params);
-            return svc;
-        };
-    }
-    angular.module('gp-common').service("BrowseObjectsService", ['$rootScope', '$timeout', '$resource', BrowseObjectsService]).factory("BrowseServiceFactory", ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
-    /*
-        Example of how to use the factory to customize a service
-    
-        //layer-specific browse service
-        .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
-            let service = BrowseServiceFactory({
-                key: 'layers',
-                url: Constants.ualUrl + '/api/layers'
-            });
-    
-            //add custom methods here
-    
-            return service;
-        }])
-    */
-})(angular, GeoPlatform);
-
-(function (angular) {
     'use strict';
-    /* *********************************************
-     * Requires socket.io be in the global namespace
-     * tested with version 2.x
-     * ********************************************* */
-    /*
-       Usage:
-        let service = ...
-        let svcId = service.getId();
-        //listen to events from the server
-       service.on('testing', (event) => {
-           if(event.clientId === svcId) return; //ignore our own events
-           ... do something ...
-       });
-       
-       //sends out a message to others
-       service.emit( service.events.CREATED, 'test');
-        //sends out a message to others
-       service.begin(service.events.EDITING, 'test');
-        //sends out a message to others
-       service.end(service.events.EDITING, 'test');
-        //stop listening and close the socket
-       service.close();
-      */
-    /**
-     *
-     */
 
-    var SocketService = /** @class */function () {
-        SocketService.$inject = ["url", "options"];
-        function SocketService(url, options) {
+    var KGEditor = /** @class */function () {
+        KGEditor.$inject = ["$rootScope", "$element", "KGFields", "KGHelper"];
+        function KGEditor($rootScope, $element, KGFields, KGHelper) {
             'ngInject';
 
-            var _this = this;
-            var opts = (typeof options === "undefined" ? "undefined" : _typeof(options)) === 'object' ? options : {};
-            for (var key in opts) {
-                this[key] = opts[key];
-            }this.socket = null;
-            //list of ids of things being tracked, such as 
-            // items edited, in order to send messages
-            // about the things lifecycle
-            this.tracking = {};
-            //events supported.
-            // Note that lifecycles can be added by using the 
-            // begin() and end() methods on the service,
-            // which appends '_start' and '_end' respectively
-            this.events = {
-                CREATED: 'created',
-                UPDATED: 'updated',
-                DELETED: 'deleted',
-                EDITING: 'editing',
-                STATUS: 'status'
-            };
-            if (typeof io === 'undefined') {
-                console.log("Socket.IO not found in global namespace");
-                return;
-            }
-            if (!url) {
-                console.log("No web socket URL configured for this app to communicate with");
-                return;
-            }
-            //make connection
-            this.socket = io.connect(url);
-            //listen for the init event indicating connection has been made
-            // and to get the socket's id from the server
-            this.socket.on("init", function (evt) {
-                _this.socketId = evt.id;
-            });
-            //if unable to connect
-            this.socket.on('error', function () {
-                console.log("Unable to connect to " + url + " with websockets");
-            });
+            this.$rootScope = $rootScope;
+            this.$element = $element;
+            this.fields = KGFields.slice(0);
+            this.helper = KGHelper;
         }
-        /**
-         *
-         */
-        SocketService.prototype.getId = function () {
-            return this.socketId;
-        };
-        /**
-         * @param {string} eventName
-         * @param {Function} callback
-         * @return {Function} to remove the listener
-         */
-        SocketService.prototype.on = function (eventName, callback) {
-            var _this = this;
-            if (!this.socket) return function () {};
-            //add the listener to the socket
-            this.socket.on(eventName, callback);
-            //return an 'off' function to remove the listener
-            return function () {
-                _this.socket.off(eventName, callback);
+        KGEditor.prototype.$onInit = function () {
+            this.displayOptions = {};
+            this.completion = 0;
+            this.service = this.helper.getService(this.ngModel.type);
+            this.descriptions = {
+                purpose: 'The intended use or reason for the Object (i.e., layer, map, gallery) e.g., environmental impact of an oil spill.',
+                'function': 'The business actions, activities, or tasks this Object is intended to support (i.e., the role it plays in supporting an activity).  e.g., environmental impact assessment.',
+                audience: 'The group of people for which this Object was intended to be used. e.g., general public, disaster recovery personnel, Congress.',
+                community: 'The GeoPlatform community this Object was produced for. e.g., "Ecosystems and Biodiversity" community',
+                place: 'The central locale or common names for the place where the Subjects of the Object occur. e.g.,  USA/Gulf Coast',
+                category: 'The type or category of the Object.  e.g., topographic map, elevation layer',
+                primarySubject: 'The selected things, events, or concepts forming part of or represented by the Object. e.g., Deep Water Horizon oil rig, oil slick extent, oil slick movement over time, predicted oil slick movement, impacted sites, impact severity.',
+                secondarySubject: 'Second-order subjects derived by machine processing/ analysis of the target Object',
+                primaryTopic: 'The central branch of knowledge or theme pertaining to the thing, concept, situation, issue, or event of interest. e.g., environmental impact of oil spill.',
+                secondaryTopic: 'Second-order topics derived by machine processing/ analysis of the target Object'
             };
+            if (!this.ngModel.classifiers) this.ngModel.classifiers = {};
+            this.calculatePercentage();
+        };
+        KGEditor.prototype.$onDestroy = function () {
+            this.$rootScope = null;
+            this.ngModel = null;
+            this.helper = null;
+            this.fields = null;
+            this.service = null;
         };
         /**
-         *
+         * @param {string} property - name of KG property being modified
+         * @param {array[object]} values - new values to assign to the property (includes old values)
          */
-        SocketService.prototype.emit = function (eventName, data, callback) {
-            if (!this.socket) return;
-            this.socket.emit(eventName, data, callback);
+        KGEditor.prototype.onChange = function (property, values) {
+            // console.log("Changed " + property + " with " + (values?values.length:0) + " values");
+            this.ngModel.classifiers[property] = values;
+            this.calculatePercentage();
         };
         /**
-         * Closes this service's socket
+         * @param {string} classifier - KG property whose value has been activated
+         * @param {object} value - selected value being activated
          */
-        SocketService.prototype.close = function () {
-            var _this = this;
-            //if this app was tracking an obj, 
-            // notify listeners that it is no longer
-            for (var event in this.tracking) {
-                if (this.tracking.hasOwnProperty(event)) {
-                    var tracks = this.tracking[event];
-                    if (tracks && tracks.length) {
-                        /* jshint ignore:start */
-                        angular.forEach(tracks, function (id) {
-                            _this.end(event, id);
-                        });
-                        /* jshint ignore:end */
-                    }
-                }
+        KGEditor.prototype.onValueClick = function (classifier, value) {
+            if (this.onActivate) {
+                this.onActivate({ classifier: classifier, value: value });
             }
-            if (this.socket) {
-                this.socket.close();
-                this.socket = null;
-            }
-            return null;
-        };
-        /**
-         * @param {string} event - name of the event being started
-         * @param {string} objId - identifier of the item being tracked
-         */
-        SocketService.prototype.begin = function (event, objId) {
-            var _this = this;
-            this.tracking[event] = this.tracking[event] || [];
-            this.tracking[event].push(objId);
-            var room = objId + "_" + event.toLowerCase();
-            this.join(room, function () {
-                _this.socket.emit(event, room, _this.socketId, true);
-            });
-        };
-        /**
-         * @param {string} event - name of the event being ended
-         * @param {string} objId - identifier of the item being tracked
-         */
-        SocketService.prototype.end = function (event, objId) {
-            var _this = this;
-            this.tracking[event] = this.tracking[event] || [];
-            if (!this.tracking[event].length) return; //empty, ignore request
-            var idx = this.tracking[event].indexOf(objId);
-            if (idx < 0)
-                //remove tracker
-                this.tracking[event].splice(idx, 1);
-            //send event to server about client stopping it's tracking
-            var room = objId + "_" + event.toLowerCase();
-            this.socket.emit(event, room, this.socketId, false, function () {
-                _this.leave(room);
-            });
         };
         /**
          *
          */
-        SocketService.prototype.join = function (objId, callback) {
-            this.emit('join', objId, callback);
+        KGEditor.prototype.calculatePercentage = function () {
+            this.completion = this.helper.calculate(this.ngModel.classifiers);
         };
-        /**
-         *
-         */
-        SocketService.prototype.leave = function (objId, callback) {
-            this.emit('leave', objId, callback);
-        };
-        return SocketService;
+        return KGEditor;
     }();
-    /**
-     * Factory to get a Service used to listen for WebSocket messages from a server
-     *
-     * Usage:
-     *
-     * let wsUrl = ...
-     * let service = SocketServiceFactory(wsUrl);
-     *
-     */
-    angular.module('gp-common').factory('SocketServiceFactory', ["$rootScope", "$window", "UUID", function ($rootScope, $window, UUID) {
-        var cache = {};
-        //disconnect whenever the app is closed
-        var onClose = function onClose(e) {
-            for (var key in cache) {
-                if (cache.hasOwnProperty(key)) {
-                    cache[key].close();
-                    cache[key] = null;
-                }
-            }
-            cache = null;
-            return null;
-        };
-        //needed for reload/backbtn
-        if ($window.onbeforeunload === 'function') {
-            var existing_1 = $window.onbeforeunload;
-            $window.onbeforeunload = function (e) {
-                onClose(e);
-                return existing_1(e);
-            };
-        } else {
-            $window.onbeforeunload = onClose;
-        }
-        $rootScope.$on('$destroy', onClose);
-        //-------------------
-        return function (url) {
-            // if(!url) return null;
-            // if(cache[url]) return cache[url];
-            var cacheRef = UUID();
-            var service = new SocketService(url, $rootScope, { cacheRef: cacheRef });
-            var closeDelegate = service.close;
-            service.close = function () {
-                var id = service.cacheRef;
-                closeDelegate.call(service); //have service disconnect and clean up itself
-                //then clean up cache reference
-                delete cache[id];
-            };
-            var onDelegate = service.on;
-            service.on = function (event, callback) {
-                if (typeof callback === 'function') {
-                    //have to use old-school refs instead of arrow functions
-                    // or else the arguments get scrambled
-                    var handle = function handle() {
-                        var args = arguments;
-                        $rootScope.$apply(function () {
-                            callback.apply(service.socket, args);
-                        });
-                    };
-                    return onDelegate.call(service, event, handle);
-                } else {
-                    return onDelegate.call(service, event);
-                }
-            };
-            var emitDelegate = service.emit;
-            service.emit = function (event, data, callback) {
-                if (typeof callback === 'function') {
-                    //have to use old-school refs instead of arrow functions
-                    // or else the arguments get scrambled
-                    var handle = function handle() {
-                        var args = arguments;
-                        $rootScope.$apply(function () {
-                            callback.apply(service.socket, args);
-                        });
-                    };
-                    emitDelegate.call(service, event, data, handle);
-                } else {
-                    emitDelegate.call(service, event, data);
-                }
-            };
-            // cache[url] = service;
-            cache[cacheRef] = service;
-            return service;
-        };
-    }]);
-})(angular);
+    angular.module('gp-common-kg').component('kgEditor', {
+        require: {
+            // formCtrl: '^form', 
+            ngModelCtrl: 'ngModel'
+        },
+        bindings: {
+            ngModel: '=',
+            onActivate: '&' //function to invoke on KG item activation (click)
+        },
+        controller: KGEditor,
+        template: "\n            <div class=\"c-kg-editor\">\n                <div class=\"c-kg-editor__header l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"flex-1\">\n                        <h4>Knowledge Graph</h4>\n                        <div class=\"u-text--sm\">\n                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items \n                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>, \n                            <em>Fitness for Use</em>, and <em>Social Context</em>. \n                            <br>\n                            <br>\n                            Knowledge graphs are used to answer questions about items, such as:\n                            <ul>\n                            <li>Why was the item created?</li>\n                            <li>Why is it useful for others?</li>\n                            <li>Why is it appropriate to be used?</li>\n                            </ul>\n                        </div>\n                    </div>\n                    <gp-progress-circle ng-model=\"$ctrl.completion\" class=\"u-mg-left--xlg u-mg-right--xlg\"></gp-progress-circle>\n                </div>\n\n                <div class=\"c-kg-editor__content\">\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Purpose</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.purposes\"\n                            on-change=\"$ctrl.onChange('purposes', values)\"\n                            on-activate=\"$ctrl.onValueClick('purposes', value)\"\n                            type=\"Purpose\"\n                            label=\"Purpose\" \n                            description=\"{{$ctrl.descriptions.purpose}}\">\n                        </kg-section>\n                    </div>\n\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Scope</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primaryTopics\"\n                            on-change=\"$ctrl.onChange('primaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('primaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Primary Topics\" \n                            description=\"{{$ctrl.descriptions.primaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondaryTopics\"\n                            on-change=\"$ctrl.onChange('secondaryTopics', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondaryTopics', value)\"\n                            type=\"Topic\" \n                            label=\"Secondary Topics\" \n                            description=\"{{$ctrl.descriptions.secondaryTopic}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.primarySubjects\"\n                            on-change=\"$ctrl.onChange('primarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('primarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Primary Subjects\" \n                            description=\"{{$ctrl.descriptions.primarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.secondarySubjects\"\n                            on-change=\"$ctrl.onChange('secondarySubjects', values)\"\n                            on-activate=\"$ctrl.onValueClick('secondarySubjects', value)\"\n                            type=\"Subject\" \n                            label=\"Secondary Subjects\" \n                            description=\"{{$ctrl.descriptions.secondarySubject}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.categories\"\n                            on-change=\"$ctrl.onChange('categories', values)\"\n                            on-activate=\"$ctrl.onValueClick('categories', value)\"\n                            type=\"Category\" \n                            label=\"Categories\" \n                            description=\"{{$ctrl.descriptions.category}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.communities\"\n                            on-change=\"$ctrl.onChange('communities', values)\"\n                            on-activate=\"$ctrl.onValueClick('communities', value)\"\n                            type=\"Community\" \n                            label=\"Communities\" \n                            description=\"{{$ctrl.descriptions.community}}\">\n                        </kg-section>\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.places\"\n                            on-change=\"$ctrl.onChange('places', values)\"\n                            on-activate=\"$ctrl.onValueClick('places', value)\"\n                            type=\"Place\" \n                            label=\"Places\" \n                            description=\"{{$ctrl.descriptions.place}}\">\n                        </kg-section> \n                    </div> \n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Fitness for Use</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.functions\"\n                            on-change=\"$ctrl.onChange('functions', values)\"\n                            on-activate=\"$ctrl.onValueClick('functions', value)\"\n                            type=\"Function\" \n                            label=\"Function\" \n                            description=\"{{$ctrl.descriptions.function}}\">\n                        </kg-section>\n                    </div>\n\n                    <div class=\"c-kg-editor__section\">\n                        <h4 class=\"t-fg--accent\">Social Context</h4>\n\n                        <kg-section \n                            service=\"$ctrl.service\"\n                            ng-model=\"$ctrl.ngModel.classifiers.audiences\"\n                            on-change=\"$ctrl.onChange('audiences', values)\"\n                            on-activate=\"$ctrl.onValueClick('audiences', value)\"\n                            type=\"Audience\" \n                            label=\"Audiences\" \n                            description=\"{{$ctrl.descriptions.audience}}\">\n                        </kg-section>\n                    </div>\n\n                </div>\n            </div>\n        "
+    });
+})(angular, GeoPlatform);
 
-(function (angular) {
+(function (angular, Constants) {
     'use strict';
 
-    angular.module("gp-common").factory('UUID', function () {
-        function s4() {
-            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+    var SectionController = /** @class */function () {
+        SectionController.$inject = ["$timeout", "RecommenderService"];
+        function SectionController($timeout, RecommenderService) {
+            'ngInject';
+
+            this.$timeout = $timeout;
+            // this.service = RecommenderService;
         }
-        /*
-        return function() {
-                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-                    s4() + '-' + s4() + s4() + s4();
-            }
-         */
-        return function () {
-            // http://www.ietf.org/rfc/rfc4122.txt
-            var s = [];
-            var hexDigits = "0123456789abcdef";
-            for (var i = 0; i < 36; i++) {
-                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-            }
-            s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
-            s[19] = hexDigits.substr(s[19] & 0x3 | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
-            s[8] = s[13] = s[18] = s[23] = "-";
-            return s.join("");
+        SectionController.prototype.$onInit = function () {
+            this.noResults = false;
+            this.query = '';
+            this.displayOptions = {
+                fetching: false,
+                showSuggested: false
+            };
+            this.paging = {
+                start: 0,
+                size: 5,
+                sizeOptions: [5, 10, 20]
+            };
+            this.updateCache();
+            //default section description if one was not provided
+            if (!this.description) this.description = '<em>No description provided</em>';
         };
+        /**
+         * Update cache when bound 'ngModel' is actually assigned in the component lifecycle
+         */
+        SectionController.prototype.$onChanges = function () {
+            this.updateCache();
+        };
+        SectionController.prototype.$onDestroy = function () {
+            this.eventHandlers = null;
+            this.clearOptions();
+            this.selected = null;
+            this.service = null;
+            this.$timeout = null;
+        };
+        /**
+         *
+         * @param {object} item - selected value being activated (clicked on for navigation)
+         */
+        SectionController.prototype.activate = function (item) {
+            if (this.onActivate) this.onActivate({ value: item });
+        };
+        SectionController.prototype.on = function (event, callback) {
+            this.eventHandlers = this.eventHandlers || {};
+            this.eventHandlers[event] = this.eventHandlers[event] || [];
+            this.eventHandlers[event].push(callback);
+        };
+        SectionController.prototype.notify = function (event, data) {
+            if (!this.eventHandlers || !this.eventHandlers[event]) return;
+            angular.forEach(this.eventHandlers[event], function (handler) {
+                try {
+                    handler(data);
+                } catch (e) {}
+            });
+        };
+        /**
+         * @param {string} query - keywords provided by user input
+         * @return {Promise} resolving an array of results
+         */
+        SectionController.prototype.fetchOptions = function (query) {
+            var _this = this;
+            //need this timeout or else 'this.query' isn't being 
+            // seen as having the same value as 'query'
+            this.$timeout(function () {
+                _this.query = query;
+            }, 10);
+            this.displayOptions.fetching = true;
+            var params = {
+                type: this.type,
+                q: query,
+                page: Math.floor(this.paging.start / this.paging.size),
+                size: this.paging.size
+            };
+            // if(this.forType)
+            //     params['for'] = this.forType;
+            return this.service.query(params).$promise.then(function (response) {
+                _this.paging.total = response.totalResults;
+                _this.notify('gp:browse:suggestions:pagination', _this.paging);
+                _this.suggested = response.results.map(function (result) {
+                    result._selected = _this.isSelected(result);
+                    return result;
+                });
+                _this.displayOptions.showSuggested = true;
+                return _this.suggested;
+            }).catch(function (e) {
+                _this.paging.total = 0;
+                _this.notify('gp:browse:suggestions:pagination', _this.paging);
+                _this.suggested = [];
+                return _this.suggested;
+            }).finally(function () {
+                return _this.displayOptions.fetching = false;
+            });
+        };
+        SectionController.prototype.clearQuery = function () {
+            this.query = '';
+            this.fetchOptions(this.query);
+        };
+        SectionController.prototype.clearOptions = function () {
+            //clear query and available options
+            this.query = '';
+            this.suggested = null;
+            //reset paging
+            this.paging.start = 0;
+            this.paging.total = 0;
+            // this.notify('gp:browse:suggestions:pagination', this.paging);
+            //hide available options
+            this.displayOptions.showSuggested = false;
+        };
+        /**
+         * @param {integer} index - position in selected array of item removed
+         */
+        SectionController.prototype.remove = function (index) {
+            var removed = this.ngModel[index].uri;
+            this.ngModel.splice(index, 1);
+            //remove from suggested list if one is populated (being shown)
+            if (this.suggested && this.suggested.length) {
+                var found = this.suggested.find(function (it) {
+                    return it.uri === removed;
+                });
+                if (found) found._selected = false;
+            }
+            this.updateCache(); //update cache of selected ids
+            if (this.onChange) this.onChange({ values: this.ngModel }); //notify others of change
+        };
+        /**
+         * @param {object} value - item being checked for selection
+         * @return {boolean}
+         */
+        SectionController.prototype.isSelected = function (value) {
+            return value._selected || ~this.selected.indexOf(value.uri);
+        };
+        /**
+         * @param {object} value - item being selected
+         */
+        SectionController.prototype.selectValue = function (value) {
+            if (value._selected) return; //already selected
+            value._selected = true;
+            this.ngModel = this.ngModel || [];
+            this.ngModel.push(value);
+            this.updateCache();
+            if (this.onChange) this.onChange({ values: this.ngModel });
+        };
+        SectionController.prototype.updateCache = function () {
+            this.selected = (this.ngModel || []).map(function (o) {
+                return o.uri;
+            });
+        };
+        SectionController.prototype.onDropdownToggled = function (open) {
+            if (!open) this.clearOptions();
+        };
+        /* -------- pagination methods ----------- */
+        SectionController.prototype.getPagination = function () {
+            return this.paging;
+        };
+        SectionController.prototype.start = function (index) {
+            this.paging.start = index;
+            this.fetchOptions(this.query);
+        };
+        SectionController.prototype.size = function (value) {
+            this.paging.size = value;
+            this.fetchOptions(this.query);
+        };
+        return SectionController;
+    }();
+    angular.module('gp-common-kg').component('kgSection', {
+        bindings: {
+            ngModel: '<',
+            service: '<',
+            label: '@',
+            description: '@',
+            type: '@',
+            onChange: '&?',
+            onActivate: '&?' //fire when selected value link is clicked
+        },
+        controller: SectionController,
+        template: "\n            <h5>{{$ctrl.label}}</h5>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"glyphicon glyphicon-remove-circle t-fg--danger\"></span> \n                    </button>\n                    <div class=\"flex-1 u-pd--md\">\n                        <div class=\"u-pd-bottom--sm t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{item.uri}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{item.uri}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>            \n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\" \n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"glyphicon\"\n                            ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\" \n                            ng-model=\"$ctrl.query\" \n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\">\n                    </div>\n                </div>\n                \n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n                    \n                    <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                        <div class=\"input-group-slick flex-1\">\n                            <span class=\"glyphicon\"\n                                ng-class=\"{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\" \n                                ng-model=\"$ctrl.query\" \n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                placeholder=\"Find values to add...\">\n                            <span class=\"glyphicon glyphicon-remove\"\n                                ng-if=\"$ctrl.query.length\"\n                                ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                        </div>\n                        <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                            ng-click=\"$ctrl.clearOptions();\">\n                            Done\n                        </button>\n                    </div>\n                    \n                    <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                    <div class=\"list-group list-group-sm u-text--sm\">\n                        <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                            <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                ng-class=\"{disabled:item._selected}\">\n                                <span class=\"glyphicon glyphicon-ok t-fg--gray-md\" ng-show=\"item._selected\"></span> \n                                <span class=\"glyphicon glyphicon-plus-sign t-fg--success\" ng-show=\"!item._selected\"></span> \n                            </button>\n                            <div class=\"flex-1 u-pd--md\">\n                                <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</div>\n                                <a href=\"{{item.uri}}\" target=\"_blank\" \n                                    class=\"u-break--all u-text--sm t-text--italic\"\n                                    title=\"Open source info in new window\">\n                                    {{item.uri}}\n                                </a>\n                                <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                            </div>\n                        </div>\n                        <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                            No results match your query\n                        </div>\n                    </div>\n                </div>\n            </div>\n        "
     });
-})(angular);
+})(angular, GeoPlatform);
 
 (function (angular, Constants) {
     'use strict';
@@ -3528,6 +2567,969 @@ var __extends = undefined && undefined.__extends || function () {
     });
 })(angular, GeoPlatform);
 
+(function (angular, Constants) {
+    "use strict";
+    //fields list sent to MDR in order to have these properties for display in search results
+
+    var FIELDS = ['created', 'modified', 'publishers', 'themes', 'description', 'extent'];
+    //facets list sent to MDR in order to get aggregation numbers
+    var FACETS = ['types', 'themes', 'publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy'];
+    var SORT_OPTIONS = [{ value: "label,asc", label: "Name (A-Z)" }, { value: "label,desc", label: "Name (Z-A)" }, { value: "type,asc", label: "Type (A-Z)" }, { value: "type,desc", label: "Type (Z-A)" }, { value: "modified,desc", label: "Most recently modified" }, { value: "modified,asc", label: "Least recently modified" }, { value: "_score,desc", label: "Relevance" }];
+    //list of _options variables for mapping to parameters
+    var VAR_TYPES = 'types';
+    var VAR_THEMES = 'themes';
+    var VAR_PUBLISHERS = 'publishers';
+    var VAR_USED_BY = 'usedBy';
+    var VAR_USER = 'user';
+    var VAR_CREATED_BY = 'createdBy';
+    var VAR_SERVICE_TYPES = 'serviceTypes';
+    var VAR_SCHEMES = 'schemes';
+    var VAR_VISIBILITY = "visibility";
+    var VAR_QUERY = 'query';
+    var VAR_EXTENT = 'bbox';
+    var VAR_MODIFIED_BEFORE = 'modified.max';
+    var VAR_MODIFIED_AFTER = 'modified.min';
+    var VAR_RESOURCE_TYPES = 'resourceTypes';
+    //parameter names for various query constraints used in requests to MDR for results
+    var PARAMETER_TYPE = 'type';
+    var PARAMETER_THEME = 'theme.id';
+    var PARAMETER_PUBLISHER = 'publisher.id';
+    var PARAMETER_USED_BY = 'usedBy.id';
+    var PARAMETER_CREATED_BY = 'createdBy';
+    var PARAMETER_CONTRIBUTED_BY = 'contributedBy';
+    var PARAMETER_CREATOR = 'creator.id';
+    var PARAMETER_SVC_TYPE = 'serviceType.id';
+    var PARAMETER_IN_SCHEME = 'scheme.id';
+    var PARAMETER_VISIBILITY = 'visibility';
+    var PARAMETER_QUERY = 'q';
+    var PARAMETER_EXTENT = 'extent';
+    var PARAMETER_MODIFIED_BEFORE = 'modified.max';
+    var PARAMETER_MODIFIED_AFTER = 'modified.min';
+    var PARAMETER_RESOURCE_TYPES = 'resourceType';
+    // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
+    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USED_BY, parameter: PARAMETER_USED_BY }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }, { option: VAR_MODIFIED_BEFORE, parameter: PARAMETER_MODIFIED_BEFORE }, { option: VAR_MODIFIED_AFTER, parameter: PARAMETER_MODIFIED_AFTER }, { option: VAR_RESOURCE_TYPES, parameter: PARAMETER_RESOURCE_TYPES }];
+    var PAGE_SIZE_BASE_10 = [10, 20, 50, 100];
+    var PAGE_SIZE_BASE_12 = [12, 24, 48, 96];
+    /**
+     *
+     *
+     */
+    function BrowseObjectsService($rootScope, $timeout, $resource, options) {
+        /* -------- private data ----------- */
+        var url = options && options.url ? options.url + "/:id" : Constants.ualUrl + '/api/items/:id';
+        var eventKey = 'gp:browse:' + (options && options.key ? options.key : 'objects') + ":";
+        var svc = $resource(url, { id: '@id' }, {
+            query: {
+                isArray: false
+            }
+        });
+        var _pageSizeBase = PAGE_SIZE_BASE_10.slice(0);
+        if (options && options.pageSizeBase && options.pageSizeBase === 12) _pageSizeBase = PAGE_SIZE_BASE_12.slice(0);
+        var _options = {
+            start: 0,
+            size: _pageSizeBase[0],
+            total: 0,
+            sort: options && options.sort ? options.sort : "modified,desc",
+            facets: {}
+        };
+        //list of field names to request in response
+        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
+        //list of facet names to request
+        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
+        var _facets = [];
+        var _selectedFacets = [];
+        var _results = [];
+        var _dirtyPromise = null;
+        var _isLoading = false;
+        var _selected = [];
+        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
+        /**
+         *
+         */
+        function notify(eventName, arg) {
+            // console.log("Notifying of " + eventName + " with " + arg);
+            $rootScope.$broadcast(eventName, arg);
+        }
+        /**
+         * when marked as dirty, debounce for rapid fire events like onKeyUp
+         */
+        function dirty(delay, resetStart) {
+            var doReset = typeof resetStart === 'undefined' || resetStart === true;
+            if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+            _dirtyPromise = $timeout(function () {
+                _dirtyPromise = null;
+                _doUpdate(doReset);
+            }, delay || 100);
+        }
+        /**
+         *
+         */
+        function _doUpdate(resetStart) {
+            if (resetStart) _options.start = 0;
+            _isLoading = true;
+            notify(eventKey + 'querying');
+            var params = {};
+            // -------- QUERY FILTERS --------
+            //create a temporary options object
+            var opts = angular.copy(_options);
+            //apply options as parameters
+            angular.forEach(PARAM_OPTIONS, function (po) {
+                var name = po.parameter;
+                var value = opts[po.option];
+                var isSet = value !== null && typeof value !== 'undefined';
+                var isArr = isSet && typeof value.push !== 'undefined';
+                if (isSet && (!isArr || value.length)) {
+                    params[name] = isArr ? value.join(',') : value;
+                } else {
+                    delete params[name];
+                }
+                delete opts[po.option]; //remove from temp opts
+            });
+            //apply remaining options to query
+            // these are not keyed with specific parameters (ie, custom params)
+            angular.forEach(opts, function (value, name) {
+                if (value !== null && typeof value !== 'undefined') {
+                    var isArr = typeof value.push !== 'undefined';
+                    params[name] = isArr ? value.join(',') : value;
+                } else {
+                    //make sure it doesn't get sent if no value provided
+                    delete params[name];
+                }
+            });
+            // -------- QUERY FILTERS --------
+            var arr = [];
+            for (var k in _options.facets) {
+                if (_options.facets.hasOwnProperty(k)) {
+                    //encode commas in facet name since it's used to separate multiple
+                    // facet values
+                    arr.push(k + ":" + _options.facets[k].replace(/,/g, '%2C'));
+                }
+            }
+            _selectedFacets = arr;
+            var start = _options.start;
+            if (isNaN(start)) start = 0;else start = start * 1;
+            params.page = Math.floor(start / _options.size);
+            params.size = _options.size;
+            params.sort = _options.sort;
+            if (arr.length) params.facets = arr.join(',');
+            //prevent CORS cache bug in Chrome
+            params.bust = new Date().getTime();
+            //request facets
+            params.includeFacet = _requestFacets.join(',');
+            //request fields
+            params.fields = _fields.join(',');
+            svc.query(params).$promise.then(function (response) {
+                _results = response.results;
+                _facets = response.facets || [];
+                //auto select objects if user has marked it as selected previously
+                // this is needed to maintain selections across pagination pages
+                _selected.each(function (id) {
+                    var map = _results.find(function (map) {
+                        return map._id === id;
+                    });
+                    if (map) map.selected = true;
+                });
+                //will trigger update on pagination directive
+                _options.total = response.totalResults;
+                _isLoading = false;
+                notify(eventKey + 'results');
+                notify(eventKey + 'pagination');
+            }).catch(function (response) {
+                _isLoading = false;
+                //fallback
+                var obj = { error: "An Error Occurred", message: "No details provided" };
+                //http response error
+                if (response && response.data) obj = response.data;else if (response && response.message) obj = response;
+                //serialized json
+                if (typeof obj === 'string') {
+                    try {
+                        obj = JSON.parse(obj);
+                    } catch (e) {
+                        obj.message = "Bad response from server";
+                    }
+                }
+                var error = {
+                    label: obj.error || "An Error Occurred",
+                    message: obj.message || "No details provided"
+                };
+                notify(eventKey + 'error', error);
+            });
+        }
+        function setOption(name, value, fire) {
+            _options[name] = value;
+            if (typeof fire === 'undefined' || !!fire) {
+                var delay = 500;
+                if (value === null || value === undefined) delay = 0;
+                if (value && typeof value.push !== 'undefined' && value.length) delay = 0; //arrays
+                else if (value && value.length) delay = 0; //strings
+                dirty(delay);
+            }
+        }
+        /* ------------ public api ------------- */
+        return {
+            events: {
+                LOADING: eventKey + 'querying',
+                RESULTS: eventKey + 'results',
+                PAGINATION: eventKey + 'pagination',
+                SELECTED: eventKey + 'selected',
+                ERROR: eventKey + 'error',
+                SELECTED_ADDED: eventKey + 'selected:added',
+                SELECTED_REMOVED: eventKey + 'selected:removed',
+                SIMILARITY: eventKey + 'similarTo',
+                CLEARED: eventKey + 'cleared'
+            },
+            /**
+             * @return {bool}
+             */
+            getLoadingStatus: function getLoadingStatus() {
+                return _isLoading;
+            },
+            /**
+             * NOTE: Make sure event names are prefixed with
+             *  eventKey + ''
+             * @param {string} eventName
+             * @param {function} listener
+             */
+            on: function on(eventName, listener) {
+                // if(eventName.indexOf(eventKey + ":") !== 0)
+                //     eventName = eventKey + '' + eventName;
+                return $rootScope.$on(eventName, listener);
+            },
+            /**
+             * @param {string} eventName
+             * @param {*} args
+             */
+            trigger: function trigger(eventName, args) {
+                notify(eventName, args);
+            },
+            /**
+             * @return {array[object]}
+             */
+            getResults: function getResults() {
+                return _results;
+            },
+            /**
+             * @return {array[string]} list of facet names
+             */
+            getFacetNames: function getFacetNames() {
+                return FACETS.slice(0);
+            },
+            /**
+             * @return {object} in form of <facet>: [<values>]
+             */
+            getFacets: function getFacets() {
+                return _facets;
+            },
+            /**
+             * @param {string} name
+             * @return {object|null}
+             */
+            getFacet: function getFacet(name) {
+                if (_facets) {
+                    return _facets.find(function (facet) {
+                        return facet.name === name;
+                    });
+                }
+                return null;
+            },
+            addFacet: function addFacet(name) {
+                _requestFacets.push(name);
+            },
+            applyConstraints: function applyConstraints(obj) {
+                for (var p in obj) {
+                    if (obj.hasOwnProperty(p)) {
+                        _options[p] = obj[p];
+                    }
+                }
+                _doUpdate(true);
+            },
+            applyOption: function applyOption(key, value, fire) {
+                setOption(key, value, fire);
+            },
+            applyOptions: function applyOptions(opts, fire) {
+                angular.forEach(opts, function (value, key) {
+                    setOption(key, value, false);
+                });
+                if (fire) _doUpdate(true);
+            },
+            /**
+             * @param {string} name - name of query parameter
+             * @return {any} value of specified query parameter
+             */
+            getQueryOption: function getQueryOption(name) {
+                return _options[name];
+            },
+            /**
+             * @param {string} text - free text query
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setQuery: function setQuery(text, fireUpdate) {
+                setOption(VAR_QUERY, text, fireUpdate);
+            },
+            getQuery: function getQuery() {
+                return _options[VAR_QUERY];
+            },
+            /**
+             * @param {array[string]} types - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setTypes: function setTypes(types, fireUpdate) {
+                setOption(VAR_TYPES, types, fireUpdate);
+            },
+            getTypes: function getTypes() {
+                return _options[VAR_TYPES];
+            },
+            /**
+             * @param {string} userId - identifier of user
+             * @param {boolean} fireUpdate -
+             */
+            setUser: function setUser(userId, fireUpdate) {
+                setOption(VAR_USER, userId, fireUpdate);
+            },
+            getUser: function getUser() {
+                return _options[VAR_USER];
+            },
+            /**
+             * @param {array[string]} creators - ids of creators
+             * @param {boolean} fireUpdate -
+             */
+            setCreatedBy: function setCreatedBy(creators, fireUpdate) {
+                setOption(VAR_CREATED_BY, creators, fireUpdate);
+            },
+            getCreatedBy: function getCreatedBy() {
+                return _options[VAR_CREATED_BY];
+            },
+            /**
+             * @param {array[string]} themes - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setThemes: function setThemes(themes, fireUpdate) {
+                setOption(VAR_THEMES, themes, fireUpdate);
+            },
+            getThemes: function getThemes() {
+                return _options[VAR_THEMES];
+            },
+            /**
+             * @param {array[string]} publishers - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setAgencies: function setAgencies(publishers, fireUpdate) {
+                setOption(VAR_PUBLISHERS, publishers, fireUpdate);
+            },
+            getAgencies: function getAgencies() {
+                return _options[VAR_PUBLISHERS];
+            },
+            /**
+             * @param {array[string]} ids - ids of agents using this item
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setUsedBy: function setUsedBy(ids, fireUpdate) {
+                setOption(VAR_USED_BY, ids, fireUpdate);
+            },
+            getUsedBy: function getUsedBy() {
+                return _options[VAR_USED_BY];
+            },
+            /**
+             * @param {array[string]} svcTypes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setServiceTypes: function setServiceTypes(svcTypes, fireUpdate) {
+                setOption(VAR_SERVICE_TYPES, svcTypes, fireUpdate);
+            },
+            getServiceTypes: function getServiceTypes() {
+                return _options[VAR_SERVICE_TYPES];
+            },
+            /**
+             * @param {array[string]} resTypes - uris
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setResourceTypes: function setResourceTypes(resTypes, fireUpdate) {
+                setOption(VAR_RESOURCE_TYPES, resTypes, fireUpdate);
+            },
+            getResourceTypes: function getResourceTypes() {
+                return _options[VAR_RESOURCE_TYPES];
+            },
+            /**
+             * @param {array[string]} schemes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setSchemes: function setSchemes(schemes, fireUpdate) {
+                setOption(VAR_SCHEMES, schemes, fireUpdate);
+            },
+            getSchemes: function getSchemes() {
+                return _options[VAR_SCHEMES];
+            },
+            /**
+             * @param {string} visibility - one of 'public' or 'private'
+             * @param {boolean} fireUpdate
+             */
+            setVisibility: function setVisibility(visibility, fireUpdate) {
+                setOption(VAR_VISIBILITY, visibility, fireUpdate);
+            },
+            getVisibility: function getVisibility() {
+                return _options[VAR_VISIBILITY];
+            },
+            /**
+             * @param {Date} date - date to compare against
+             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
+             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
+             */
+            setModified: function setModified(date, beforeOrAfter, fireUpdate) {
+                //if no date was supplied, consider it "unset" for both properties
+                if (!date) {
+                    setOption(VAR_MODIFIED_BEFORE, null, false);
+                    setOption(VAR_MODIFIED_AFTER, null, true);
+                    return;
+                }
+                var dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
+                var prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER; //property being set
+                var oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE; //unset opposite property
+                var arg = date && date.getTime ? date.getTime() : date;
+                setOption(oppProp, null, false);
+                setOption(prop, arg, true);
+            },
+            getModified: function getModified() {
+                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
+            },
+            /**
+             * @param {string} bboxStr - form of "minx,miny,maxx,maxy"
+             * @param {boolean} fireUpdate
+             */
+            setExtent: function setExtent(bboxStr) {
+                setOption(VAR_EXTENT, bboxStr, true);
+            },
+            /** @return {string} bbox string or null if not set */
+            getExtent: function getExtent() {
+                return _options[VAR_EXTENT];
+            },
+            /**
+             * @return {array} list of selected items from current search results
+             */
+            getSelected: function getSelected() {
+                return _selected;
+            },
+            /**
+             * @param {array} arr - list of items to select in current search results
+             */
+            setSelected: function setSelected(arr) {
+                _selected = arr;
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * @param {string} id - identifier of item in current search results to add to selected list
+             */
+            select: function select(id) {
+                var finder = function finder(l) {
+                    return l.id === id;
+                };
+                var existing = _selected.find(finder);
+                if (existing) {
+                    var idx = _selected.indexOf(existing);
+                    if (idx >= 0) {
+                        _selected.splice(idx, 1);
+                        notify(eventKey + 'selected:removed', existing);
+                    }
+                } else {
+                    var obj = _results.find(finder);
+                    if (obj) {
+                        if (_onSelectFn) {
+                            _onSelectFn(id, function (err, item) {
+                                if (item) {
+                                    _selected.unshift(item);
+                                    notify(eventKey + 'selected:added', item);
+                                }
+                            });
+                        } else {
+                            _selected.unshift(obj);
+                            notify(eventKey + 'selected:added', obj);
+                        }
+                    }
+                }
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * @param {string} id - identifier of item to check
+             * @return {boolean} true if selected, false otherwise
+             */
+            isSelected: function isSelected(id) {
+                return _selected.find(function (obj) {
+                    return obj.id === id;
+                });
+            },
+            /**
+             * select all items in current page of results
+             */
+            selectAll: function selectAll() {
+                var _this = this;
+                angular.forEach(_results, function (obj) {
+                    if (!_this.isSelected(obj.id)) _selected.unshift(obj);
+                });
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * empty list of selected items
+             */
+            clearSelected: function clearSelected() {
+                var prev = _selected.slice(0);
+                notify(this.events.SELECTED_REMOVED, prev);
+                _selected = [];
+                notify(this.events.SELECTED, []);
+            },
+            /**
+             *
+             */
+            clear: function clear(refresh) {
+                for (var prop in _options) {
+                    if (!_options.hasOwnProperty(prop)) continue;
+                    if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
+                }
+                notify(this.events.CLEARED);
+                if (refresh || typeof refresh === 'undefined') _doUpdate(true);
+            },
+            /*
+             * @param {string} category - name of facet
+             * @param {string} value - value of facet
+             */
+            setFacet: function setFacet(category, value) {
+                var f = _options.facets[category];
+                if (!f) _options.facets[category] = value;else {
+                    if (f === value) {
+                        //unset it
+                        delete _options.facets[category];
+                    } else {
+                        //set it
+                        _options.facets[category] = value;
+                    }
+                }
+                _doUpdate(true);
+            },
+            /**
+             * @param {array[string]} fields - list of field names to request for each search result
+             */
+            setFields: function setFields(fields) {
+                if (fields && typeof fields.push !== 'undefined') _fields = fields;
+            },
+            /**
+             * @param {int} start - beginning index of results to request
+             * @param {bool} andUpdate - trigger update (default is true)
+             */
+            start: function start(_start, andUpdate) {
+                _options.start = _start;
+                if (andUpdate && andUpdate === true) _doUpdate(false);
+            },
+            /**
+             * @param {int} size - page size to request
+             * @param {bool} andUpdate - trigger update (default is true)
+             */
+            size: function size(_size, andUpdate) {
+                _options.size = _size;
+                //find out which page in the new scheme the current first-result of current page
+                // will show up in, and set start so that it shows up with the new page size
+                var page = Math.floor(_options.start * 1 / _options.size * 1);
+                _options.start = page * (_options.size * 1);
+                if (andUpdate && andUpdate === true) _doUpdate(false);
+            },
+            /**
+             * @param {int} size - number of items to return in each page of results
+             */
+            pageSize: function pageSize(size) {
+                this.size(size, true);
+            },
+            /**
+             * @param {string} sort - form of <field>,<dir>
+             */
+            sort: function sort(_sort) {
+                _options.sort = _sort;
+                _doUpdate(false);
+            },
+            /**
+             * return {object} containing start index, page size, and total results
+             */
+            getPagination: function getPagination() {
+                return {
+                    start: _options.start,
+                    size: _options.size,
+                    pageSize: _options.size,
+                    total: _options.total,
+                    sizeOptions: _pageSizeBase
+                };
+            },
+            /**
+             * @return {array} list of key-value pairs of sort options
+             */
+            getSortOptions: function getSortOptions() {
+                return SORT_OPTIONS.slice(0);
+            },
+            /**
+             * @return {string} sorting parameter (field,order)
+             */
+            getSortValue: function getSortValue() {
+                return _options.sort;
+            },
+            /**
+             * @return {object} clone of the current set of query options
+             */
+            getQueryOptions: function getQueryOptions() {
+                return jQuery.extend({}, _options);
+            },
+            /**
+             *
+             */
+            hasQueryOptions: function hasQueryOptions() {
+                var result = false;
+                for (var k in _options) {
+                    if (_options.hasOwnProperty(k)) {
+                        if ('start' === k || 'size' === k || 'total' === k || 'sort' === k || 'order' === k || 'within' === k || 'facets' === k) continue;
+                        if (_selectedFacets.length) result = true;
+                        if (typeof _options[k] !== 'undefined' && _options[k] !== null) {
+                            result = true;
+                        }
+                    }
+                }
+                return result;
+            },
+            /**
+             * Triggers a refresh of current search results
+             * @param {boolean} resetStart - reset 'start' to 0 flag
+             */
+            update: function update(resetStart) {
+                dirty(0, resetStart);
+            },
+            reset: function reset() {
+                _options = {
+                    start: 0,
+                    size: _pageSizeBase[0],
+                    total: 0,
+                    sort: "modified,desc", order: "asc",
+                    facets: {}
+                };
+                notify(this.events.CLEARED);
+                _facets = [];
+                _selectedFacets = [];
+                _results = [];
+                _isLoading = false;
+                _selected = [];
+                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+                _dirtyPromise = null;
+            },
+            destroy: function destroy() {
+                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+            }
+        };
+    }
+    /**
+     * Factory for creating instances of BrowseObjectsService
+     */
+    function BrowseServiceFactory($rootScope, $timeout, $resource) {
+        return function (options) {
+            var svc = BrowseObjectsService($rootScope, $timeout, $resource, options);
+            if (options && options.params) svc.applyOptions(options.params);
+            return svc;
+        };
+    }
+    angular.module('gp-common').service("BrowseObjectsService", ['$rootScope', '$timeout', '$resource', BrowseObjectsService]).factory("BrowseServiceFactory", ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
+    /*
+        Example of how to use the factory to customize a service
+    
+        //layer-specific browse service
+        .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
+            let service = BrowseServiceFactory({
+                key: 'layers',
+                url: Constants.ualUrl + '/api/layers'
+            });
+    
+            //add custom methods here
+    
+            return service;
+        }])
+    */
+})(angular, GeoPlatform);
+
+(function (angular) {
+    'use strict';
+    /* *********************************************
+     * Requires socket.io be in the global namespace
+     * tested with version 2.x
+     * ********************************************* */
+    /*
+       Usage:
+        let service = ...
+        let svcId = service.getId();
+        //listen to events from the server
+       service.on('testing', (event) => {
+           if(event.clientId === svcId) return; //ignore our own events
+           ... do something ...
+       });
+       
+       //sends out a message to others
+       service.emit( service.events.CREATED, 'test');
+        //sends out a message to others
+       service.begin(service.events.EDITING, 'test');
+        //sends out a message to others
+       service.end(service.events.EDITING, 'test');
+        //stop listening and close the socket
+       service.close();
+      */
+    /**
+     *
+     */
+
+    var SocketService = /** @class */function () {
+        SocketService.$inject = ["url", "options"];
+        function SocketService(url, options) {
+            'ngInject';
+
+            var _this = this;
+            var opts = (typeof options === "undefined" ? "undefined" : _typeof(options)) === 'object' ? options : {};
+            for (var key in opts) {
+                this[key] = opts[key];
+            }this.socket = null;
+            //list of ids of things being tracked, such as 
+            // items edited, in order to send messages
+            // about the things lifecycle
+            this.tracking = {};
+            //events supported.
+            // Note that lifecycles can be added by using the 
+            // begin() and end() methods on the service,
+            // which appends '_start' and '_end' respectively
+            this.events = {
+                CREATED: 'created',
+                UPDATED: 'updated',
+                DELETED: 'deleted',
+                EDITING: 'editing',
+                STATUS: 'status'
+            };
+            if (typeof io === 'undefined') {
+                console.log("Socket.IO not found in global namespace");
+                return;
+            }
+            if (!url) {
+                console.log("No web socket URL configured for this app to communicate with");
+                return;
+            }
+            //make connection
+            this.socket = io.connect(url);
+            //listen for the init event indicating connection has been made
+            // and to get the socket's id from the server
+            this.socket.on("init", function (evt) {
+                _this.socketId = evt.id;
+            });
+            //if unable to connect
+            this.socket.on('error', function () {
+                console.log("Unable to connect to " + url + " with websockets");
+            });
+        }
+        /**
+         *
+         */
+        SocketService.prototype.getId = function () {
+            return this.socketId;
+        };
+        /**
+         * @param {string} eventName
+         * @param {Function} callback
+         * @return {Function} to remove the listener
+         */
+        SocketService.prototype.on = function (eventName, callback) {
+            var _this = this;
+            if (!this.socket) return function () {};
+            //add the listener to the socket
+            this.socket.on(eventName, callback);
+            //return an 'off' function to remove the listener
+            return function () {
+                _this.socket.off(eventName, callback);
+            };
+        };
+        /**
+         *
+         */
+        SocketService.prototype.emit = function (eventName, data, callback) {
+            if (!this.socket) return;
+            this.socket.emit(eventName, data, callback);
+        };
+        /**
+         * Closes this service's socket
+         */
+        SocketService.prototype.close = function () {
+            var _this = this;
+            //if this app was tracking an obj, 
+            // notify listeners that it is no longer
+            for (var event in this.tracking) {
+                if (this.tracking.hasOwnProperty(event)) {
+                    var tracks = this.tracking[event];
+                    if (tracks && tracks.length) {
+                        /* jshint ignore:start */
+                        angular.forEach(tracks, function (id) {
+                            _this.end(event, id);
+                        });
+                        /* jshint ignore:end */
+                    }
+                }
+            }
+            if (this.socket) {
+                this.socket.close();
+                this.socket = null;
+            }
+            return null;
+        };
+        /**
+         * @param {string} event - name of the event being started
+         * @param {string} objId - identifier of the item being tracked
+         */
+        SocketService.prototype.begin = function (event, objId) {
+            var _this = this;
+            this.tracking[event] = this.tracking[event] || [];
+            this.tracking[event].push(objId);
+            var room = objId + "_" + event.toLowerCase();
+            this.join(room, function () {
+                _this.socket.emit(event, room, _this.socketId, true);
+            });
+        };
+        /**
+         * @param {string} event - name of the event being ended
+         * @param {string} objId - identifier of the item being tracked
+         */
+        SocketService.prototype.end = function (event, objId) {
+            var _this = this;
+            this.tracking[event] = this.tracking[event] || [];
+            if (!this.tracking[event].length) return; //empty, ignore request
+            var idx = this.tracking[event].indexOf(objId);
+            if (idx < 0)
+                //remove tracker
+                this.tracking[event].splice(idx, 1);
+            //send event to server about client stopping it's tracking
+            var room = objId + "_" + event.toLowerCase();
+            this.socket.emit(event, room, this.socketId, false, function () {
+                _this.leave(room);
+            });
+        };
+        /**
+         *
+         */
+        SocketService.prototype.join = function (objId, callback) {
+            this.emit('join', objId, callback);
+        };
+        /**
+         *
+         */
+        SocketService.prototype.leave = function (objId, callback) {
+            this.emit('leave', objId, callback);
+        };
+        return SocketService;
+    }();
+    /**
+     * Factory to get a Service used to listen for WebSocket messages from a server
+     *
+     * Usage:
+     *
+     * let wsUrl = ...
+     * let service = SocketServiceFactory(wsUrl);
+     *
+     */
+    angular.module('gp-common').factory('SocketServiceFactory', ["$rootScope", "$window", "UUID", function ($rootScope, $window, UUID) {
+        var cache = {};
+        //disconnect whenever the app is closed
+        var onClose = function onClose(e) {
+            for (var key in cache) {
+                if (cache.hasOwnProperty(key)) {
+                    cache[key].close();
+                    cache[key] = null;
+                }
+            }
+            cache = null;
+            return null;
+        };
+        //needed for reload/backbtn
+        if ($window.onbeforeunload === 'function') {
+            var existing_1 = $window.onbeforeunload;
+            $window.onbeforeunload = function (e) {
+                onClose(e);
+                return existing_1(e);
+            };
+        } else {
+            $window.onbeforeunload = onClose;
+        }
+        $rootScope.$on('$destroy', onClose);
+        //-------------------
+        return function (url) {
+            // if(!url) return null;
+            // if(cache[url]) return cache[url];
+            var cacheRef = UUID();
+            var service = new SocketService(url, $rootScope, { cacheRef: cacheRef });
+            var closeDelegate = service.close;
+            service.close = function () {
+                var id = service.cacheRef;
+                closeDelegate.call(service); //have service disconnect and clean up itself
+                //then clean up cache reference
+                delete cache[id];
+            };
+            var onDelegate = service.on;
+            service.on = function (event, callback) {
+                if (typeof callback === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    var handle = function handle() {
+                        var args = arguments;
+                        $rootScope.$apply(function () {
+                            callback.apply(service.socket, args);
+                        });
+                    };
+                    return onDelegate.call(service, event, handle);
+                } else {
+                    return onDelegate.call(service, event);
+                }
+            };
+            var emitDelegate = service.emit;
+            service.emit = function (event, data, callback) {
+                if (typeof callback === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    var handle = function handle() {
+                        var args = arguments;
+                        $rootScope.$apply(function () {
+                            callback.apply(service.socket, args);
+                        });
+                    };
+                    emitDelegate.call(service, event, data, handle);
+                } else {
+                    emitDelegate.call(service, event, data);
+                }
+            };
+            // cache[url] = service;
+            cache[cacheRef] = service;
+            return service;
+        };
+    }]);
+})(angular);
+
+(function (angular) {
+    'use strict';
+
+    angular.module("gp-common").factory('UUID', function () {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+        }
+        /*
+        return function() {
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                    s4() + '-' + s4() + s4() + s4();
+            }
+         */
+        return function () {
+            // http://www.ietf.org/rfc/rfc4122.txt
+            var s = [];
+            var hexDigits = "0123456789abcdef";
+            for (var i = 0; i < 36; i++) {
+                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+            }
+            s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
+            s[19] = hexDigits.substr(s[19] & 0x3 | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+            s[8] = s[13] = s[18] = s[23] = "-";
+            return s.join("");
+        };
+    });
+})(angular);
+
 (function () {
     "use strict";
 
@@ -4158,7 +4160,13 @@ var __extends = undefined && undefined.__extends || function () {
              * @param {JWT} jwt
              */
             AuthService.prototype.setAuth = function (jwt) {
-                if (RPMService && jwt.length) RPMService().setUserId(this.parseJwt(jwt).sub);
+                if (RPMService && jwt.length) {
+                    var token = this.parseJwt(jwt);
+                    if (token) {
+                        var sub = token.sub;
+                        RPMService().setUserId(sub);
+                    }
+                }
                 this.saveToLocalStorage('gpoauthJWT', jwt);
                 $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
                 // $http.defaults.useXDomain = true;

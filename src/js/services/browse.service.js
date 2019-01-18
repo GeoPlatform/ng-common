@@ -586,6 +586,8 @@
              * empty list of selected items
              */
             clearSelected: function() {
+                let prev = _selected.slice(0);
+                notify(this.events.SELECTED_REMOVED, prev);
                 _selected = [];
                 notify(this.events.SELECTED, []);
             },

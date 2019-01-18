@@ -585,8 +585,14 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
-            if(RPMService && jwt.length)
-              RPMService().setUserId(this.parseJwt(jwt).sub)
+
+            if(RPMService && jwt.length) {
+                let token = this.parseJwt(jwt);
+                if(token) {
+                    let sub = token.sub;
+                    RPMService().setUserId(sub);
+                }
+            }
 
             this.saveToLocalStorage('gpoauthJWT', jwt)
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
