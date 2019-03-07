@@ -76,12 +76,14 @@
                 this.additionalValueCount = total - newValues.length;
 
                 let selections = this.getSelected();
-                this.outsideResults = (this.values||[]).filter( v => {
-                    //find existing values that are selected
-                    return ~selections.indexOf(v.id) &&
-                        // but not in new set of values
-                        !newValues.filter( nv => nv.id === v.id).length;
-                });
+                if(selections.length) {
+                    this.outsideResults = (this.values||[]).filter( v => {
+                        //find existing values that are selected
+                        return ~selections.indexOf(v.id) &&
+                            // but not in new set of values
+                            !newValues.filter( nv => nv.id === v.id).length;
+                    });
+                }
 
                 this.values = newValues;
 
