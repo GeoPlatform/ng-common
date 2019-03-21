@@ -3380,7 +3380,7 @@ var __extends = undefined && undefined.__extends || function () {
                 type: 'skos:Concept',
                 fields: 'scheme',
                 size: 20,
-                sort: 'label,asc'
+                sort: '_score,desc' // DT-2417
             };
             this.updateValues();
         };
@@ -3487,7 +3487,7 @@ var __extends = undefined && undefined.__extends || function () {
             }, function (response) {
                 console.log("(" + response.status + ") " + response.statusText);
             }).catch(function (e) {
-                console.log("Error fetching NGDA Themes: " + e.message);
+                console.log("Error fetching themes: " + e.message);
             });
         };
         /**

@@ -17,7 +17,7 @@
                 type:'skos:Concept',
                 fields:'scheme',
                 size: 20,
-                sort: 'label,asc'
+                sort: '_score,desc' // DT-2417
             };
             this.updateValues();
         }
@@ -134,7 +134,7 @@
             }, (response) => {
                 console.log("(" + response.status + ") " + response.statusText);
             }).catch( e => {
-                console.log("Error fetching NGDA Themes: " + e.message);
+                console.log("Error fetching themes: " + e.message);
             });
         }
 
