@@ -63,7 +63,7 @@
 
             let params = {
                 type:'org:Organization',
-                sort: 'label,asc',
+                sort: '_score,desc',     //DT-2461
                 q: query,
                 size: 20,
                 bust: new Date().getTime()

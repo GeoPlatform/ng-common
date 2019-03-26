@@ -57,7 +57,7 @@
 
                 return $http.get(Constants.ualUrl + '/api/communities', {
                     params: {
-                        sort: 'label,asc',
+                        sort: '_score,desc', //DT-2461
                         q: query,
                         size: 20,
                         bust: new Date().getTime()
