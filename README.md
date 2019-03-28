@@ -80,6 +80,8 @@ The folling are values that can/should be set in the GeoPlatform global namespac
 |---|---|---|---|---|
 | portalUrl | yes | FQDN of GeoPlatform portal URL | N/A | N/A |
 |env, ENV, NODE_ENV | yes (one of) | Environment flag to run NgCommon with. Some features (like authentication) may be disabled or preform differently in a development vs production environment | dev, development, prod, prd, sit, test | N/A |
+| loadRPM | no | Load [RPM](http://geoplatform-cdn.s3-website-us-east-1.amazonaws.com/gp.rpm/stable/docs/jsdocs/index.html) library into browser if not already loaded. | true, false | false |
+| rpmVersion | no | version of RPM lib to load (RPM-JS will only be loaed if it is not already loaded) | latest, stable, 0.1.0, 0.1.4, etc. | latest |
 
 > See additonal configurations in the Authentication section
 
@@ -107,8 +109,13 @@ Apps have the ability to allow for authentication via iframe and keep the user f
 
 | name | description | args |
 |---|---|---|
+| auth:requireLogin | This event is used internally by ng-common. It will trigger the login event (either iframe login or redirect based on confuguration).| **event**: the event|
 | userAuthenticated | Is called when a user has authenticated and the iframe authentication window is closed, or user has signed out. In the later case null will be passed for the user argument. | **event**: the event **user**: User object (or null) |
 | userSignOut | Is called when user is signed out. This can happen when the user triggers the logout action, or when an expired JWT is detected that is not able to be refreshed. | **event**: the event |
+| auth:iframeLoginShow | This event will be called when the login iframe is triggered. Use this event to inform your appliction that the login iframe is present. | **event**: the event |
+| auth:iframeLoginHide | This event is called when the loggin iframe is hidden. Use this event to inform your appliction that the login iframe has been hidden (NOTE: this will always fire when the login iframe is removed but the 'userAuthenticated' event will only fire is the user successfully logs in. If this event fires and the 'userAuthenticated' event does not it means the user canceled the login challenge). | **event**: the event |
+
+
 
 **Example:**
 ```javascript

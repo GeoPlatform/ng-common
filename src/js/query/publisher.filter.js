@@ -53,7 +53,7 @@
 
         getCount (value) {
             var facet = this.service.getFacet(PUBLISHER_FACET);
-            if(!facet) return '';
+            if(!facet || !facet.buckets || !facet.buckets.length) return '';
             var valObj = facet.buckets.find(function(v) { return v.label===value.id; });
             if(!valObj) return '';
             return valObj.count;
@@ -63,7 +63,7 @@
 
             let params = {
                 type:'org:Organization',
-                sort: 'label,asc',
+                sort: '_score,desc',     //DT-2461
                 q: query,
                 size: 20,
                 bust: new Date().getTime()
@@ -76,12 +76,14 @@
                 this.additionalValueCount = total - newValues.length;
 
                 let selections = this.getSelected();
-                this.outsideResults = (this.values||[]).filter( v => {
-                    //find existing values that are selected
-                    return ~selections.indexOf(v.id) &&
-                        // but not in new set of values
-                        !newValues.filter( nv => nv.id === v.id).length;
-                });
+                if(selections.length) {
+                    this.outsideResults = (this.values||[]).filter( v => {
+                        //find existing values that are selected
+                        return ~selections.indexOf(v.id) &&
+                            // but not in new set of values
+                            !newValues.filter( nv => nv.id === v.id).length;
+                    });
+                }
 
                 this.values = newValues;
 

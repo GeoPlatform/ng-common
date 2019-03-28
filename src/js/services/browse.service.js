@@ -298,8 +298,18 @@
                     delay = 0;  //arrays
                 else if(value && value.length)
                     delay = 0;   //strings
-                dirty(delay);
+                dirty(delay, shouldResetPageStart(name));
             }
+        }
+
+
+        /**
+         * @param {string} key - option being set
+         * @return {boolean} true if the property change should reset pagination start
+         */
+        function shouldResetPageStart(key) {
+            return key !== 'start' && key !== 'size' && key !== 'count' &&
+                key !== 'pageSize' && key !== 'sort';
         }
 
 
@@ -386,7 +396,9 @@
                 _doUpdate(true);
             },
 
-            applyOption: function(key, value, fire) { setOption(key, value, fire); },
+            applyOption: function(key, value, fire) { 
+                setOption(key, value, fire);
+            },
 
             applyOptions: function(opts, fire) { 
                 angular.forEach(opts, (value, key) => { setOption(key, value, false); });
@@ -586,6 +598,8 @@
              * empty list of selected items
              */
             clearSelected: function() {
+                let prev = _selected.slice(0);
+                notify(this.events.SELECTED_REMOVED, prev);
                 _selected = [];
                 notify(this.events.SELECTED, []);
             },

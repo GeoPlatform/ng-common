@@ -47,7 +47,7 @@
 
             this.getCount = function(value) {
                 var facet = this.service.getFacet(FACET_NAME);
-                if(!facet) return '';
+                if(!facet || !facet.buckets || !facet.buckets.length) return '';
                 var valObj = facet.buckets.find(function(v) { return v.label===value.id; });
                 if(!valObj) return '';
                 return valObj.count;
@@ -57,7 +57,7 @@
 
                 return $http.get(Constants.ualUrl + '/api/communities', {
                     params: {
-                        sort: 'label,asc',
+                        sort: '_score,desc', //DT-2461
                         q: query,
                         size: 20,
                         bust: new Date().getTime()

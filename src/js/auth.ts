@@ -20,6 +20,10 @@
     return res && res[1];
   };
 
+  function RPMLoaded():  boolean {
+   return typeof RPMService != 'undefined'
+  }
+
   /**
    * GeoPlatform Common Module Authentication Support
    *
@@ -182,6 +186,20 @@
            * @method init
            */
           private init(){
+            const self = this;
+            // Delay init until RPMService is loaded
+            if(RPMLoaded() && Config.loadRPM){
+              const script = document.createElement('script');
+              script.onload = function () {
+                  //do stuff with the script
+                  self.init();
+              };
+              script.src = `https://s3.amazonaws.com/geoplatform-cdn/gp.rpm/${Config.RPMVersion || 'stable'}/js/gp.rpm.browser.js`;
+
+              document.head.appendChild(script);
+              return // skip init() till RPM is loaded
+            }
+
             const jwt = this.getJWT();
             if(jwt) this.setAuth(jwt)
 
@@ -571,8 +589,14 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
+            if(RPMLoaded() && jwt.length){
+              const parsedJWT = this.parseJwt(jwt)
+              parsedJWT ?
+                  RPMService().setUserId(parsedJWT.sub) :
+                  null;
+            }
+
             this.saveToLocalStorage('gpoauthJWT', jwt)
-            $http.defaults.headers.common.Authorization = 'Bearer ' + jwt;
             $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
             // $http.defaults.useXDomain = true;
           };
@@ -600,7 +624,19 @@
      * requests
      */
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
-      // Interceptor
+      // Interceptors
+
+      // Request Handler
+      function requestHandler(config: ng.IRequestConfig){
+        // Add the token from Local-storage to the outgoing request
+        const AuthenticationService = $injector.get('AuthenticationService')
+        const token = AuthenticationService.getJWT();
+        config.headers['Authorization'] = token ? `Bearer ${token}` : '';
+
+        return config;
+      }
+
+      // Generic Response Handler
       function respHandler(resp: ng.IHttpResponse<any>) {
         const AuthenticationService = $injector.get('AuthenticationService')
         const jwt = getJWTFromUrl();
@@ -628,6 +664,7 @@
       // Apply handler to all responses (regular and error as to not miss
       // tokens passed from node-gpoauth even on 4XX and 5XX responses)
       return {
+        request: requestHandler,
         response: respHandler,
         responseError: respErrorHandler
       };
@@ -667,18 +704,24 @@
 
             // Catch the request to display login modal
             $scope.$on('auth:requireLogin', function(){
-              $timeout(function(){ $scope.requireLogin = true; })
+              $timeout(function(){
+                $scope.requireLogin = true;
+                $rootScope.$broadcast('auth:iframeLoginShow')
+              })
             });
 
             // Catch the request to display login modal
             $scope.$on('userAuthenticated', function(){
-               $timeout(function(){ $scope.requireLogin = false })
+               $timeout(function(){
+                $scope.requireLogin = false
+                $rootScope.$broadcast('auth:iframeLoginHide')
+              })
             });
 
             $scope.cancel = function(){
               console.log("CALLED")
               $scope.requireLogin = false
-
+              $rootScope.$broadcast('auth:iframeLoginHide')
             }
 
           }
