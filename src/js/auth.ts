@@ -265,7 +265,8 @@
             const self = this;
             // Create iframe to manually call the logout and remove gpoauth cookie
             // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
-            // this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
+            if(this.config.IDP_BASE_URL)
+              this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
 
             // Save JWT to send with final request to revoke it
             const jwt = this.getJWT()
@@ -273,7 +274,7 @@
 
             return $http({
                       method: 'GET',
-                      url: `/revoke?sso=true`,
+                      url: `/revoke`,
                       headers: {
                         Authorization: `Bearer ${jwt}`
                       }
