@@ -5,6 +5,8 @@
 
   'use strict';
 
+  const REVOKE_RESPONSE = '<REVOKED>';
+
   /**
    * Get token from query string
    *
@@ -589,16 +591,21 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
-            if(RPMLoaded() && jwt.length){
-              const parsedJWT = this.parseJwt(jwt)
-              parsedJWT ?
-                  RPMService().setUserId(parsedJWT.sub) :
-                  null;
-            }
+            if(jwt == REVOKE_RESPONSE){
+              this.logout()
+            } else {
 
-            this.saveToLocalStorage('gpoauthJWT', jwt)
-            $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
-            // $http.defaults.useXDomain = true;
+              if(RPMLoaded() && jwt.length){
+                const parsedJWT = this.parseJwt(jwt)
+                parsedJWT ?
+                    RPMService().setUserId(parsedJWT.sub) :
+                    null;
+              }
+
+              this.saveToLocalStorage('gpoauthJWT', jwt)
+              $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
+
+            }
           };
 
           /**
