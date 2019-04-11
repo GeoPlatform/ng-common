@@ -5,6 +5,8 @@
 
   'use strict';
 
+  const REVOKE_RESPONSE = '<REVOKED>';
+
   /**
    * Get token from query string
    *
@@ -117,6 +119,7 @@
         class AuthService implements ngcommon.AuthService {
 
           iframe: HTMLIFrameElement
+            config: any;
 
           constructor(){
             const self = this;
@@ -263,7 +266,8 @@
             const self = this;
             // Create iframe to manually call the logout and remove gpoauth cookie
             // https://stackoverflow.com/questions/13758207/why-is-passportjs-in-node-not-removing-session-on-logout#answer-33786899
-            // this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
+            if(this.config.IDP_BASE_URL)
+              this.createIframe(`${Config.IDP_BASE_URL}/auth/logout`)
 
             // Save JWT to send with final request to revoke it
             const jwt = this.getJWT()
@@ -271,7 +275,7 @@
 
             return $http({
                       method: 'GET',
-                      url: `/revoke?sso=true`,
+                      url: `/revoke`,
                       headers: {
                         Authorization: `Bearer ${jwt}`
                       }
@@ -589,16 +593,21 @@
            * @param {JWT} jwt
            */
           private setAuth(jwt: string): void {
-            if(RPMLoaded() && jwt.length){
-              const parsedJWT = this.parseJwt(jwt)
-              parsedJWT ?
-                  RPMService().setUserId(parsedJWT.sub) :
-                  null;
-            }
+            if(jwt == REVOKE_RESPONSE){
+              this.logout()
+            } else {
 
-            this.saveToLocalStorage('gpoauthJWT', jwt)
-            $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
-            // $http.defaults.useXDomain = true;
+              if(RPMLoaded() && jwt.length){
+                const parsedJWT = this.parseJwt(jwt)
+                parsedJWT ?
+                    RPMService().setUserId(parsedJWT.sub) :
+                    null;
+              }
+
+              this.saveToLocalStorage('gpoauthJWT', jwt)
+              $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
+
+            }
           };
 
           /**
