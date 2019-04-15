@@ -259,6 +259,19 @@
                 notify(eventKey + 'results');
                 notify(eventKey + 'pagination');
 
+                if(options.trackingService) {
+                    //If an instanceof APIClient.TrackingService has been provided
+                    // using the constructor options, report the event of this search
+                    // using the TrackingService API
+                    setTimeout( //call using timeout to avoid any errors breaking search
+                        (trSvc, qp, total) => { trSvc.logSearch(qp, total); },
+                        50,
+                        options.trackingService,
+                        params,
+                        response.totalResults
+                    );
+                }
+
             })
             .catch( function(response) {
                 _isLoading = false;
@@ -292,12 +305,9 @@
             _options[name] = value;
             if(typeof(fire) === 'undefined' || !!fire) {
                 let delay = 500;
-                if(value === null || value === undefined)
-                    delay = 0;
-                if(value && typeof(value.push) !== 'undefined' && value.length)
-                    delay = 0;  //arrays
-                else if(value && value.length)
-                    delay = 0;   //strings
+                if(value === null || value === undefined) delay = 0;
+                else if(typeof(value.push) !== 'undefined' && value.length) delay = 0;  //arrays
+                else if(!value.length) delay = 0;   //strings
                 dirty(delay, shouldResetPageStart(name));
             }
         }
