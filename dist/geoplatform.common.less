@@ -58,6 +58,8 @@
 }
 
 
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
+
 
 .gp-ui-card__body .text--supporting[card-details-carousel-activator] {
     position: relative;
@@ -98,6 +100,7 @@
     //     color: #efefef;
     // }
 }
+
 
 
 .gp-colorpicker {
@@ -149,6 +152,7 @@
     }
 }
 
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
 
 .c-query-filter.card {
 
@@ -268,7 +272,7 @@
     }
     &.is-collapsed li > a.active,
     &.is-collapsed > .c-facet__value.active {
-        .t-fg--gray-dk;
+        color: @color-gray-dk;
         background-color: transparent;
     }
 }
@@ -346,6 +350,9 @@ header.app-header {
     }
 }
 
+
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
+
 /* ------------------------------------------------- *\
     Notifications
     ...
@@ -381,15 +388,15 @@ header.app-header {
         max-height: 10rem;
         overflow: auto;
     }
-    
-    &.ng-hide-add, 
+
+    &.ng-hide-add,
     &.ng-hide-remove {
         transition: all linear .5s;
     }
 
     &.ng-hide {
         opacity: 0;
-    } 
+    }
 
     .notification__actions {
         text-align: right;
@@ -435,8 +442,12 @@ header.app-header {
     color:          darken(@color-info, 20%);
 }
 
+
+
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
+
 /*  -------------------------------------------
-    PAGINATION COMPONENT STYLES 
+    PAGINATION COMPONENT STYLES
     ------------------------------------------- */
 
 .c-pagination {
@@ -542,8 +553,8 @@ header.app-header {
         flex-wrap:       wrap;
         height: auto;
 
-        .c-pagination__total, 
-        .c-pagination__page-size, 
+        .c-pagination__total,
+        .c-pagination__page-size,
         .c-pagination__pages {
             padding: 0 1em 0 0;
 
@@ -552,8 +563,8 @@ header.app-header {
             }
         }
 
-        .c-pagination__total, 
-        .c-pagination__page-size, 
+        .c-pagination__total,
+        .c-pagination__page-size,
         .c-pagination__pages {
             margin-bottom: 0.5em;
         }
@@ -572,6 +583,7 @@ header.app-header {
 }
 
 
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
 
 /* -----------------------------------------
     Progress Circle
@@ -613,9 +625,7 @@ header.app-header {
 }
 
 
-
-
-
+@import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
 
 .c-kg-editor__header {
     background: #fff;
@@ -726,4 +736,3 @@ kg-section {
     }
 
 }
-

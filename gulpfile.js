@@ -11,7 +11,10 @@ const pkg         = require('./package.json'),
       notify      = require('gulp-notify'),
       del         = require('del'),
       srcmaps     = require('gulp-sourcemaps'),
-      ts          = require('gulp-typescript');
+      ts          = require('gulp-typescript'),
+      less        = require('gulp-less'),
+      cssmin      = require('gulp-cssmin'),
+      autoprefixer= require('less-plugin-autoprefix');
 
 const jshintConfig = {
     // laxbreak: true,
@@ -21,6 +24,17 @@ const jshintConfig = {
     browser: true,
     jquery: true
 }
+
+const autoprefix = new autoprefixer({
+    browsers: [
+        "iOS >= 7",
+        "Chrome >= 30",
+        "Explorer >= 11",
+        "last 2 Edge versions",
+        "Firefox >= 20"
+    ]
+});
+
 
 require('gulp-help')(gulp, { description: 'Help listing.' });
 
@@ -75,10 +89,23 @@ gulp.task('clean', function() {
 });
 
 gulp.task('less', 'Compile less into a single app.css.', function() {
+    
     gulp.src(['src/**/*.less'])
         .pipe(concat(pkg.name + '.less'))
         .pipe(gulp.dest('dist/'))
         .pipe(notify('Compiled less'));
+
+    gulp.src([ 'dist/' + pkg.name + '.less'], {base: "."})
+        .pipe(less({
+            plugins: [autoprefix],
+            paths: ['./src/less']
+        }))
+        .on("error", notify.onError({message: 'LESS compile error: <%= error.message %>'}))
+        .pipe(gulp.dest('./'))
+        // .pipe(cssmin())
+        // .pipe(rename({ suffix: '.min' }))
+        // .pipe(gulp.dest('dist/css/'))
+        .pipe(notify('Compiled styles'));
 });
 
 
