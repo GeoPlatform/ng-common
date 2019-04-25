@@ -30,12 +30,12 @@
         }
 
         isSelected (value) {
-            let val = this.service.getTopics();
+            let val = this.service.getTopics() || [];
             return val && val.length && ~val.indexOf(value);
         }
 
         toggle (value) {
-            let val = this.service.getTopics();
+            let val = this.service.getTopics() || [];
             if(!val) val = [];
             let index = val.indexOf(value);
             if(index >= 0) val.splice(index, 1);
