@@ -89,13 +89,16 @@ gulp.task('clean', function() {
 });
 
 gulp.task('less', 'Compile less into a single app.css.', function() {
-    
-    gulp.src(['src/**/*.less'])
+
+    gulp.src([
+        'node_modules/geoplatform.style/src/less/variables.less',
+        'src/**/*.less'
+    ])
         .pipe(concat(pkg.name + '.less'))
         .pipe(gulp.dest('dist/'))
         .pipe(notify('Compiled less'));
 
-    gulp.src([ 'dist/' + pkg.name + '.less'], {base: "."})
+    gulp.src(['dist/' + pkg.name + '.less'], {base: "."})
         .pipe(less({
             plugins: [autoprefix],
             paths: ['./src/less']
