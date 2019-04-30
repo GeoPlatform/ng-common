@@ -9,51 +9,57 @@
     -webkit-font-smoothing: antialiased;
 }
 
+.gpicons.arrow-left:before { content: "\e091"; }
+.gpicons.arrow-left-circle:before { content: "\e132"; }
+.gpicons.arrow-right:before { content: "\e092"; }
+.gpicons.arrow-right-circle:before { content: "\e131"; }
 .gpicons.backward:before { content: "\e071"; }
 .gpicons.ban-circle:before { content: "\e090"; }        /*glyphicon glyphicon-ban-circle*/
+.gpicons.bars:before { content: "\e236"; }
 .gpicons.calendar:before { content: "\e109"; }      /*glyphicon glyphicon-calendar*/
 .gpicons.check:before { content: "\e067"; }     /*glyphicon-check-sign*/
 .gpicons.check-circle:before { content: "\e084"; }      /*glyphicon-check-sign*/
 .gpicons.chevron-left:before { content: "\e079"; }      /*glyphicon glyphicon-chevron-left*/
 .gpicons.chevron-right:before { content: "\e080"; }     /*glyphicon glyphicon-chevron-right*/
+.gpicons.crosshairs:before { content: "\e087"; }        /*glyphicon glyphicon-screenshot*/
 .gpicons.dashboard:before { content: "\e141"; }     /*glyphicon glyphicon-dashboard*/
+.gpicons.download:before { content: "\e197"; }
+.gpicons.edit:before { content: "\270f"; }
+.gpicons.ellipsis-h:before { content: "\e234"; }
+.gpicons.ellipsis-v:before { content: "\e235"; }
 .gpicons.exclamation-circle:before { content: "\e101"; }        /*glyphicon-exclamation-sign*/
+.gpicons.external-link:before { content: "\e164"; }
+.gpicons.eye:before { content: "\e105"; }
+.gpicons.eye-closed:before { content: "\e106"; }
+.gpicons.file-download:before { content: "\e202"; }
+.gpicons.font:before { content: "\e047"; }
 .gpicons.fast-backward:before { content: "\e070"; }
 .gpicons.fast-forward:before { content: "\e076"; }
 .gpicons.forward:before { content: "\e075"; }
 .gpicons.home:before { content: "\e021"; }      /*glyphicon glyphicon-home*/
 .gpicons.hourglass:before { content: "\231b"; }     /*glyphicon glyphicon-hourglass*/
 .gpicons.info-circle:before { content: "\e086"; }       /*glyphicon-info-sign*/
+.gpicons.link:before { content: "\e144"; }
 .gpicons.minus:before { content: "\2212"; }
 .gpicons.minus-circle:before { content: "\e082"; }
 .gpicons.ok:before { content: "\e013"; }            /*glyphicon-ok*/
 .gpicons.plus:before { content: "\002b"; }          /*glyphicon glyphicon-plus*/
 .gpicons.plus-circle:before { content: "\e081"; }   /*glyphicon glyphicon-plus-sign*/
-.gpicons.crosshairs:before { content: "\e087"; }        /*glyphicon glyphicon-screenshot*/
+.gpicons.question:before { content: "\e085"; }
+.gpicons.question-circle:before { content: "\e085"; }
+.gpicons.refresh:before { content: "\e031"; }
 .gpicons.search:before { content: "\e003"; }        /*glyphicon-search*/
 .gpicons.sort-asc:before { content: "\e156"; }      /*glyphicon glyphicon-sort-by-attributes-alt*/
 .gpicons.sort, .icon.sort-desc:before { content: "\e155"; }     /*glyphicon glyphicon-sort-by-attributes*/
 .gpicons.square:before { content: "\e157"; }        /*glyphicon-unchecked*/
+.gpicons.tag:before { content: "\e041"; }
 .gpicons.times:before { content: "\e014"; }         /*glyphicon glyphicon-remove*/
 .gpicons.times-circle:before { content: "\e088"; }      /*glyphicon glyphicon-remove-sign*/
-.gpicons.user:before { content: "\e008"; }
-
-
-
 .gpicons.trash:before { content: "\e020"; }
-.gpicons.ellipsis-h:before { content: "\e234"; }
-.gpicons.ellipsis-v:before { content: "\e235"; }
-.gpicons.refresh:before { content: "\e031"; }
-.gpicons.bars { content: "\e236"; }
-.gpicons.upload { content: "\e198"; }
-.gpicons.download { content: "\e197"; }
-.gpicons.edit { content: "\270f"; }
-.gpicons.question { content: "\e085"; }
-.gpicons.question-circle { content: "\e085"; }
-.gpicons.warning { content: "\e107"; }
-.gpicons.warning-triangle { content: "\e107"; }
-.gpicons.eye { content: "\e105"; }
-.gpicons.eye-closed { content: "\e106"; }
+.gpicons.upload:before { content: "\e198"; }
+.gpicons.user:before { content: "\e008"; }
+.gpicons.warning:before { content: "\e107"; }
+.gpicons.warning-triangle:before { content: "\e107"; }
 
 
 
