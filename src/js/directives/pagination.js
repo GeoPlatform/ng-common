@@ -1,15 +1,15 @@
 (function(jQuery, angular) {
-    
+
     "use strict";
 
 
 
     /*
      * Usage:
-     * 
+     *
      *      <gp-pagination service="$ctrl.service" event-key="maps"></gp-pagination>
      *
-     *  Expects a BrowseObjService instance for the 'service' binding, or at least 
+     *  Expects a BrowseObjService instance for the 'service' binding, or at least
      * one that provides the same pagination and options API.
      */
 
@@ -32,18 +32,18 @@
         }
 
         $onInit () {
-            
+
             if(!this.service) return;
 
             this.options = this.service.getPagination();
-            
+
             //support using a traditional select instead of a uib dropdown menu
             // in case the pagination control itself is wrapped in a dropdown menu.
             //in this case, we use objects with labels and values in order to display
             // the 'per page' text along with whatever the page size is.
-            
+
             this.pageSizeDropdown = true;
-            this.useSelect = typeof(this.useSelect) !== 'undefined' && 
+            this.useSelect = typeof(this.useSelect) !== 'undefined' &&
                 (this.useSelect === true || this.useSelect === 'true' || this.useSelect === 1);
             if(this.useSelect) {
                 this.pageSizeDropdown = false;
@@ -51,7 +51,7 @@
                 this.pageSizeOptions = (this.options.sizeOptions||[5,10,20,50]).map(o=> {
                     return { label: o +' per page', value: o };
                 });
-            } 
+            }
 
             let event = 'gp:browse:';
             if(this.eventKey)
@@ -59,7 +59,7 @@
             else
                 event = 'gp:browse:objects:';
 
-            this.listener = this.service.on(event + 'pagination', () => { 
+            this.listener = this.service.on(event + 'pagination', () => {
                 this.options = this.service.getPagination();
             });
         }
@@ -67,14 +67,14 @@
         $onDestroy () {
 
             //remove listener from service if exists
-            if(this.listener) 
+            if(this.listener)
                 this.listener();
 
             this.service = null;
         }
 
-        
-        previous () { 
+
+        previous () {
             if(this.service && this.hasPrevious()) {
                 this.service.start(Math.max(0, this.options.start*1 - this.options.size*1), true);
             }
@@ -136,7 +136,7 @@
 
         controller: PaginationController,
 
-        template: 
+        template:
         `
             <div class="c-pagination">
                 <div class="c-pagination__total">{{$ctrl.options.total||0}} results</div>
@@ -145,42 +145,42 @@
                         <a href="" uib-dropdown-toggle title="Change the number of results returned">
                             {{$ctrl.options.size}} per page <span class="caret"></span>
                         </a>
-                        <ul class="dropdown-menu" role="menu">
-                            <li ng-repeat="size in $ctrl.options.sizeOptions track by $index">
+                        <ul class="dropdown-menu" role="menu" uib-dropdown-menu>
+                            <li ng-repeat="size in $ctrl.options.sizeOptions track by $index" class="dropdown-item">
                                 <a ng-click="$ctrl.setPageSize(size)">{{size}} per page</a>
                             </li>
                         </ul>
                     </span>
                 </div>
                 <div class="c-pagination__page-size" ng-if="!$ctrl.pageSizeDropdown">
-                    <select class="form-control" 
+                    <select class="form-control"
                         ng-model="$ctrl.pageSize" ng-change="$ctrl.setPageSize($ctrl.pageSize)"
                         ng-options="opt.value as opt.label for opt in $ctrl.pageSizeOptions">
                     </select>
                 </div>
                 <div class="c-pagination__pages">
-                    <div class="c-pagination__button" 
+                    <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
                         ng-click="$ctrl.first()">
-                        <span class="glyphicon glyphicon-fast-backward"></span>
+                        <span class="gpicons fast-backward"></span>
                     </div>
-                    <div class="c-pagination__button" 
+                    <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
                         ng-click="$ctrl.previous()">
-                        <span class="glyphicon glyphicon-backward"></span>
+                        <span class="gpicons backward"></span>
                     </div>
                     <div class="c-pagination__page">
                         {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}
                     </div>
-                    <div class="c-pagination__button" 
+                    <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasNext()}"
                         ng-click="$ctrl.next()">
-                        <span class="glyphicon glyphicon-forward"></span>
+                        <span class="gpicons forward"></span>
                     </div>
-                    <div class="c-pagination__button" 
+                    <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasNext()}"
                         ng-click="$ctrl.last()">
-                        <span class="glyphicon glyphicon-fast-forward"></span>
+                        <span class="gpicons fast-forward"></span>
                     </div>
                 </div>
             </div>

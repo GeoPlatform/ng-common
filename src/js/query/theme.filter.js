@@ -191,7 +191,7 @@
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
-                        <span class="glyphicon" ng-class="{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}"></span>
+                        <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
                     </button>
                     <span>Filter by Themes</span>
                 </div>
@@ -211,7 +211,7 @@
                                     typeahead-editable="false"
                                     placeholder="Filter Themes by Scheme..."
                                     aria-label="Find scheme by name to filter theme options">
-                                <span class="glyphicon glyphicon-remove"
+                                <span class="gpicons times"
                                     title="Clear selected Scheme"
                                     ng-if="$ctrl.scheme"
                                     ng-click="$ctrl.onSchemeChange($ctrl.scheme=null)">
@@ -227,7 +227,7 @@
                                     ng-model-options="{debounce:200}"
                                     placeholder="Find a Theme by name..."
                                     aria-label="Find a theme by name">
-                                <span class="glyphicon glyphicon-remove"
+                                <span class="gpicons times"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"
                                     ng-click="$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)">
@@ -237,8 +237,8 @@
 
                         <a class="c-facet__value" ng-click="$ctrl.clear()"
                             ng-class="{active:!$ctrl.hasSelections()}">
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}">
+                            <span class="gpicons"
+                                ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
                             </span>
                             Any Theme
                         </a>
@@ -246,8 +246,8 @@
                             class="c-facet__value" ng-click="$ctrl.toggle(theme)"
                             ng-class="{active:$ctrl.isSelected(theme)}">
                             <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-check':$ctrl.isSelected(theme),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(theme)}"></span>
+                            <span class="gpicons"
+                                ng-class="{'check':$ctrl.isSelected(theme),'square t-fg--gray-lt':!$ctrl.isSelected(theme)}"></span>
                             {{theme.label || "Untitled Theme"}}
                         </a>
 
@@ -267,7 +267,7 @@
                         <a ng-repeat="theme in $ctrl.outsideResults track by $index"
                             class="c-facet__value active" ng-click="$ctrl.deselectOutside(theme)">
                             <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
-                            <span class="glyphicon glyphicon-check"></span>
+                            <span class="gpicons check"></span>
                             {{theme.label || "Untitled Theme"}}
                         </a>
 

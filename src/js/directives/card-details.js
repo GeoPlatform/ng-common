@@ -1,16 +1,16 @@
 (function(angular) {
-    
+
     "use strict";
 
-    const ACTIVATORS_HTML = 
+    const ACTIVATORS_HTML =
         `
             <div class="gp-ui-card__details-activator--left" title="Show previous details"
                 ng-class="{disabled:!hasPrevious()}" ng-click="previousDetails()">
-                <span class="glyphicon glyphicon-chevron-left"></span>
+                <span class="gpicons chevron-left"></span>
             </div>
             <div class="gp-ui-card__details-activator--right" title="Show next details"
                 ng-class="{disabled:!hasNext()}" ng-click="nextDetails()">
-                <span class="glyphicon glyphicon-chevron-right"></span>
+                <span class="gpicons chevron-right"></span>
             </div>
         `;
 
@@ -18,11 +18,11 @@
 
     /*
      * Appends carousel-like activators onto a card section
-     * Usage: 
+     * Usage:
      *
      *  <div class="text--supporting" card-details-carousel-activator>
-     *      <div class="gp-ui-card__details active" id="description">...</div>    
-     *      <div class="gp-ui-card__details" id="author">...</div>        
+     *      <div class="gp-ui-card__details active" id="description">...</div>
+     *      <div class="gp-ui-card__details" id="author">...</div>
      *  </div>
      */
     angular.module("gp-common").directive('cardDetailsCarouselActivator', function() {

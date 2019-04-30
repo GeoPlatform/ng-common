@@ -84,7 +84,7 @@
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
-                        <span class="glyphicon" ng-class="{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}"></span>
+                        <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
                     </button>
                     <span class="flex-1">Filter by Author</span>
                 </div>
@@ -93,13 +93,13 @@
                     <div class="c-facets" ng-hide="$ctrl.collapse">
 
                         <div class="input-group-slick">
-                            <span class="glyphicon glyphicon-user"></span>
+                            <span class="gpicons user"></span>
                             <input type="text" class="form-control" placeholder="Specify author username"
                                 ng-disabled="$ctrl.limitToUser"
                                 ng-model="$ctrl.value"
                                 ng-model-options="$ctrl.modelOptions"
                                 ng-change="$ctrl.filter()">
-                            <span class="glyphicon glyphicon-remove" title="Clear author"
+                            <span class="gpicons times" title="Clear author"
                                 ng-if="$ctrl.value.length&&!$ctrl.limitToUser" ng-click="$ctrl.clear()"></span>
                         </div>
 

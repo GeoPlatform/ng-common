@@ -1,5 +1,5 @@
 (function(angular) {
-    
+
     "use strict";
 
 
@@ -17,8 +17,8 @@
              * @param item object
              * @return function to cancel the notification
              */
-            addItem: function(item) { 
-                this.items.push(item); 
+            addItem: function(item) {
+                this.items.push(item);
                 $rootScope.$broadcast('gp:notifications:new', item);
 
                 var fn = function(item) { this.removeItem(item); };
@@ -30,13 +30,13 @@
                     return this.items.splice(index, 1);
                 return null;
             },
-            error: function(label, msg, dismiss) { 
+            error: function(label, msg, dismiss) {
                 return this.addItem({ type: 'error', label: label, message: msg, canDismiss: dismiss });
             },
-            success: function(label, msg, dismiss) { 
+            success: function(label, msg, dismiss) {
                 return this.addItem({ type: 'success', label: label, message: msg, canDismiss: dismiss });
             },
-            info: function(label, msg, dismiss) { 
+            info: function(label, msg, dismiss) {
                 return this.addItem({ type: 'info', label: label, message: msg, canDismiss: dismiss });
             }
         };
@@ -55,8 +55,8 @@
                 '  <div class="notification" ng-repeat="item in items"',
                 '    ng-class="{\'notification--success\':item.type===\'success\', \'notification--error\':item.type===\'error\', \'notification--info\':item.type===\'info\'}">',
                 '    <h5 class="notification__title">',
-                '        <span class="pull-right glyphicon" ',
-                '            ng-class="{\'glyphicon-ok-sign\':item.type===\'success\',\'glyphicon-exclamation-sign\':item.type===\'error\',\'glyphicon-info-sign\':item.type===\'info\'}">',
+                '        <span class="pull-right gpicons" ',
+                '            ng-class="{\'check-circle\':item.type===\'success\',\'exclamation-circle\':item.type===\'error\',\'gpicons info-circle\':item.type===\'info\'}">',
                 '        </span>',
                 '        {{item.label}}',
                 '    </h5>',

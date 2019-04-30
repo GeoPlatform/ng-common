@@ -1,0 +1,56 @@
+.gpicons {
+    position: relative;
+    top: 1px;
+    display: inline-block;
+    font-family: 'Glyphicons Halflings';
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+}
+
+.gpicons.backward:before { content: "\e071"; }
+.gpicons.ban-circle:before { content: "\e090"; }        /*glyphicon glyphicon-ban-circle*/
+.gpicons.calendar:before { content: "\e109"; }      /*glyphicon glyphicon-calendar*/
+.gpicons.check:before { content: "\e067"; }     /*glyphicon-check-sign*/
+.gpicons.check-circle:before { content: "\e084"; }      /*glyphicon-check-sign*/
+.gpicons.chevron-left:before { content: "\e079"; }      /*glyphicon glyphicon-chevron-left*/
+.gpicons.chevron-right:before { content: "\e080"; }     /*glyphicon glyphicon-chevron-right*/
+.gpicons.dashboard:before { content: "\e141"; }     /*glyphicon glyphicon-dashboard*/
+.gpicons.exclamation-circle:before { content: "\e101"; }        /*glyphicon-exclamation-sign*/
+.gpicons.fast-backward:before { content: "\e070"; }
+.gpicons.fast-forward:before { content: "\e076"; }
+.gpicons.forward:before { content: "\e075"; }
+.gpicons.home:before { content: "\e021"; }      /*glyphicon glyphicon-home*/
+.gpicons.hourglass:before { content: "\231b"; }     /*glyphicon glyphicon-hourglass*/
+.gpicons.info-circle:before { content: "\e086"; }       /*glyphicon-info-sign*/
+.gpicons.minus:before { content: "\2212"; }
+.gpicons.minus-circle:before { content: "\e082"; }
+.gpicons.ok:before { content: "\e013"; }            /*glyphicon-ok*/
+.gpicons.plus:before { content: "\002b"; }          /*glyphicon glyphicon-plus*/
+.gpicons.plus-circle:before { content: "\e081"; }   /*glyphicon glyphicon-plus-sign*/
+.gpicons.crosshairs:before { content: "\e087"; }        /*glyphicon glyphicon-screenshot*/
+.gpicons.search:before { content: "\e003"; }        /*glyphicon-search*/
+.gpicons.sort-asc:before { content: "\e156"; }      /*glyphicon glyphicon-sort-by-attributes-alt*/
+.gpicons.sort, .icon.sort-desc:before { content: "\e155"; }     /*glyphicon glyphicon-sort-by-attributes*/
+.gpicons.square:before { content: "\e157"; }        /*glyphicon-unchecked*/
+.gpicons.times:before { content: "\e014"; }         /*glyphicon glyphicon-remove*/
+.gpicons.times-circle:before { content: "\e088"; }      /*glyphicon glyphicon-remove-sign*/
+.gpicons.user:before { content: "\e008"; }
+
+
+
+
+
+
+
+
+.u-spin {       /*glyphicons-spin*/
+    animation: spin .5s infinite linear;
+    -ms-animation: spin .5s infinite linear;
+}
+
+@keyframes spin {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}

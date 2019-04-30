@@ -104,8 +104,8 @@
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
-                        <span class="glyphicon"
-                            ng-class="{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}">
+                        <span class="gpicons"
+                            ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}">
                         </span>
                     </button>
                     Filter by Topic(s)
@@ -119,7 +119,7 @@
                                 ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                 ng-model-options="{debounce:200}"
                                 placeholder="Search by name">
-                            <span class="glyphicon glyphicon-remove"
+                            <span class="gpicons times"
                                 title="Clear query"
                                 ng-if="$ctrl.typeaheadValue.length"
                                 ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
@@ -129,8 +129,8 @@
 
                     <a class="c-facet__value" ng-click="$ctrl.clear()"
                         ng-class="{active:!$ctrl.hasSelections()}">
-                        <span class="glyphicon"
-                            ng-class="{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}">
+                        <span class="gpicons"
+                            ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
                         </span>
                         Any Topic
                     </a>
@@ -139,8 +139,8 @@
                         class="c-facet__value"
                         ng-click="$ctrl.toggle(topic.id)"
                         ng-class="{active:$ctrl.isSelected(topic.id)}">
-                        <span class="glyphicon glyphicon-check" ng-show="$ctrl.isSelected(topic.id)"></span>
-                        <span class="glyphicon glyphicon-unchecked t-fg--gray-lt" ng-show="!$ctrl.isSelected(topic.id)"></span>
+                        <span class="gpicons check" ng-show="$ctrl.isSelected(topic.id)"></span>
+                        <span class="gpicons square t-fg--gray-lt" ng-show="!$ctrl.isSelected(topic.id)"></span>
                         <span class="badge">{{$ctrl.getCount(topic.id)}}</span>
                         {{topic.label || "Un-titled Topic"}}
                     </a>

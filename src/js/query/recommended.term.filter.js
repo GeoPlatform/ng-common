@@ -256,8 +256,8 @@
                         title="{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}"
                         aria-label="Toggle collapsed state of this filter"
                         ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
-                        <span class="glyphicon"
-                            ng-class="{'glyphicon-minus':!$ctrl.displayOpts.collapse,'glyphicon-plus':$ctrl.displayOpts.collapse}"></span>
+                        <span class="gpicons"
+                            ng-class="{'minus':!$ctrl.displayOpts.collapse,'plus':$ctrl.displayOpts.collapse}"></span>
                     </button>
                     <span>Filter using Semantic Concepts</span>
                 </div>
@@ -267,15 +267,15 @@
                     <div ng-hide="$ctrl.displayOpts.collapse">
 
                         <div class="input-group-slick">
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-search':!$ctrl.displayOpts.fetching, 'glyphicon-hourglass spin':$ctrl.displayOpts.fetching}"></span>
+                            <span class="gpicons"
+                                ng-class="{'search':!$ctrl.displayOpts.fetching, 'hourglass spin':$ctrl.displayOpts.fetching}"></span>
                             <input type="text" class="form-control"
                                 ng-model="$ctrl.termQuery"
                                 ng-model-options="{ debounce: 250 }"
                                 ng-change="$ctrl.getOptions()"
                                 placeholder="Find concepts"
                                 aria-label="Find concepts">
-                            <span class="glyphicon glyphicon-remove" ng-if="$ctrl.displayOpts.suggest"
+                            <span class="gpicons times" ng-if="$ctrl.displayOpts.suggest"
                                 ng-click="$ctrl.hideSuggested()"></span>
                         </div>
 
@@ -311,9 +311,9 @@
 
                         <div class="u-break--all t-text--strong u-pd-bottom--sm">
                             <button type="button" class="btn btn-sm btn-link pull-right">
-                                <span class="glyphicon glyphicon-remove t-fg--danger"></span>
+                                <span class="gpicons times t-fg--danger"></span>
                             </button>
-                            <span class="glyphicon glyphicon-check"></span>
+                            <span class="gpicons check"></span>
                             {{term.prefLabel}}
                         </div>
                         <div class="u-break--all u-text--sm t-text--italic">{{term.uri}}</div>
