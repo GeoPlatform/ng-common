@@ -39,6 +39,20 @@
 .gpicons.times-circle:before { content: "\f057"; }
 .gpicons.user:before { content: "\f007"; }
 
+.gpicons.trash:before { content: "\f2ed"; }
+.gpicons.ellipsis-h:before { content: "\f141"; }
+.gpicons.ellipsis-v:before { content: "\f142"; }
+.gpicons.refresh:before { content: "\f2f1"; }
+.gpicons.bars { content: "\f0c9"; }
+.gpicons.upload { content: "\f382"; }
+.gpicons.download { content: "\f381"; }
+.gpicons.edit { content: "\f303"; }
+.gpicons.question { content: "\f128"; }
+.gpicons.question-circle { content: "\f059"; }
+.gpicons.warning { content: "\f071"; }
+.gpicons.warning-triangle { content: "\f071"; }
+.gpicons.eye { content: "\f06e"; }
+.gpicons.eye-closed { content: "\f070"; }
 
 
 

@@ -40,6 +40,20 @@
 
 
 
+.gpicons.trash:before { content: "\e020"; }
+.gpicons.ellipsis-h:before { content: "\e234"; }
+.gpicons.ellipsis-v:before { content: "\e235"; }
+.gpicons.refresh:before { content: "\e031"; }
+.gpicons.bars { content: "\e236"; }
+.gpicons.upload { content: "\e198"; }
+.gpicons.download { content: "\e197"; }
+.gpicons.edit { content: "\270f"; }
+.gpicons.question { content: "\e085"; }
+.gpicons.question-circle { content: "\e085"; }
+.gpicons.warning { content: "\e107"; }
+.gpicons.warning-triangle { content: "\e107"; }
+.gpicons.eye { content: "\e105"; }
+.gpicons.eye-closed { content: "\e106"; }
 
 
 
