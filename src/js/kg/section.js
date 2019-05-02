@@ -221,7 +221,7 @@
 
         template:
         `
-            <h5>{{$ctrl.label}}</h5>
+            <div class="a-heading">{{$ctrl.label}}</div>
             <p class="u-text--sm" ng-bind-html="$ctrl.description"></p>
 
             <div class="list-group list-group-sm">
@@ -229,8 +229,8 @@
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
                         <span class="gpicons times-circle t-fg--danger"></span>
                     </button>
-                    <div class="flex-1 u-pd--md">
-                        <div class="u-pd-bottom--sm t-text--strong">
+                    <div class="flex-1 u-pd--xs">
+                        <div class="t-text--strong">
                             <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate"
                                  class="u-break--all">{{item.label}}</a>
                             <span ng-if="!$ctrl.onActivate">{{item.label}}</span>

@@ -720,6 +720,9 @@ kg-section [uib-dropdown-menu].dropdown-menu {
   transition: .2s linear opacity;
   box-shadow: 0 1em 1em rgba(100, 100, 100, 0.5);
 }
+kg-section [uib-dropdown-menu].dropdown-menu .c-pagination {
+  font-size: 0.875em;
+}
 kg-section .dropdown.open [uib-dropdown-menu].dropdown-menu,
 kg-section .dropdown.show [uib-dropdown-menu].dropdown-menu {
   opacity: 1;
