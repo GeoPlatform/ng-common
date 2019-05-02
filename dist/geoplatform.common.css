@@ -710,7 +710,7 @@ kg-section [uib-dropdown-menu].dropdown-menu {
   font-size: 1em;
   left: 0;
   right: 0;
-  padding: 1.3em 1em 0;
+  padding: 1.3em 1em;
   top: -1.5em;
   margin-left: -1em;
   margin-right: -1em;
@@ -718,8 +718,10 @@ kg-section [uib-dropdown-menu].dropdown-menu {
   z-index: -1;
   opacity: 0;
   transition: .2s linear opacity;
+  box-shadow: 0 1em 1em rgba(100, 100, 100, 0.5);
 }
-kg-section .dropdown.open [uib-dropdown-menu].dropdown-menu {
+kg-section .dropdown.open [uib-dropdown-menu].dropdown-menu,
+kg-section .dropdown.show [uib-dropdown-menu].dropdown-menu {
   opacity: 1;
   z-index: 1;
 }

@@ -20,6 +20,8 @@
 .gpicons.calendar:before { content: "\f073"; }
 .gpicons.check:before { content: "\f14a"; }
 .gpicons.check-circle:before { content: "\f058"; }
+.gpicons.chevron-up:before { content: "\f077"; }
+.gpicons.chevron-down:before { content: "\f078"; }
 .gpicons.chevron-left:before { content: "\f053"; }
 .gpicons.chevron-right:before { content: "\f054"; }
 .gpicons.crosshairs:before { content: "\f05b"; }

@@ -19,6 +19,8 @@
 .gpicons.calendar:before { content: "\e109"; }      /*glyphicon glyphicon-calendar*/
 .gpicons.check:before { content: "\e067"; }     /*glyphicon-check-sign*/
 .gpicons.check-circle:before { content: "\e084"; }      /*glyphicon-check-sign*/
+.gpicons.chevron-up:before { content: "\e113"; }
+.gpicons.chevron-down:before { content: "\e114"; }
 .gpicons.chevron-left:before { content: "\e079"; }      /*glyphicon glyphicon-chevron-left*/
 .gpicons.chevron-right:before { content: "\e080"; }     /*glyphicon glyphicon-chevron-right*/
 .gpicons.crosshairs:before { content: "\e087"; }        /*glyphicon glyphicon-screenshot*/

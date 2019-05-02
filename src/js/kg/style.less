@@ -92,7 +92,7 @@ kg-section {
         font-size:    1em;          //override bootstrap default
         left:         0;
         right:        0;            //make span parent width
-        padding:      1.3em 1em 0;
+        padding:      1.3em 1em;
         top:          -1.5em;       //cover up triggering input when open
         margin-left:  -1em;
         margin-right: -1em;
@@ -100,12 +100,22 @@ kg-section {
         z-index:      -1;           //sit behind triggering input until open
         opacity:      0;            //animate using opacity
         transition:   .2s linear opacity;
+        box-shadow:   0 1em 1em rgba(100,100,100,0.5);
+
+        .c-pagination {
+            font-size: 0.875em;
+        }
 
     }
 
-    .dropdown.open [uib-dropdown-menu].dropdown-menu {
-        opacity: 1;
-        z-index: 1;     //sit on top of triggering input when open
+    .dropdown.open,
+    .dropdown.show {
+
+        [uib-dropdown-menu].dropdown-menu {
+            opacity: 1;
+            z-index: 1;     //sit on top of triggering input when open
+        }
+
     }
 
 }

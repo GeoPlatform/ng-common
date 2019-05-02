@@ -293,8 +293,8 @@
                                 <span class="gpicons check t-fg--gray-md" ng-show="item._selected"></span>
                                 <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
                             </button>
-                            <div class="flex-1 u-pd--md">
-                                <div class="u-break--all t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</div>
+                            <div class="flex-1 u-pd--xs">
+                                <div class="u-break--all t-text--strong">{{item.prefLabel}}</div>
                                 <a href="{{item.uri}}" target="_blank"
                                     class="u-break--all u-text--sm t-text--italic"
                                     title="Open source info in new window">
