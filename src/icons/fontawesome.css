@@ -53,7 +53,7 @@
 .gpicons.refresh:before { content: "\f2f1"; }
 .gpicons.search:before { content: "\f002"; }
 .gpicons.sort-asc:before { content: "\f161"; }
-.gpicons.sort, .icon.sort-desc:before { content: "\f160"; }
+.gpicons.sort:before, .gpicons.sort-desc:before { content: "\f160"; }
 .gpicons.square:before { content: "\f0c8"; font-weight: 400; }
 .gpicons.tag:before { content: "\f02b"; }
 .gpicons.times:before { content: "\f00d"; }

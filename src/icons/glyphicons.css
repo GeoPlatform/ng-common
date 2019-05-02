@@ -52,7 +52,7 @@
 .gpicons.refresh:before { content: "\e031"; }
 .gpicons.search:before { content: "\e003"; }        /*glyphicon-search*/
 .gpicons.sort-asc:before { content: "\e156"; }      /*glyphicon glyphicon-sort-by-attributes-alt*/
-.gpicons.sort, .icon.sort-desc:before { content: "\e155"; }     /*glyphicon glyphicon-sort-by-attributes*/
+.gpicons.sort:before, .gpicons.sort-desc:before { content: "\e155"; }     /*glyphicon glyphicon-sort-by-attributes*/
 .gpicons.square:before { content: "\e157"; }        /*glyphicon-unchecked*/
 .gpicons.tag:before { content: "\e041"; }
 .gpicons.times:before { content: "\e014"; }         /*glyphicon glyphicon-remove*/

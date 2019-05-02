@@ -625,7 +625,6 @@ header.app-header .gpLoginCover {
   display: block;
 }
 .c-kg-editor .c-kg-editor__section {
-  padding: 1em;
   border-bottom: 1px solid #ddd;
 }
 @media (min-width: 1200px) {
@@ -644,7 +643,6 @@ header.app-header .gpLoginCover {
             align-items: flex-start;
     -webkit-flex-wrap: wrap;
             flex-wrap: wrap;
-    padding: 1em 2em 0;
   }
   .c-kg-editor .c-kg-editor__section > h3,
   .c-kg-editor .c-kg-editor__section > h4,
@@ -660,7 +658,7 @@ header.app-header .gpLoginCover {
             flex: 0 0 48%;
   }
   .c-kg-editor .c-kg-editor__section kg-section:nth-child(2n+2) {
-    margin-right: 2%;
+    margin-left: 2%;
   }
 }
 kg-section {
