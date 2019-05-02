@@ -10,6 +10,7 @@
     line-height: 1;
 }
 
+.gpicons.asterisk:before { content: "\f069"; }
 .gpicons.arrow-left:before { content: "\f060"; }
 .gpicons.arrow-left-circle:before { content: "\f0a8"; }
 .gpicons.arrow-right:before { content: "\f061"; }
@@ -17,6 +18,7 @@
 .gpicons.backward:before { content: "\f04a"; }
 .gpicons.ban-circle:before { content: "\f05e"; }
 .gpicons.bars:before { content: "\f0c9"; }
+.gpicons.briefcase:before { content: "\f0b1"; }
 .gpicons.calendar:before { content: "\f073"; }
 .gpicons.check:before { content: "\f14a"; }
 .gpicons.check-circle:before { content: "\f058"; }
@@ -24,6 +26,8 @@
 .gpicons.chevron-down:before { content: "\f078"; }
 .gpicons.chevron-left:before { content: "\f053"; }
 .gpicons.chevron-right:before { content: "\f054"; }
+.gpicons.comment:before { content: "\f075"; font-weight: 400; }
+.gpicons.configure:before { content: "\f013"; }
 .gpicons.crosshairs:before { content: "\f05b"; }
 .gpicons.dashboard:before { content: "\f3fd"; }
 .gpicons.download:before { content: "\f381"; }
@@ -39,13 +43,17 @@
 .gpicons.file-download:before { content: "\f56d"; }
 .gpicons.font:before { content: "\f031"; }
 .gpicons.forward:before { content: "\f04e"; }
+.gpicons.hdd:before { content: "\f0a0"; }
+.gpicons.heart:before { content: "\f004"; }
 .gpicons.home:before { content: "\f015"; }
 .gpicons.hourglass:before { content: "\f252"; }
 .gpicons.info-circle:before { content: "\f05a"; }
 .gpicons.link:before { content: "\f0c1"; }
+.gpicons.map-marker:before { content: "\f3c5"; }
 .gpicons.minus:before { content: "\f068"; }
 .gpicons.minus-circle:before { content: "\f056"; }
 .gpicons.ok:before { content: "\f00c"; }
+.gpicons.picture:before { content: "\f03e"; }
 .gpicons.plus:before { content: "\f067"; }
 .gpicons.plus-circle:before { content: "\f055"; }
 .gpicons.question:before { content: "\f128"; }
@@ -56,6 +64,7 @@
 .gpicons.sort:before, .gpicons.sort-desc:before { content: "\f160"; }
 .gpicons.square:before { content: "\f0c8"; font-weight: 400; }
 .gpicons.tag:before { content: "\f02b"; }
+.gpicons.tags:before { content: "\f02c"; }
 .gpicons.times:before { content: "\f00d"; }
 .gpicons.times-circle:before { content: "\f057"; }
 .gpicons.trash:before { content: "\f2ed"; }
