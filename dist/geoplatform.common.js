@@ -2723,7 +2723,7 @@ var __extends = undefined && undefined.__extends || function () {
         TopicsFilter.prototype.getCount = function (value) {
             var facet = this.service.getFacet('topics');
             if (!facet) return '';
-            var valObj = facet.buckets.find(function (v) {
+            var valObj = (facet.buckets || []).find(function (v) {
                 return v.label === value;
             });
             if (!valObj) return '';

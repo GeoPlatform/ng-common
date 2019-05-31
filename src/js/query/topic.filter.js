@@ -52,7 +52,7 @@
         getCount (value) {
             let facet = this.service.getFacet('topics');
             if(!facet) return '';
-            let valObj = facet.buckets.find(function(v) { return v.label===value; });
+            let valObj = (facet.buckets||[]).find(function(v) { return v.label===value; });
             if(!valObj) return '';
             return valObj.count;
         }
