@@ -1,5 +1,6 @@
 const pkg         = require('./package.json'),
       gulp        = require('gulp'),
+      gutil       = require('gulp-util'),
       jshint      = require('gulp-jshint');
       concat      = require('gulp-concat'),
       ngAnnotate  = require('gulp-ng-annotate'),
@@ -56,17 +57,19 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         'src/js/**/*.js',
         'src/js/**/*.ts'
     ])
-        .pipe(tsProject())
-        .pipe(srcmaps.init())
-        .pipe(concat(pkg.name + '.js'))
-        .pipe(babel({presets: [es2015], plugins: [assign]}))
-        .pipe(ngAnnotate()).on('error', notify.onError("Error: <%= error.message %>"))
-        .pipe(gulp.dest('dist/'))
-        .pipe(uglify()).on('error', notify.onError("Error: <%= error.message %>"))
-        .pipe(rename({extname: ".min.js"}))
-        .pipe(srcmaps.write('./'))
-        .pipe(gulp.dest('dist/'))
-        .pipe(notify('Uglified JavaScript'));
+    .pipe(tsProject())
+    .pipe(srcmaps.init())
+    .pipe(concat(pkg.name + '.js'))
+    .pipe(babel({presets: [es2015], plugins: [assign]}))
+    .pipe(ngAnnotate())
+    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe(gulp.dest('dist/'))
+    .pipe(uglify())
+    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe(rename({extname: ".min.js"}))
+    .pipe(srcmaps.write('./'))
+    .pipe(gulp.dest('dist/'))
+    .pipe(notify('Uglified JavaScript'));
 });
 
 gulp.task('concat', 'Concat only, do not minify', () => {
