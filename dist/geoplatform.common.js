@@ -162,127 +162,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     });
 })(jQuery, angular, GeoPlatform);
 
-(function () {
-    "use strict";
-
-    if (typeof Array.prototype.find === 'undefined') {
-        Array.prototype.find = function (callback) {
-            for (var i = 0; i < this.length; ++i) {
-                if (callback(this[i], i, this)) return this[i];
-            }
-            return null;
-        };
-    }
-    if (typeof Array.prototype.filter === 'undefined') {
-        Array.prototype.filter = function (callback) {
-            var results = [];
-            for (var i = 0; i < this.length; ++i) {
-                if (callback(this[i], i, this)) results.push(this[i]);
-            }
-            return results;
-        };
-    }
-    if (typeof Array.prototype.each === 'undefined') {
-        Array.prototype.each = function (callback) {
-            for (var i = 0; i < this.length; ++i) {
-                callback(this[i], i, this);
-            }
-        };
-    }
-    if (typeof Array.prototype.indexOfObj === 'undefined') {
-        Array.prototype.indexOfObj = function (obj, comparatorFn) {
-            var arr = this,
-                len = arr.length;
-            if (typeof comparatorFn !== 'function') comparatorFn = function comparatorFn(a, b) {
-                return a === b;
-            };
-            for (var i = 0; i < len; ++i) {
-                if (comparatorFn(obj, arr[i])) return i;
-            }
-            return -1;
-        };
-    }
-    if (typeof String.prototype.startsWith === 'undefined') {
-        String.prototype.startsWith = function (value) {
-            var str = this;
-            if (!str.length) return false;
-            if (!value.length) return false;
-            if (str.length < value.length) return false;
-            return str.indexOf(value) === 0;
-        };
-    }
-    if (typeof String.prototype.endsWith === 'undefined') {
-        String.prototype.endsWith = function (value) {
-            var str = this;
-            if (!str.length) return false;
-            if (!value.length) return false;
-            if (str.length < value.length) return false;
-            var substr = str.substring(str.length - value.length, str.length);
-            return substr == value;
-        };
-    }
-    if (typeof Date.prototype.plus === 'undefined') {
-        Date.prototype.plus = function (offset) {
-            var type = typeof offset === "undefined" ? "undefined" : _typeof(offset);
-            if (type === 'undefined') return this;
-            var offsetMS = 0;
-            if (type === 'string') {
-                switch (offset) {
-                    case 'hour':
-                        offsetMS = 1000 * 60 * 60;
-                        break;
-                    case 'day':
-                        offsetMS = 1000 * 60 * 60 * 24;
-                        break;
-                    case 'week':
-                        offsetMS = 1000 * 60 * 60 * 24 * 7;
-                        break;
-                    case 'month':
-                        offsetMS = 1000 * 60 * 60 * 24 * 31;
-                        break;
-                    case 'year':
-                        offsetMS = 1000 * 60 * 60 * 24 * 365;
-                        break;
-                }
-            } else if (type === 'number') {
-                offsetMS = offset;
-            } else return this;
-            var d = this;
-            return new Date(d.getTime() + offsetMS);
-        };
-    }
-    if (typeof Date.prototype.random === 'undefined') {
-        Date.prototype.random = function (threshold) {
-            var type = typeof threshold === "undefined" ? "undefined" : _typeof(threshold);
-            if (type === 'undefined') return this;
-            var offsetMS = 0;
-            if (type === 'string') {
-                switch (threshold) {
-                    case 'hour':
-                        offsetMS = 1000 * 60 * 60;
-                        break;
-                    case 'day':
-                        offsetMS = 1000 * 60 * 60 * 24;
-                        break;
-                    case 'week':
-                        offsetMS = 1000 * 60 * 60 * 24 * 7;
-                        break;
-                    case 'month':
-                        offsetMS = 1000 * 60 * 60 * 24 * 31;
-                        break;
-                    case 'year':
-                        offsetMS = 1000 * 60 * 60 * 24 * 365;
-                        break;
-                }
-            } else if (type === 'number') {
-                offsetMS = threshold;
-            } else return this;
-            var d = this;
-            return new Date(d.getTime() + Math.floor(Math.random() * offsetMS));
-        };
-    }
-})();
-
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
         // Now we're wrapping the factory and assigning the return
@@ -360,6 +239,104 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     }();
     return AuthenticatedComponent;
 });
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common")
+    /**
+     * Custom filter to make label values visually helpful by
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular) {
     "use strict";
@@ -1705,104 +1682,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         };
     });
 })(angular);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common")
-    /**
-     * Custom filter to make label values visually helpful by
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';
@@ -3891,6 +3770,127 @@ var __extends = undefined && undefined.__extends || function () {
     });
 })(angular);
 
+(function () {
+    "use strict";
+
+    if (typeof Array.prototype.find === 'undefined') {
+        Array.prototype.find = function (callback) {
+            for (var i = 0; i < this.length; ++i) {
+                if (callback(this[i], i, this)) return this[i];
+            }
+            return null;
+        };
+    }
+    if (typeof Array.prototype.filter === 'undefined') {
+        Array.prototype.filter = function (callback) {
+            var results = [];
+            for (var i = 0; i < this.length; ++i) {
+                if (callback(this[i], i, this)) results.push(this[i]);
+            }
+            return results;
+        };
+    }
+    if (typeof Array.prototype.each === 'undefined') {
+        Array.prototype.each = function (callback) {
+            for (var i = 0; i < this.length; ++i) {
+                callback(this[i], i, this);
+            }
+        };
+    }
+    if (typeof Array.prototype.indexOfObj === 'undefined') {
+        Array.prototype.indexOfObj = function (obj, comparatorFn) {
+            var arr = this,
+                len = arr.length;
+            if (typeof comparatorFn !== 'function') comparatorFn = function comparatorFn(a, b) {
+                return a === b;
+            };
+            for (var i = 0; i < len; ++i) {
+                if (comparatorFn(obj, arr[i])) return i;
+            }
+            return -1;
+        };
+    }
+    if (typeof String.prototype.startsWith === 'undefined') {
+        String.prototype.startsWith = function (value) {
+            var str = this;
+            if (!str.length) return false;
+            if (!value.length) return false;
+            if (str.length < value.length) return false;
+            return str.indexOf(value) === 0;
+        };
+    }
+    if (typeof String.prototype.endsWith === 'undefined') {
+        String.prototype.endsWith = function (value) {
+            var str = this;
+            if (!str.length) return false;
+            if (!value.length) return false;
+            if (str.length < value.length) return false;
+            var substr = str.substring(str.length - value.length, str.length);
+            return substr == value;
+        };
+    }
+    if (typeof Date.prototype.plus === 'undefined') {
+        Date.prototype.plus = function (offset) {
+            var type = typeof offset === "undefined" ? "undefined" : _typeof(offset);
+            if (type === 'undefined') return this;
+            var offsetMS = 0;
+            if (type === 'string') {
+                switch (offset) {
+                    case 'hour':
+                        offsetMS = 1000 * 60 * 60;
+                        break;
+                    case 'day':
+                        offsetMS = 1000 * 60 * 60 * 24;
+                        break;
+                    case 'week':
+                        offsetMS = 1000 * 60 * 60 * 24 * 7;
+                        break;
+                    case 'month':
+                        offsetMS = 1000 * 60 * 60 * 24 * 31;
+                        break;
+                    case 'year':
+                        offsetMS = 1000 * 60 * 60 * 24 * 365;
+                        break;
+                }
+            } else if (type === 'number') {
+                offsetMS = offset;
+            } else return this;
+            var d = this;
+            return new Date(d.getTime() + offsetMS);
+        };
+    }
+    if (typeof Date.prototype.random === 'undefined') {
+        Date.prototype.random = function (threshold) {
+            var type = typeof threshold === "undefined" ? "undefined" : _typeof(threshold);
+            if (type === 'undefined') return this;
+            var offsetMS = 0;
+            if (type === 'string') {
+                switch (threshold) {
+                    case 'hour':
+                        offsetMS = 1000 * 60 * 60;
+                        break;
+                    case 'day':
+                        offsetMS = 1000 * 60 * 60 * 24;
+                        break;
+                    case 'week':
+                        offsetMS = 1000 * 60 * 60 * 24 * 7;
+                        break;
+                    case 'month':
+                        offsetMS = 1000 * 60 * 60 * 24 * 31;
+                        break;
+                    case 'year':
+                        offsetMS = 1000 * 60 * 60 * 24 * 365;
+                        break;
+                }
+            } else if (type === 'number') {
+                offsetMS = threshold;
+            } else return this;
+            var d = this;
+            return new Date(d.getTime() + Math.floor(Math.random() * offsetMS));
+        };
+    }
+})();
+
 /// <reference path="../types.d.ts" />
 /// <reference path="../commonNG.ts" />
 (function (angular) {
@@ -4500,7 +4500,7 @@ var __extends = undefined && undefined.__extends || function () {
                 minimal: '@'
             },
             replace: true,
-            template: "<div class=\"gpLoginCover\" ng-show=\"requireLogin\">\n\n              <button class=\"btn btn-cancel gpLoginCancelIframe pull-right\"\n                ng-show=\"!FORCE_LOGIN\"\n                ng-click=\"cancel()\">\n                Cancel\n                <span class=\"gpicons times-circle\"></span>\n              </button>\n\n              <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->\n              <div class=\"gpLoginWindow\" ng-if=\"requireLogin\">\n                <iframe id=\"gpLoginIFrame\" src=\"/login?redirect_url=" + encodeURIComponent(window.location.origin + "/auth/loading?cachebuster=" + new Date().getTime()) + "&cachebuster=" + new Date().getTime() + "\"></iframe>\n              </div>\n\n            </div>",
+            template: "<div class=\"gpLoginCover\" ng-show=\"requireLogin\">\n\n              <button class=\"btn btn-danger gpLoginCancelIframe pull-right\"\n                ng-show=\"!FORCE_LOGIN\"\n                ng-click=\"cancel()\">\n                Cancel\n                <span class=\"gpicons times-circle\"></span>\n              </button>\n\n              <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->\n              <div class=\"gpLoginWindow\" ng-if=\"requireLogin\">\n                <iframe id=\"gpLoginIFrame\" src=\"/login?redirect_url=" + encodeURIComponent(window.location.origin + "/auth/loading?cachebuster=" + new Date().getTime()) + "&cachebuster=" + new Date().getTime() + "\"></iframe>\n              </div>\n\n            </div>",
             controller: ["$scope", "$element", "$timeout", function controller($scope, $element, $timeout) {
                 $scope.requireLogin = false;
                 $scope.FORCE_LOGIN = Config.FORCE_LOGIN;

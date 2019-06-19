@@ -693,7 +693,7 @@
           template:
             `<div class="gpLoginCover" ng-show="requireLogin">
 
-              <button class="btn btn-cancel gpLoginCancelIframe pull-right"
+              <button class="btn btn-danger gpLoginCancelIframe pull-right"
                 ng-show="!FORCE_LOGIN"
                 ng-click="cancel()">
                 Cancel
