@@ -93,7 +93,7 @@
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
-                        <span class="glyphicon" ng-class="{'glyphicon-minus':!$ctrl.collapse,'glyphicon-plus':$ctrl.collapse}"></span>
+                        <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
                     </button>
                     <span class="flex-1">Filter by Communities</span>
                 </div>
@@ -108,7 +108,7 @@
                                     ng-model-options="{debounce:200}"
                                     placeholder="Search by name"
                                     aria-label="Find a community by name">
-                                <span class="glyphicon glyphicon-remove"
+                                <span class="gpicons times"
                                     title="Clear query"
                                     ng-if="$ctrl.typeaheadValue.length"
                                     ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
@@ -118,8 +118,8 @@
 
                         <a class="c-facet__value" ng-click="$ctrl.clear()"
                             ng-class="{active:!$ctrl.hasSelections()}">
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-check':!$ctrl.hasSelections(), 'glyphicon-unchecked t-fg--gray-lt':$ctrl.hasSelections()}">
+                            <span class="gpicons"
+                                ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
                             </span>
                             Any Community
                         </a>
@@ -129,8 +129,8 @@
                             ng-class="{active:$ctrl.isSelected(value)}">
 
                             <span class="badge pull-right">{{$ctrl.getCount(value)}}</span>
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-check':$ctrl.isSelected(value),'glyphicon-unchecked t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
+                            <span class="gpicons"
+                                ng-class="{'check':$ctrl.isSelected(value),'square t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
                             {{value.label}}
                         </a>
                         <div class="c-facet__value disabled t-fg--gray-md"

@@ -1,4 +1,5 @@
 
+// @import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
 
 .c-query-filter.card {
 
@@ -15,13 +16,13 @@
         font-size:       0.875em;    //override default card-title style
         margin-bottom:   0;
         min-height:      2em;    //for those without collapse buttons
-        color:           lighten(@color-gray-dk, 15%);
-        border-bottom:   1px solid @color-gray-xlt;
+        color:           lighten(#333, 15%);
+        border-bottom:   1px solid #ddd;
         text-transform:  uppercase;
         font-weight:     700;
 
         .btn-link {
-            color: lighten(@color-gray-dk, 15%);
+            color: lighten(#333, 15%);
         }
     }
 
@@ -33,33 +34,33 @@
             border-width:   0 0 0 2px;
             border-color:   transparent;
             border-style:   solid;
-            color:          darken(@color-gray-md, 5%);
+            color:          darken(#777, 5%);
             padding:        0.5em;
             font-size:      1em; //override default c-facet__value style
 
             &.disabled { cursor: default; }
 
             &:not(.disabled):hover {
-                background: fadeOut(@color-gray-xlt, 10%);
-                color:              @color-gray-dk;
+                background: fadeOut(#ddd, 10%);
+                color:              #333;
             }
 
             &.active {
-                background: fadeOut(@color-active, 75%);
-                border-left-color:  @color-active;
-                color:              @color-gray-dk;
+                background: fadeOut(#2079c5, 75%);
+                border-left-color:  #2079c5;
+                color:              #333;
             }
 
             .badge {
                 float: right;
-                background-color: @color-gray-md;
+                background-color: #777;
             }
         }
 
         &.is-collapsed > .c-facet__value.active {
             background-color: transparent;
             border-color:     transparent;
-            color:            darken(@color-gray-md, 5%);
+            color:            darken(#777, 5%);
         }
 
         //any inputs that aren't wrapped in a c-facet__value should have a bit of margin
@@ -89,13 +90,13 @@
     display:   block;
     text-decoration: none;
     cursor:    pointer;
-    padding:   @px-md;
+    padding:   0.5em;
     font-size: 0.875em;
 }
 
 .c-facets > .c-facet__value.active {
-    background: @color-active;
-    color: @color-white;
+    background: #2079c5;
+    color: #fff;
 }
 
 // for list groups in browse filters
@@ -118,7 +119,7 @@
     }
     &.is-collapsed li > a.active,
     &.is-collapsed > .c-facet__value.active {
-        .t-fg--gray-dk;
+        color: #333;
         background-color: transparent;
     }
 }
@@ -127,7 +128,7 @@
 //override selected value styles when expanded for specific filters
 .c-filter__recommended-terms .c-facets > .c-facet__value.active {
     background: transparent;
-    color: @color-gray-dk;
+    color: #333;
 }
 
 .c-facets > .c-facet__value .form-control {

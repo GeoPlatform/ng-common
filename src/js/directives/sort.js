@@ -4,17 +4,17 @@
 
     angular.module("gp-common").directive('sortOrder', function() {
         return {
-            
+
             replace: true,
             require: 'ngModel',
-            
+
             template: [
                 '<div>',
                 '<a class="btn btn-default" title="Click to sort in ascending order" href ng-if="value===\'dsc\'" ng-click="toggle()">',
-                '    <span class="glyphicon glyphicon-sort-by-attributes-alt"></span>',
+                '    <span class="gpicons sort-asc"></span>',
                 '</a>',
                 '<a class="btn btn-default" title="Click to sort in descending order" href ng-if="value===\'asc\'" ng-click="toggle()">',
-                '    <span class="glyphicon glyphicon-sort-by-attributes"></span>',
+                '    <span class="gpicons sort"></span>',
                 '</a>',
                 '</div>'
             ].join(' '),

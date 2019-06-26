@@ -1,7 +1,7 @@
 
 
 ( function(angular, Constants) {
-    
+
     'use strict';
 
 
@@ -81,24 +81,24 @@
 
     angular.module('gp-common-kg').component('kgEditor', {
         require: {
-            // formCtrl: '^form', 
+            // formCtrl: '^form',
             ngModelCtrl: 'ngModel'
         },
         bindings: {
             ngModel: '=',       //object containing the KG
             onActivate: '&'     //function to invoke on KG item activation (click)
         },
-        controller: KGEditor, 
-        template: 
+        controller: KGEditor,
+        template:
         `
             <div class="c-kg-editor">
                 <div class="c-kg-editor__header l-flex-container flex-justify-between flex-align-center">
-                    <div class="flex-1">
-                        <h4>Knowledge Graph</h4>
+                    <div class="flex-1 m-article">
+                        <div class="m-article__heading">Knowledge Graph</div>
                         <div class="u-text--sm">
-                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items 
-                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>, 
-                            <em>Fitness for Use</em>, and <em>Social Context</em>. 
+                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items
+                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>,
+                            <em>Fitness for Use</em>, and <em>Social Context</em>.
                             <br>
                             <br>
                             Knowledge graphs are used to answer questions about items, such as:
@@ -114,115 +114,119 @@
 
                 <div class="c-kg-editor__content">
 
-                    <div class="c-kg-editor__section">
-                        <h4 class="t-fg--accent">Purpose</h4>
-
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.purposes"
-                            on-change="$ctrl.onChange('purposes', values)"
-                            on-activate="$ctrl.onValueClick('purposes', value)"
-                            type="Purpose"
-                            label="Purpose" 
-                            description="{{$ctrl.descriptions.purpose}}">
-                        </kg-section>
+                    <div class="m-article">
+                        <div class="m-article__heading">Purpose</div>
+                        <div class="m-article__desc c-kg-editor__section">
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.purposes"
+                                on-change="$ctrl.onChange('purposes', values)"
+                                on-activate="$ctrl.onValueClick('purposes', value)"
+                                type="Purpose"
+                                label="Purpose"
+                                description="{{$ctrl.descriptions.purpose}}">
+                            </kg-section>
+                        </div>
                     </div>
 
 
-                    <div class="c-kg-editor__section">
-                        <h4 class="t-fg--accent">Scope</h4>
-
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.primaryTopics"
-                            on-change="$ctrl.onChange('primaryTopics', values)"
-                            on-activate="$ctrl.onValueClick('primaryTopics', value)"
-                            type="Topic" 
-                            label="Primary Topics" 
-                            description="{{$ctrl.descriptions.primaryTopic}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.secondaryTopics"
-                            on-change="$ctrl.onChange('secondaryTopics', values)"
-                            on-activate="$ctrl.onValueClick('secondaryTopics', value)"
-                            type="Topic" 
-                            label="Secondary Topics" 
-                            description="{{$ctrl.descriptions.secondaryTopic}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.primarySubjects"
-                            on-change="$ctrl.onChange('primarySubjects', values)"
-                            on-activate="$ctrl.onValueClick('primarySubjects', value)"
-                            type="Subject" 
-                            label="Primary Subjects" 
-                            description="{{$ctrl.descriptions.primarySubject}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.secondarySubjects"
-                            on-change="$ctrl.onChange('secondarySubjects', values)"
-                            on-activate="$ctrl.onValueClick('secondarySubjects', value)"
-                            type="Subject" 
-                            label="Secondary Subjects" 
-                            description="{{$ctrl.descriptions.secondarySubject}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.categories"
-                            on-change="$ctrl.onChange('categories', values)"
-                            on-activate="$ctrl.onValueClick('categories', value)"
-                            type="Category" 
-                            label="Categories" 
-                            description="{{$ctrl.descriptions.category}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.communities"
-                            on-change="$ctrl.onChange('communities', values)"
-                            on-activate="$ctrl.onValueClick('communities', value)"
-                            type="Community" 
-                            label="Communities" 
-                            description="{{$ctrl.descriptions.community}}">
-                        </kg-section>
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.places"
-                            on-change="$ctrl.onChange('places', values)"
-                            on-activate="$ctrl.onValueClick('places', value)"
-                            type="Place" 
-                            label="Places" 
-                            description="{{$ctrl.descriptions.place}}">
-                        </kg-section> 
-                    </div> 
-
-                    <div class="c-kg-editor__section">
-                        <h4 class="t-fg--accent">Fitness for Use</h4>
-
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.functions"
-                            on-change="$ctrl.onChange('functions', values)"
-                            on-activate="$ctrl.onValueClick('functions', value)"
-                            type="Function" 
-                            label="Function" 
-                            description="{{$ctrl.descriptions.function}}">
-                        </kg-section>
+                    <div class="m-article">
+                        <div class="m-article__heading">Scope</div>
+                        <div class="m-article__desc c-kg-editor__section">
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.primaryTopics"
+                                on-change="$ctrl.onChange('primaryTopics', values)"
+                                on-activate="$ctrl.onValueClick('primaryTopics', value)"
+                                type="Topic"
+                                label="Primary Topics"
+                                description="{{$ctrl.descriptions.primaryTopic}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.secondaryTopics"
+                                on-change="$ctrl.onChange('secondaryTopics', values)"
+                                on-activate="$ctrl.onValueClick('secondaryTopics', value)"
+                                type="Topic"
+                                label="Secondary Topics"
+                                description="{{$ctrl.descriptions.secondaryTopic}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.primarySubjects"
+                                on-change="$ctrl.onChange('primarySubjects', values)"
+                                on-activate="$ctrl.onValueClick('primarySubjects', value)"
+                                type="Subject"
+                                label="Primary Subjects"
+                                description="{{$ctrl.descriptions.primarySubject}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.secondarySubjects"
+                                on-change="$ctrl.onChange('secondarySubjects', values)"
+                                on-activate="$ctrl.onValueClick('secondarySubjects', value)"
+                                type="Subject"
+                                label="Secondary Subjects"
+                                description="{{$ctrl.descriptions.secondarySubject}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.categories"
+                                on-change="$ctrl.onChange('categories', values)"
+                                on-activate="$ctrl.onValueClick('categories', value)"
+                                type="Category"
+                                label="Categories"
+                                description="{{$ctrl.descriptions.category}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.communities"
+                                on-change="$ctrl.onChange('communities', values)"
+                                on-activate="$ctrl.onValueClick('communities', value)"
+                                type="Community"
+                                label="Communities"
+                                description="{{$ctrl.descriptions.community}}">
+                            </kg-section>
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.places"
+                                on-change="$ctrl.onChange('places', values)"
+                                on-activate="$ctrl.onValueClick('places', value)"
+                                type="Place"
+                                label="Places"
+                                description="{{$ctrl.descriptions.place}}">
+                            </kg-section>
+                        </div>
                     </div>
 
-                    <div class="c-kg-editor__section">
-                        <h4 class="t-fg--accent">Social Context</h4>
+                    <div class="m-article">
+                        <div class="m-article__heading">Fitness for Use</div>
+                        <div class="m-article__desc c-kg-editor__section">
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.functions"
+                                on-change="$ctrl.onChange('functions', values)"
+                                on-activate="$ctrl.onValueClick('functions', value)"
+                                type="Function"
+                                label="Function"
+                                description="{{$ctrl.descriptions.function}}">
+                            </kg-section>
+                        </div>
+                    </div>
 
-                        <kg-section 
-                            service="$ctrl.service"
-                            ng-model="$ctrl.ngModel.classifiers.audiences"
-                            on-change="$ctrl.onChange('audiences', values)"
-                            on-activate="$ctrl.onValueClick('audiences', value)"
-                            type="Audience" 
-                            label="Audiences" 
-                            description="{{$ctrl.descriptions.audience}}">
-                        </kg-section>
+                    <div class="m-article">
+                        <div class="m-article__heading">Social Context</div>
+                        <div class="m-article__desc c-kg-editor__section">
+                            <kg-section
+                                service="$ctrl.service"
+                                ng-model="$ctrl.ngModel.classifiers.audiences"
+                                on-change="$ctrl.onChange('audiences', values)"
+                                on-activate="$ctrl.onValueClick('audiences', value)"
+                                type="Audience"
+                                label="Audiences"
+                                description="{{$ctrl.descriptions.audience}}">
+                            </kg-section>
+                        </div>
                     </div>
 
                 </div>
@@ -231,4 +235,3 @@
     });
 
 }) (angular, GeoPlatform);
-

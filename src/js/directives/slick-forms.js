@@ -1,5 +1,5 @@
 (function(jQuery, angular) {
-    
+
     "use strict";
 
 
@@ -18,11 +18,11 @@
 
 
         //listen for changes to the inner value by way of the form-control
-        $element.find('.form-control').on('change', function onChange() { 
-            validate($scope.innerValue); 
+        $element.find('.form-control').on('change', function onChange() {
+            validate($scope.innerValue);
         });
-        
-        
+
+
 
         /* ------------- private methods --------------- */
 
@@ -54,14 +54,14 @@
 
         // when model change, update our view (just update the div content)
         ngModelController.$render = function() {
-                
+
             var value = ngModelController.$viewValue;
 
             //create copy of passed in model value that can be used
-            // by the controls here allowing us to cancel and 
+            // by the controls here allowing us to cancel and
             // commit changes at our own leisure
             $scope.innerValue = value;
-            
+
             $scope.displayValue = value || $scope.placeholder || "No value provided";
 
             validate(value);
@@ -110,16 +110,16 @@
             if((code === undefined || code === 0) && $event.which !== undefined)
                 code = $event.which;
             if($scope.type === 'number') {
-                
-                //NOTE: Chrome does not catch Backspace onKeyPress, so it 
-                // skips this handler. FF does, so we need to watch for 
+
+                //NOTE: Chrome does not catch Backspace onKeyPress, so it
+                // skips this handler. FF does, so we need to watch for
                 // backspace, delete, and numbers
 
                 if (code === 8  ||   //backspace
-                    code === 46 ||  //delete  
+                    code === 46 ||  //delete
                     (code >= 44 && code <= 57))    //comma, hyphen, period and numbers (0-9)
                     return;
-                
+
                 //NOTE: keyPress period is 46. keyDown it is 190
 
                 $event.preventDefault();
@@ -133,13 +133,13 @@
             if(code === 13 && !$scope.error) $scope.done();  //enter
             else if(code === 27)             $scope.cancel();//esc
             else {
-            
+
                 if(code !== 8 &&                //backspace
                     code !== 46 &&              //delete
                     code !== 190 &&             //period
                     (code < 48 || code > 90) && //letters and numbers (a-z, 0-9)
-                    (code < 106 || code > 111) && 
-                    (code < 186)) 
+                    (code < 106 || code > 111) &&
+                    (code < 186))
                     return;
 
                 validate();
@@ -239,7 +239,7 @@
                 if($scope.required === 'true')
                     $scope.required = true;
                 else $scope.required = false;
-                
+
                 $scope.elId = 'input_' + Math.ceil(Math.random()*9999);
                 $scope.size = $scope.size || 'medium';
                 $scope.type = $scope.type || 'text';
@@ -273,10 +273,10 @@
                     var value = ngModelController.$viewValue;
 
                     //create copy of passed in model value that can be used
-                    // by the controls here allowing us to cancel and 
+                    // by the controls here allowing us to cancel and
                     // commit changes at our own leisure
                     $scope.innerValue = value;
-                    
+
                     $scope.displayValue = value ? $filter('date')(ngModelController.$modelValue, $scope.format) :
                         $scope.placeholder || "No value provided";
 
@@ -300,9 +300,9 @@
                 //enter edit mode
                 $scope.edit = function() {
                     if($scope.isReadOnly()) return;
-                    
+
                     $scope.editing=true;
-                    
+
                     //auto-focus on form-control when entering edit mode
                     // $timeout(function() { $element.find('.form-control').focus().select(); }, 200);
                 };
@@ -326,11 +326,11 @@
                 };
 
 
-                
-                
+
+
 
                 $scope.open = function() {
-                    //must wrap 'opened' variable in an object for 
+                    //must wrap 'opened' variable in an object for
                     // angular to properly track its value changes
                     // from within children scope (ie, the date picker)
                     if (typeof($scope.uibopts) === 'undefined'){
@@ -401,17 +401,17 @@
                             return {value: item.value, label: item.value};
                         return item;
                     });
-                } else 
+                } else
                     $scope.selectOptions = [];
 
 
 
                 //listen for changes to the inner value by way of the form-control
-                // $element.find('.form-control').on('change', function onChange() { 
-                //     validate($scope.innerValue); 
+                // $element.find('.form-control').on('change', function onChange() {
+                //     validate($scope.innerValue);
                 // });
-                
-                
+
+
 
                 /* ------------- private methods --------------- */
 
@@ -443,13 +443,13 @@
 
                 // when model change, update our view (just update the div content)
                 ngModelController.$render = function() {
-                        
+
                     var value = ngModelController.$viewValue;
 
                     //@see https://github.com/angular/angular.js/commit/7fda214c4f65a6a06b25cf5d5aff013a364e9cef
 
                     //create copy of passed in model value that can be used
-                    // by the controls here allowing us to cancel and 
+                    // by the controls here allowing us to cancel and
                     // commit changes at our own leisure
                     $scope.innerValue = value;
 
@@ -460,7 +460,7 @@
                         var opt = $scope.selectOptions.find(function(o){return o.value==value;});
                         $scope.displayValue = opt.label;
                     }
-                    
+
                     validate();
                 };
 
@@ -468,9 +468,9 @@
                 /* ------------- private methods --------------- */
 
                 $scope.onChange = function(value) {
-                    
+
                     // console.log("Changing value " + value + " vs " + $scope.innerValue);
-                    $scope.innerValue = value;                
+                    $scope.innerValue = value;
                     $timeout(function() { validate(); }, 200);
 
                 };
@@ -543,128 +543,128 @@
 
 
     var INPUT_TEMPLATE = [
-        
+
         '<div class="form-group form-group-slick">',
-        
+
         '   <label for="{{::elId}}" class="control-label">{{::label}}</label>',
-        
+
         '   <div class="input__display" ',
         '       ng-class="{\'is-read-only\':isReadOnly(), \'has-error\':!!error,\'text-lg\':size===\'large\'}" ',
         '       ng-show="!editing" ng-click="edit()" ',
         '       title="{{!!error?error:(!isReadOnly()?\'Click to edit\':\'\')}}">',
         '      {{displayValue}}',
         '   </div>',
-        
+
         '   <div ng-show="editing">',
         '      <div class="input-group" ng-class="{\'input-group-lg\':size===\'large\'}">',
         '           <div class="input-group-slick" ng-class="{\'input-group-slick--lg\':size===\'large\'}">',
-        
+
         '               <span ng-if="icon" class="{{::icon}}"></span>',
-        
+
         '               <input id="{{::elId}}" type="{{::type}}" class="form-control" ',
         '                   pattern="{{pattern}}" ',
         '                   ng-model="innerValue" ',
         '                   ng-required="{{required}}" ',
         '                   ng-keypress="onKeyPress($event, $event.keyCode)" ',
         '                   ng-keyup="onKeyUp($event, $event.keyCode)" >',
-        
+
         '               <span class="indicators">',
-        '                   <span class="is-valid glyphicon glyphicon-ok-sign"></span>',
-        '                  <span class="is-invalid glyphicon glyphicon-exclamation-sign"></span>',
+        '                   <span class="is-valid gpicons check-circle"></span>',
+        '                  <span class="is-invalid gpicons exclamation-circle"></span>',
         '              </span>',
-        
+
         '           </div>',
-        
+
         '          <span class="input-group-btn">',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{\'btn-lg\':size===\'large\'}"' ,
         '                   ng-click="cancel()" title="Cancel changes">',
-        '                   <span class="glyphicon glyphicon-ban-circle"></span>',
+        '                   <span class="gpicons ban-circle"></span>',
         '              </button>',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{disabled:!!error||!isDirty,\'btn-lg\':size===\'large\'}"' ,
         '                   ng-disabled="{{!!error}}" ',
         '                   ng-click="save()" title="Save changes">',
-        '                  <span class="glyphicon glyphicon-ok"></span>',
+        '                  <span class="gpicons check"></span>',
         '               </button>',
-        
+
         '           </span>',
-        
-        '       </div>', 
+
+        '       </div>',
 
         '       <div ng-if="error && error.length"><small class="help-block text-danger">{{error}}</small></div>',
         '       <div ng-if="help && help.length"><small class="help-block">{{help}}</small></div>',
-        
+
         '   </div>',
-        
+
         '</div>'
 
     ].join(' ');
 
     var TEXTAREA_TEMPLATE = [
         '<div class="form-group form-group-slick">',
-        
+
         '   <label for="{{::elId}}" class="control-label">{{::label}}</label>',
-        
+
         '   <div class="input__display" ',
         '       ng-class="{\'is-read-only\':isReadOnly(), \'has-error\':!!error,\'text-lg\':size===\'large\'}" ',
         '       ng-show="!editing" ng-click="edit()" ',
         '       title="{{!!error?error:(!isReadOnly()?\'Click to edit\':\'\')}}">',
         '      {{displayValue}}',
         '   </div>',
-        
+
         '   <div ng-show="editing">',
         '      <div class="input-group" ng-class="{\'input-group-lg\':size===\'large\'}">',
         '           <div class="input-group-slick" ng-class="{\'input-group-slick--lg\':size===\'large\'}">',
-        
+
         '               <span ng-if="icon" class="{{::icon}}"></span>',
-        
+
         '               <textarea rows="3" id="{{::elId}}" class="form-control" ',
         '                   ng-required="{{required}}" ng-model="innerValue"',
         '                   ng-keypress="onKeyPress($event, $event.keyCode)" ',
         '                   ng-keyup="onKeyUp($event, $event.keyCode)"></textarea>',
-        
+
         '               <span class="indicators">',
-        '                   <span class="is-valid glyphicon glyphicon-ok-sign"></span>',
-        '                  <span class="is-invalid glyphicon glyphicon-exclamation-sign"></span>',
+        '                   <span class="is-valid gpicons check-circle"></span>',
+        '                  <span class="is-invalid gpicons exclamation-circle"></span>',
         '              </span>',
-        
+
         '           </div>',
-        
+
         '          <span class="input-group-btn">',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{\'btn-lg\':size===\'large\'}"' ,
         '                   ng-click="cancel()" title="Cancel changes">',
-        '                   <span class="glyphicon glyphicon-ban-circle"></span>',
+        '                   <span class="gpicons ban-circle"></span>',
         '              </button>',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{disabled:!!error||!isDirty,\'btn-lg\':size===\'large\'}"' ,
         '                   ng-disabled="{{!!error}}" ',
         '                   ng-click="save()" title="Save changes">',
-        '                  <span class="glyphicon glyphicon-ok"></span>',
+        '                  <span class="gpicons check"></span>',
         '               </button>',
-        
+
         '           </span>',
-        
-        '       </div>', 
+
+        '       </div>',
 
         '       <div ng-if="error && error.length"><small class="help-block text-danger">{{error}}</small></div>',
         '       <div ng-if="help && help.length"><small class="help-block">{{help}}</small></div>',
-        
+
         '   </div>',
-        
+
         '</div>'
     ].join(' ');
 
     var DATE_TEMPLATE = [
 
-        
+
         '<div class="form-group form-group-slick">',
-        
+
         '   <label for="{{::elId}}" class="control-label">{{::label}}</label>',
 
         '   <div class="input__display" ',
@@ -673,24 +673,24 @@
         '       title="{{!!error?error:(!isReadOnly()?\'Click to edit\':\'\')}}">',
         '      {{displayValue}}',
         '   </div>',
-        
+
         '   <div ng-show="editing">',
         '       <div uib-datepicker ng-required="{{required}}" ng-model="innerValue" datepicker-options="{showWeeks:false}"></div>',
-        
+
         '       <div ng-if="error && error.length"><small class="help-block text-danger">{{error}}</small></div>',
         '       <div ng-if="help && help.length"><small class="help-block">{{help}}</small></div>',
-        
+
         '       <button type="button" class="btn btn-default" ',
         '           ng-class="{\'btn-lg\':size===\'large\'}"' ,
         '           ng-click="cancel()" title="Cancel changes">',
-        '           <span class="glyphicon glyphicon-ban-circle"></span>',
+        '           <span class="gpicons ban-circle"></span>',
         '      </button>',
-        
+
         '      <button type="button" class="btn btn-default" ',
         '           ng-class="{disabled:!!error,\'btn-lg\':size===\'large\'}"' ,
         '          ng-disabled="{{!!error}}" ',
         '           ng-click="save()" title="Save changes">',
-        '           <span class="glyphicon glyphicon-ok"></span>',
+        '           <span class="gpicons check"></span>',
         '      </button>',
 
         '   </div>',
@@ -700,26 +700,26 @@
     ].join(' ');
 
     var SELECT_TEMPLATE = [
-        
+
         '<div class="form-group form-group-slick">',
-        
+
         '   <label for="{{::elId}}" class="control-label">{{::label}}</label>',
-        
+
         '   <div class="input__display" ',
         '       ng-class="{\'is-read-only\':isReadOnly(), \'has-error\':!!error}" ',
         '       ng-show="!editing" ng-click="edit()" ',
         '       title="{{!!error?error:(!isReadOnly()?\'Click to edit\':\'\')}}">',
         '      {{displayValue}}',
         '   </div>',
-        
+
         '   <div ng-show="editing">',
 
         '      <div class="input-group" ng-class="{\'input-group-lg\':size===\'large\'}">',
-        
+
         '           <div class="input-group-slick" ng-class="{\'input-group-slick--lg\':size===\'large\'}">',
-        
+
         '               <span ng-if="icon" class="{{::icon}}"></span>',
-        
+
         '               <select class="form-control input__field" ',
         '                   ng-if="codeList.length<=12" ',
         '                   ng-model="innerValue" ',
@@ -738,38 +738,38 @@
         '                   uib-typeahead="opt.value as opt.label for opt in selectOptions | filter:{value:$viewValue} | limitTo:12" ',
         '                   typeahead-min-length="0" ',
         '                   typeahead-editable="false">',
-        
+
         '               <span class="indicators">',
-        '                   <span class="is-valid glyphicon glyphicon-ok-sign"></span>',
-        '                  <span class="is-invalid glyphicon glyphicon-exclamation-sign"></span>',
+        '                   <span class="is-valid gpicons check-circle"></span>',
+        '                  <span class="is-invalid gpicons exclamation-circle"></span>',
         '              </span>',
-        
+
         '           </div>',
-        
+
         '          <span class="input-group-btn">',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{\'btn-lg\':size===\'large\'}"' ,
         '                   ng-click="cancel()" title="Cancel changes">',
-        '                   <span class="glyphicon glyphicon-ban-circle"></span>',
+        '                   <span class="gpicons ban-circle"></span>',
         '              </button>',
-        
+
         '               <button type="button" class="btn btn-default" ',
         '                   ng-class="{disabled:!!error||!isDirty,\'btn-lg\':size===\'large\'}"' ,
         '                   ng-disabled="{{!!error}}" ',
         '                   ng-click="save()" title="Save changes">',
-        '                  <span class="glyphicon glyphicon-ok"></span>',
+        '                  <span class="gpicons check"></span>',
         '               </button>',
-        
+
         '           </span>',
-        
+
         '       </div>',
-        
+
         '       <div ng-if="error && error.length"><small class="help-block text-danger">{{error}}</small></div>',
         '       <div ng-if="help && help.length"><small class="help-block">{{help}}</small></div>',
-        
+
         '   </div>',
-        
+
         '</div>'
 
     ].join(' ');

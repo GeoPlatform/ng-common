@@ -1,5 +1,5 @@
 (function(jQuery, angular) {
-    
+
     'use strict';
 
     angular.module('gp-common').directive('gpDatePicker', ['$timeout', function($timeout) {
@@ -15,7 +15,7 @@
                 '<div class="input-group-slick">',
                 '    <input type="text" class="form-control" placeholder="{{::label}}"',
                 '        datepicker-popup="{{format}}" ng-model="date" is-open="opened" />',
-                '    <span class="glyphicon glyphicon-calendar" ng-click="toggle($event)"></span>',
+                '    <span class="gpicons calendar" ng-click="toggle($event)"></span>',
                 '</div>',
                 '<p class="help-block"><small><em>Ex: "2015-01-31" or "Jan 31 2015"</em></small></p>'
             ].join(' '),
@@ -36,7 +36,7 @@
 
                 $scope.debounce = function() {
                     if(promise) $timeout.cancel(promise);
-                    promise = $timeout(function() { 
+                    promise = $timeout(function() {
                         promise = null;
                         if($scope.onChange)
                             $scope.onChange();
@@ -48,9 +48,9 @@
                 });
 
                 var listener = $scope.$on('$destroy', function() {
-                    
+
                     listener();             //deregister listener
-                    
+
                     if(promise) $timeout.cancel(promise);
                     promise = null;
 

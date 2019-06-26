@@ -98,15 +98,15 @@
                     <div class="c-facets">
 
                         <a class="c-facet__value" ng-if="$ctrl.value" ng-click="$ctrl.clearValue()">
-                            <span class="glyphicon glyphicon-remove-circle"></span>
+                            <span class="gpicons times-circle"></span>
                             {{$ctrl.value.label}}
                         </a>
 
                         <!--
                         <a ng-if="$ctrl.mapId" class="c-facet__value"
                             ng-click="$ctrl.toggleCurrentMap()" ng-class="{active:$ctrl.useMap}">
-                            <span class="glyphicon glyphicon-check" ng-show="$ctrl.useMap"></span>
-                            <span class="glyphicon glyphicon-unchecked" ng-show="!$ctrl.useMap"></span>
+                            <span class="gpicons check" ng-show="$ctrl.useMap"></span>
+                            <span class="gpicons square" ng-show="!$ctrl.useMap"></span>
                             Find similar to my current map
                         </a>
                         -->

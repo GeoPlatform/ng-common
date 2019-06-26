@@ -1,5 +1,6 @@
 const pkg         = require('./package.json'),
       gulp        = require('gulp'),
+      gutil       = require('gulp-util'),
       jshint      = require('gulp-jshint');
       concat      = require('gulp-concat'),
       ngAnnotate  = require('gulp-ng-annotate'),
@@ -11,7 +12,10 @@ const pkg         = require('./package.json'),
       notify      = require('gulp-notify'),
       del         = require('del'),
       srcmaps     = require('gulp-sourcemaps'),
-      ts          = require('gulp-typescript');
+      ts          = require('gulp-typescript'),
+      less        = require('gulp-less'),
+      cssmin      = require('gulp-cssmin'),
+      autoprefixer= require('less-plugin-autoprefix');
 
 const jshintConfig = {
     // laxbreak: true,
@@ -21,6 +25,17 @@ const jshintConfig = {
     browser: true,
     jquery: true
 }
+
+const autoprefix = new autoprefixer({
+    browsers: [
+        "iOS >= 7",
+        "Chrome >= 30",
+        "Explorer >= 11",
+        "last 2 Edge versions",
+        "Firefox >= 20"
+    ]
+});
+
 
 require('gulp-help')(gulp, { description: 'Help listing.' });
 
@@ -42,17 +57,19 @@ gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', fun
         'src/js/**/*.js',
         'src/js/**/*.ts'
     ])
-        .pipe(tsProject())
-        .pipe(srcmaps.init())
-        .pipe(concat(pkg.name + '.js'))
-        .pipe(babel({presets: [es2015], plugins: [assign]}))
-        .pipe(ngAnnotate()).on('error', notify.onError("Error: <%= error.message %>"))
-        .pipe(gulp.dest('dist/'))
-        .pipe(uglify()).on('error', notify.onError("Error: <%= error.message %>"))
-        .pipe(rename({extname: ".min.js"}))
-        .pipe(srcmaps.write('./'))
-        .pipe(gulp.dest('dist/'))
-        .pipe(notify('Uglified JavaScript'));
+    .pipe(tsProject())
+    .pipe(srcmaps.init())
+    .pipe(concat(pkg.name + '.js'))
+    .pipe(babel({presets: [es2015], plugins: [assign]}))
+    .pipe(ngAnnotate())
+    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe(gulp.dest('dist/'))
+    .pipe(uglify())
+    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe(rename({extname: ".min.js"}))
+    .pipe(srcmaps.write('./'))
+    .pipe(gulp.dest('dist/'))
+    .pipe(notify('Uglified JavaScript'));
 });
 
 gulp.task('concat', 'Concat only, do not minify', () => {
@@ -75,10 +92,26 @@ gulp.task('clean', function() {
 });
 
 gulp.task('less', 'Compile less into a single app.css.', function() {
-    gulp.src(['src/**/*.less'])
+
+    gulp.src([
+        'node_modules/geoplatform.style/src/less/variables.less',
+        'src/**/*.less'
+    ])
         .pipe(concat(pkg.name + '.less'))
         .pipe(gulp.dest('dist/'))
         .pipe(notify('Compiled less'));
+
+    gulp.src(['dist/' + pkg.name + '.less'], {base: "."})
+        .pipe(less({
+            plugins: [autoprefix],
+            paths: ['./src/less']
+        }))
+        .on("error", notify.onError({message: 'LESS compile error: <%= error.message %>'}))
+        .pipe(gulp.dest('./'))
+        // .pipe(cssmin())
+        // .pipe(rename({ suffix: '.min' }))
+        // .pipe(gulp.dest('dist/css/'))
+        .pipe(notify('Compiled styles'));
 });
 
 

@@ -23,6 +23,7 @@
     //list of _options variables for mapping to parameters
     const VAR_TYPES                 = 'types';
     const VAR_THEMES                = 'themes';
+    const VAR_TOPICS                = 'topics';
     const VAR_PUBLISHERS            = 'publishers';
     const VAR_USED_BY               = 'usedBy';
     const VAR_USER                  = 'user';
@@ -39,6 +40,7 @@
     //parameter names for various query constraints used in requests to MDR for results
     const PARAMETER_TYPE            = 'type';
     const PARAMETER_THEME           = 'theme.id';
+    const PARAMETER_TOPIC           = 'topic.id';
     const PARAMETER_PUBLISHER       = 'publisher.id';
     const PARAMETER_USED_BY         = 'usedBy.id';
     const PARAMETER_CREATED_BY      = 'createdBy';
@@ -58,6 +60,7 @@
     const PARAM_OPTIONS = [
         { option: VAR_TYPES,            parameter: PARAMETER_TYPE            },
         { option: VAR_THEMES,           parameter: PARAMETER_THEME           },
+        { option: VAR_TOPICS,           parameter: PARAMETER_TOPIC           },
         { option: VAR_PUBLISHERS,       parameter: PARAMETER_PUBLISHER       },
         { option: VAR_USED_BY,          parameter: PARAMETER_USED_BY         },
         { option: VAR_USER,             parameter: PARAMETER_CREATOR         },
@@ -490,6 +493,15 @@
              */
             setSchemes: function(schemes, fireUpdate) { setOption(VAR_SCHEMES, schemes, fireUpdate); },
             getSchemes: function() { return _options[VAR_SCHEMES]; },
+
+
+            /**
+             * @param {array[string]} schemes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setTopics: function(topics, fireUpdate) { setOption(VAR_TOPICS, topics, fireUpdate); },
+            getTopics: function() { return _options[VAR_TOPICS]; },
+
 
             /**
              * @param {string} visibility - one of 'public' or 'private'

@@ -1,14 +1,14 @@
 (function(jQuery, angular) {
-    
-    "use strict"; 
-    
+
+    "use strict";
+
     angular.module("gp-common")
 
     /**
      * Geolocation directive
      */
     .directive('gpGeolocation', ['$window',function ($window) {
-        
+
         var defaultBtnLabel = "Locate";
 
         return {
@@ -18,8 +18,8 @@
             restrict: "EA",
             template: [
                 '<a class="btn btn-primary" ng-click="geolocate()" ng-if="available">',
-                '  <span class="glyphicon glyphicon-screenshot" ng-if="!loading"></span>',
-                '  <span class="glyphicon glyphicon-hourglass glyphicon-spin" ng-if="loading"></span>',
+                '  <span class="gpicons crosshairs" ng-if="!loading"></span>',
+                '  <span class="gpicons hourglass u-spin" ng-if="loading"></span>',
                 '  {{btnLabel}}',
                 '</a>',
                 '<div ng-if="error">{{error}}</div>'
@@ -30,7 +30,7 @@
                 $scope.loading = false;
                 $scope.available = ($window.navigator && $window.navigator.geolocation);
 
-                if(!$scope.available) 
+                if(!$scope.available)
                     $scope.error = "Your browser does not support determining location";
 
                 $scope.geolocate = function() {
@@ -54,7 +54,7 @@
                             break;
                         }
                     });
-                }; 
+                };
             }
         };
 

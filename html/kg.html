@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html ng-app="kg">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <base href="/">
+    <title>Filter Example Page</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="node_modules/geoplatform.style/dist/css/platform.min.css" />
+    <link rel="stylesheet" type="text/css" href="dist/geoplatform.common.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.8.2/css/fontawesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="src/icons/fontawesome.css" />
+</head>
+<body>
+
+
+    <test-component></test-component>
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/q.js/1.5.1/q.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.5/angular.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-resource/1.6.5/angular-resource.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+
+    <script>
+
+        //configure geoplatform env variables needed to interact with the API
+        window.GeoPlatform = {
+            ualUrl : 'https://sit-ual.geoplatform.us',
+            env: 'development',
+            IDP_BASE_URL: 'https://sit-idp.geoplatform.us'
+        };
+    </script>
+
+    <script src="dist/geoplatform.common.js"></script>
+
+    <script>
+
+        //define the application's angular module and make sure to include the $httpProvider
+        // in the config function
+        angular.module('kg', [ 'ngResource', 'ui.bootstrap', 'gp-common', 'gp-common-kg'])
+
+        .config(function myAppConfig ($httpProvider) {
+            $httpProvider.defaults.withCredentials = true;
+        })
+
+        .component( 'testComponent', {
+            template: `
+                <div class="c-kg-editor">
+                    <div class="c-kg-editor__content">
+                        <div class="m-article">
+                            <div class="m-article__heading">Purpose</div>
+                            <div class="m-article__desc c-kg-editor__section">
+                                <kg-section
+                                    service="$ctrl.service"
+                                    ng-model="$ctrl.ngModel.classifiers.purposes"
+                                    on-change="$ctrl.onChange('purposes', values)"
+                                    on-activate="$ctrl.onValueClick('purposes', value)"
+                                    type="Purpose"
+                                    label="Purpose"
+                                    description="{{$ctrl.descriptions.purpose}}">
+                                </kg-section>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `,
+            controller: function(KGHelper) {
+
+                this.$onInit = function() {
+                    this.ngModel = {
+                        type: "dcat:Dataset",
+                        classifiers: {
+                            purposes: []
+                        }
+                    };
+                    this.service = KGHelper.getService(this.ngModel.type);
+                };
+                this.$onDestroy = function() {
+                    this.service = null;
+                };
+                this.onChange = function(property, values) {
+                    console.log("Changed " + property + " with " + (values?values.length:0) + " values");
+                    this.ngModel.classifiers[property] = values;
+                };
+                this.onValueClick = function(classifier, value) {
+
+                };
+            }
+        });
+
+
+
+
+    </script>
+
+</body>
+</html>

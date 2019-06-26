@@ -693,11 +693,11 @@
           template:
             `<div class="gpLoginCover" ng-show="requireLogin">
 
-              <button class="btn btn-cancel gpLoginCancelIframe pull-right"
+              <button class="btn btn-danger gpLoginCancelIframe pull-right"
                 ng-show="!FORCE_LOGIN"
                 ng-click="cancel()">
                 Cancel
-                <span class="glyphicon glyphicon-remove-sign"></span>
+                <span class="gpicons times-circle"></span>
               </button>
 
               <!-- In order to keep the trigger in scope we use ng-show above and ng-if here -->
@@ -755,7 +755,7 @@
             //logged in
             '  <button type="button" class="btn btn-link dropdown-toggle" data-toggle="dropdown" ' +
             '   aria-expanded="false" ng-if="user">' +
-            '     <span class="glyphicon glyphicon-user"></span> ' +
+            '     <span class="gpicons user"></span> ' +
             '     <span class="hidden-xs">{{::user.name}}</span> ' +
             '     <span class="caret"></span>' +
             '  </button>' +
@@ -764,7 +764,7 @@
             '      <div class="media">' +
             '        <div class="media-left">' +
             '          <div class="media-object">' +
-            '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>' +
+            '            <span class="gpicons user u-text--xlg"></span>' +
             '          </div>' +
             '        </div>' +
             '        <div class="media-body">' +
@@ -822,7 +822,7 @@
               '  <div class="media">',
               '    <div class="media-left">',
               '        <div class="media-object">',
-              '            <span class="glyphicon glyphicon-user glyphicon-xlg"></span>',
+              '            <span class="gpicons user u-text--xlg"></span>',
               '        </div>',
               '    </div>',
               '    <div class="media-body" ng-if="user">',

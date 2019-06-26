@@ -1,7 +1,7 @@
 
 
 ( function(angular, Constants) {
-    
+
     'use strict';
 
 
@@ -9,7 +9,7 @@
 
         constructor($timeout, RecommenderService) {
             'ngInject';
-            
+
             this.$timeout = $timeout;
             // this.service = RecommenderService;
         }
@@ -49,7 +49,7 @@
         }
 
         /**
-         * 
+         *
          * @param {object} item - selected value being activated (clicked on for navigation)
          */
         activate(item) {
@@ -65,8 +65,8 @@
 
         notify(event, data) {
             if(!this.eventHandlers || !this.eventHandlers[event]) return;
-            angular.forEach(this.eventHandlers[event], (handler) => { 
-                try { handler(data); } catch(e) { } 
+            angular.forEach(this.eventHandlers[event], (handler) => {
+                try { handler(data); } catch(e) { }
             });
         }
 
@@ -76,8 +76,8 @@
          * @return {Promise} resolving an array of results
          */
         fetchOptions (query) {
-            
-            //need this timeout or else 'this.query' isn't being 
+
+            //need this timeout or else 'this.query' isn't being
             // seen as having the same value as 'query'
             this.$timeout( () => { this.query = query; }, 10);
 
@@ -102,7 +102,7 @@
                 this.displayOptions.showSuggested = true;
                 return this.suggested;
             })
-            .catch( e        => { 
+            .catch( e        => {
                 this.paging.total = 0;
                 this.notify('gp:browse:suggestions:pagination', this.paging);
                 this.suggested = [];
@@ -130,12 +130,12 @@
             //hide available options
             this.displayOptions.showSuggested = false;
         }
-        
+
         /**
          * @param {integer} index - position in selected array of item removed
          */
         remove (index) {
-            
+
             let removed = this.ngModel[index].uri;
             this.ngModel.splice(index, 1);
 
@@ -145,7 +145,7 @@
                 if(found) found._selected = false;
             }
             this.updateCache();                       //update cache of selected ids
-            
+
             if(this.onChange)
                 this.onChange({values: this.ngModel});  //notify others of change
         }
@@ -199,7 +199,7 @@
             this.paging.size = value;
             this.fetchOptions(this.query);
         }
-        
+
     }
 
 
@@ -219,18 +219,18 @@
 
         controller: SectionController,
 
-        template: 
+        template:
         `
-            <h5>{{$ctrl.label}}</h5>
+            <div class="a-heading">{{$ctrl.label}}</div>
             <p class="u-text--sm" ng-bind-html="$ctrl.description"></p>
 
             <div class="list-group list-group-sm">
                 <div ng-repeat="item in $ctrl.ngModel track by $index" class="list-group-item">
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
-                        <span class="glyphicon glyphicon-remove-circle t-fg--danger"></span> 
+                        <span class="gpicons times-circle t-fg--danger"></span>
                     </button>
-                    <div class="flex-1 u-pd--md">
-                        <div class="u-pd-bottom--sm t-text--strong">
+                    <div class="flex-1 u-pd--xs">
+                        <div class="t-text--strong">
                             <a ng-click="$ctrl.activate(item)" ng-if="$ctrl.onActivate"
                                  class="u-break--all">{{item.label}}</a>
                             <span ng-if="!$ctrl.onActivate">{{item.label}}</span>
@@ -244,37 +244,37 @@
                 </div>
             </div>
 
-            <div class="t-fg--gray-md" ng-if="!$ctrl.ngModel.length"><em>No values specified</em></div>            
+            <div class="t-fg--gray-md" ng-if="!$ctrl.ngModel.length"><em>No values specified</em></div>
 
             <hr>
 
-            <div uib-dropdown is-open="$ctrl.displayOptions.showSuggested" 
+            <div uib-dropdown is-open="$ctrl.displayOptions.showSuggested"
                 auto-close="outsideClick" on-toggle="$ctrl.onDropdownToggled(open)">
 
                 <div class="l-flex-container flex-justify-between flex-align-center">
                     <div class="input-group-slick flex-1">
-                        <span class="glyphicon"
-                            ng-class="{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}"></span>
-                        <input type="text" class="form-control" 
-                            ng-model="$ctrl.query" 
+                        <span class="gpicons"
+                            ng-class="{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}"></span>
+                        <input type="text" class="form-control"
+                            ng-model="$ctrl.query"
                             ng-model-options="{ debounce: 250 }"
                             ng-change="$ctrl.fetchOptions($ctrl.query)"
                             placeholder="Find values to add...">
                     </div>
                 </div>
-                
+
                 <div class="dropdown-menu" uib-dropdown-menu>
-                    
+
                     <div class="form-group l-flex-container flex-justify-between flex-align-center">
                         <div class="input-group-slick flex-1">
-                            <span class="glyphicon"
-                                ng-class="{'glyphicon-search':!$ctrl.displayOptions.fetching, 'glyphicon-hourglass spin':$ctrl.displayOptions.fetching}"></span>
-                            <input type="text" class="form-control" 
-                                ng-model="$ctrl.query" 
+                            <span class="gpicons"
+                                ng-class="{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}"></span>
+                            <input type="text" class="form-control"
+                                ng-model="$ctrl.query"
                                 ng-model-options="{ debounce: 250 }"
                                 ng-change="$ctrl.fetchOptions($ctrl.query)"
                                 placeholder="Find values to add...">
-                            <span class="glyphicon glyphicon-remove"
+                            <span class="gpicons times"
                                 ng-if="$ctrl.query.length"
                                 ng-click="$event.stopPropagation();$ctrl.clearQuery()"></span>
                         </div>
@@ -283,19 +283,19 @@
                             Done
                         </button>
                     </div>
-                    
+
                     <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"></gp-pagination>
 
                     <div class="list-group list-group-sm u-text--sm">
                         <div ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item">
                             <button type="button" class="btn btn-link" ng-click="$ctrl.selectValue(item)"
                                 ng-class="{disabled:item._selected}">
-                                <span class="glyphicon glyphicon-ok t-fg--gray-md" ng-show="item._selected"></span> 
-                                <span class="glyphicon glyphicon-plus-sign t-fg--success" ng-show="!item._selected"></span> 
+                                <span class="gpicons check t-fg--gray-md" ng-show="item._selected"></span>
+                                <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
                             </button>
-                            <div class="flex-1 u-pd--md">
-                                <div class="u-break--all t-text--strong u-pd-bottom--sm">{{item.prefLabel}}</div>
-                                <a href="{{item.uri}}" target="_blank" 
+                            <div class="flex-1 u-pd--xs">
+                                <div class="u-break--all t-text--strong">{{item.prefLabel}}</div>
+                                <a href="{{item.uri}}" target="_blank"
                                     class="u-break--all u-text--sm t-text--italic"
                                     title="Open source info in new window">
                                     {{item.uri}}
@@ -313,4 +313,3 @@
     });
 
 }) (angular, GeoPlatform);
-

@@ -1,3 +1,48 @@
+
+//core colors
+@color-primary:  #112158;
+@color-accent:   #393;
+@color-active:   #428bca;
+
+//utility colors
+@color-gray-dk:  #333;
+@color-gray-md:  #777;
+@color-gray-lt:  #bbb;
+@color-gray-xlt: #ddd;
+@color-white:    #fff;
+
+//bootstrap colors
+@color-success:  #5cb85c;
+@color-info:     #5bc0de;
+@color-warning:  #f0ad4e;
+@color-danger:   #d9534f;
+
+//misc colors
+@color-wild:     #ff009a;
+@color-pink:     #e25284;
+
+
+
+
+/* px values */
+@px-none:  0px;
+@px-xs:    0.125em;    //2px for 16px default
+@px-sm:    0.25em;     //4px  ...
+@px-md:    0.5em;      //8px  ...
+@px-lg:    0.75em;     //12px ...
+@px-xlg:   1em;        //16px ...
+@px-xxlg:  1.5em;      //24px ...
+@px-xxxlg: 2em;        //32px ...
+
+@px-bootstrap-default: 15px;
+
+@screen-xs-min: 480px;  //phone
+@screen-xs-max: 767px;
+@screen-sm-min: 768px;  //tablet
+@screen-sm-max: 991px;
+@screen-md-min: 992px;  //desktop
+@screen-md-max: 1199px;
+@screen-lg-min: 1200px; //large desktop
 .gpLoginCover {
   position: relative;
   top: 0;
@@ -59,6 +104,7 @@
 
 
 
+
 .gp-ui-card__body .text--supporting[card-details-carousel-activator] {
     position: relative;
     padding-left: 1.5em;
@@ -71,7 +117,7 @@
     display: flex;
     align-items: center;
     padding: 0 0.25em;
-    color: @color-gray-lt;
+    color: #ddd;
     &.disabled {
         color: #efefef;
     }
@@ -98,6 +144,7 @@
     //     color: #efefef;
     // }
 }
+
 
 
 .gp-colorpicker {
@@ -149,6 +196,7 @@
     }
 }
 
+// @import (reference) "../../node_modules/geoplatform.style/src/less/variables.less";
 
 .c-query-filter.card {
 
@@ -165,13 +213,13 @@
         font-size:       0.875em;    //override default card-title style
         margin-bottom:   0;
         min-height:      2em;    //for those without collapse buttons
-        color:           lighten(@color-gray-dk, 15%);
-        border-bottom:   1px solid @color-gray-xlt;
+        color:           lighten(#333, 15%);
+        border-bottom:   1px solid #ddd;
         text-transform:  uppercase;
         font-weight:     700;
 
         .btn-link {
-            color: lighten(@color-gray-dk, 15%);
+            color: lighten(#333, 15%);
         }
     }
 
@@ -183,33 +231,33 @@
             border-width:   0 0 0 2px;
             border-color:   transparent;
             border-style:   solid;
-            color:          darken(@color-gray-md, 5%);
+            color:          darken(#777, 5%);
             padding:        0.5em;
             font-size:      1em; //override default c-facet__value style
 
             &.disabled { cursor: default; }
 
             &:not(.disabled):hover {
-                background: fadeOut(@color-gray-xlt, 10%);
-                color:              @color-gray-dk;
+                background: fadeOut(#ddd, 10%);
+                color:              #333;
             }
 
             &.active {
-                background: fadeOut(@color-active, 75%);
-                border-left-color:  @color-active;
-                color:              @color-gray-dk;
+                background: fadeOut(#2079c5, 75%);
+                border-left-color:  #2079c5;
+                color:              #333;
             }
 
             .badge {
                 float: right;
-                background-color: @color-gray-md;
+                background-color: #777;
             }
         }
 
         &.is-collapsed > .c-facet__value.active {
             background-color: transparent;
             border-color:     transparent;
-            color:            darken(@color-gray-md, 5%);
+            color:            darken(#777, 5%);
         }
 
         //any inputs that aren't wrapped in a c-facet__value should have a bit of margin
@@ -239,13 +287,13 @@
     display:   block;
     text-decoration: none;
     cursor:    pointer;
-    padding:   @px-md;
+    padding:   0.5em;
     font-size: 0.875em;
 }
 
 .c-facets > .c-facet__value.active {
-    background: @color-active;
-    color: @color-white;
+    background: #2079c5;
+    color: #fff;
 }
 
 // for list groups in browse filters
@@ -268,7 +316,7 @@
     }
     &.is-collapsed li > a.active,
     &.is-collapsed > .c-facet__value.active {
-        .t-fg--gray-dk;
+        color: #333;
         background-color: transparent;
     }
 }
@@ -277,7 +325,7 @@
 //override selected value styles when expanded for specific filters
 .c-filter__recommended-terms .c-facets > .c-facet__value.active {
     background: transparent;
-    color: @color-gray-dk;
+    color: #333;
 }
 
 .c-facets > .c-facet__value .form-control {
@@ -346,6 +394,8 @@ header.app-header {
     }
 }
 
+
+
 /* ------------------------------------------------- *\
     Notifications
     ...
@@ -381,15 +431,15 @@ header.app-header {
         max-height: 10rem;
         overflow: auto;
     }
-    
-    &.ng-hide-add, 
+
+    &.ng-hide-add,
     &.ng-hide-remove {
         transition: all linear .5s;
     }
 
     &.ng-hide {
         opacity: 0;
-    } 
+    }
 
     .notification__actions {
         text-align: right;
@@ -415,9 +465,9 @@ header.app-header {
     right: 1rem;
 }
 .notification--default {
-    border-color:   @color-gray-md;
-    background:     @color-gray-lt;
-    color:          @color-gray-dk;
+    border-color:   #777;
+    background:     #bbb;
+    color:          #333;
 }
 .notification--success {
     border-color:   darken(@color-success, 20%);
@@ -435,8 +485,10 @@ header.app-header {
     color:          darken(@color-info, 20%);
 }
 
+
+
 /*  -------------------------------------------
-    PAGINATION COMPONENT STYLES 
+    PAGINATION COMPONENT STYLES
     ------------------------------------------- */
 
 .c-pagination {
@@ -466,7 +518,7 @@ header.app-header {
         align-items: center;
 
         .dropdown {
-            border: 1px solid #ddd;
+            border: 1px solid @color-gray-xlt;
             border-radius: 4px;
             padding: 0.4em 0.5em;
             background: #fefefe;
@@ -484,7 +536,7 @@ header.app-header {
         & > * {
             border-width: 1px 0 1px 1px;
             border-style: solid;
-            border-color: #ddd;
+            border-color: @color-gray-xlt;
             background-color: #fefefe;
 
             &:first-child {
@@ -542,8 +594,8 @@ header.app-header {
         flex-wrap:       wrap;
         height: auto;
 
-        .c-pagination__total, 
-        .c-pagination__page-size, 
+        .c-pagination__total,
+        .c-pagination__page-size,
         .c-pagination__pages {
             padding: 0 1em 0 0;
 
@@ -552,8 +604,8 @@ header.app-header {
             }
         }
 
-        .c-pagination__total, 
-        .c-pagination__page-size, 
+        .c-pagination__total,
+        .c-pagination__page-size,
         .c-pagination__pages {
             margin-bottom: 0.5em;
         }
@@ -614,9 +666,6 @@ header.app-header {
 
 
 
-
-
-
 .c-kg-editor__header {
     background: #fff;
     margin:     1em 1%;
@@ -630,7 +679,7 @@ header.app-header {
 }
 
 .c-kg-editor .c-kg-editor__section {
-    padding: 1em;
+    // padding: 1em;
     border-bottom: 1px solid @color-gray-xlt;
 }
 
@@ -645,13 +694,13 @@ header.app-header {
         justify-content: flex-start;
         align-items:     flex-start;
         flex-wrap:       wrap;
-        padding:         1em 2em 0;
+        //padding:         1em 2em 0;
 
         & > h3, & > h4, & > h5, & > h6 { flex: 1 0 100%; }
 
         kg-section {
             flex: 0 0 48%;
-            &:nth-child(2n+2) { margin-right: 2%; }
+            &:nth-child(2n+2) { margin-left: 2%; }
         }
     }
 }
@@ -709,7 +758,7 @@ kg-section {
         font-size:    1em;          //override bootstrap default
         left:         0;
         right:        0;            //make span parent width
-        padding:      1.3em 1em 0;
+        padding:      1.3em 1em;
         top:          -1.5em;       //cover up triggering input when open
         margin-left:  -1em;
         margin-right: -1em;
@@ -717,13 +766,22 @@ kg-section {
         z-index:      -1;           //sit behind triggering input until open
         opacity:      0;            //animate using opacity
         transition:   .2s linear opacity;
+        box-shadow:   0 1em 1em rgba(100,100,100,0.5);
+
+        .c-pagination {
+            font-size: 0.875em;
+        }
 
     }
 
-    .dropdown.open [uib-dropdown-menu].dropdown-menu {
-        opacity: 1;
-        z-index: 1;     //sit on top of triggering input when open
+    .dropdown.open,
+    .dropdown.show {
+
+        [uib-dropdown-menu].dropdown-menu {
+            opacity: 1;
+            z-index: 1;     //sit on top of triggering input when open
+        }
+
     }
 
 }
-

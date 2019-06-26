@@ -10,7 +10,7 @@
     'use strict';
 
     angular.module('gp-common-kg', [])
-    
+
 
     .constant('KGFields', [
         'purposes', 'functions', 'primaryTopics', 'secondaryTopics',
@@ -156,7 +156,7 @@
         template:
         `
             <span>{{$ctrl.value||0}}%</span>
-            <span class="glyphicon glyphicon-dashboard"></span>
+            <span class="gpicons dashboard"></span>
         `
 
     })

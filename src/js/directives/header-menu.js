@@ -40,7 +40,7 @@
                 '  <ul role="menu" class="header__menu" gp-header-menu>',
                 '    <li ng-if="showHomeLink" role="menuitem">',
                 '      <a href="#/goHome">',
-                '        <span class="glyphicon glyphicon-home"></span> ',
+                '        <span class="gpicons home"></span> ',
                 '        <span class="hidden-xs hidden-sm">Home</span>',
                 '      </a>',
                 '    </li>',
@@ -201,7 +201,7 @@
                     <ul role="menu" class="header__menu" gp-header-menu>
                         <li ng-if="showHomeLink" role="menuitem">
                             <a href="/">
-                                <span class="glyphicon glyphicon-home"></span>
+                                <span class="gpicons home"></span>
                                 <span class="hidden-xs hidden-sm">Home</span>
                             </a>
                         </li>
