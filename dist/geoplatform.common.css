@@ -1,4 +1,6 @@
-/* px values */
+/*
+    USED TEMPORARILY
+ */
 .gpLoginCover {
   position: relative;
   top: 0;
@@ -115,7 +117,7 @@
   background: linear-gradient(to right, #fff, #efefef);
 }
 .gp-colorpicker {
-  margin-top: .25em;
+  margin-top: 0.25em;
   padding-right: 2em;
 }
 .gp-colorpicker > .rgb-form-group {
@@ -125,8 +127,8 @@
 }
 .gp-colorpicker > .rgb-form-group > .form-control {
   width: 2em;
-  padding: 0 0 0 .25em;
-  margin: 0 0 .25em 0;
+  padding: 0 0 0 0.25em;
+  margin: 0 0 0.25em 0;
 }
 .gp-colorpicker > .hex-form-group {
   margin-bottom: 0;
@@ -352,7 +354,7 @@ header.app-header .gpLoginCover {
 }
 .notification.ng-hide-add,
 .notification.ng-hide-remove {
-  transition: all linear .5s;
+  transition: all linear 0.5s;
 }
 .notification.ng-hide {
   opacity: 0;
@@ -390,14 +392,14 @@ header.app-header .gpLoginCover {
   color: #357935;
 }
 .notification--error {
-  border-color: #a02622;
-  background: #f4cecd;
-  color: #a02622;
+  border-color: #89201d;
+  background: #f0b7b5;
+  color: #89201d;
 }
 .notification--info {
-  border-color: #2390b0;
-  background: #daf1f8;
-  color: #2390b0;
+  border-color: #00303e;
+  background: #3ed3ff;
+  color: #00303e;
 }
 /*  -------------------------------------------
     PAGINATION COMPONENT STYLES
@@ -503,7 +505,7 @@ header.app-header .gpLoginCover {
           align-items: center;
   width: 2.25em;
   height: 2.25em;
-  color: #428bca;
+  color: #2079c5;
   cursor: pointer;
 }
 .c-pagination .c-pagination__button:hover {
@@ -617,7 +619,7 @@ header.app-header .gpLoginCover {
 .c-kg-editor__header {
   background: #fff;
   margin: 1em 1%;
-  padding: .5em 1em;
+  padding: 0.5em 1em;
   border: 1px solid #ddd;
   border-radius: 4px;
 }
@@ -629,7 +631,7 @@ header.app-header .gpLoginCover {
 }
 @media (min-width: 1200px) {
   .c-kg-editor .c-kg-editor__header {
-    padding: .5em 1.5em;
+    padding: 0.5em 1.5em;
   }
   .c-kg-editor .c-kg-editor__section {
     display: -webkit-flex;
@@ -702,7 +704,7 @@ kg-section .list-group-item .description {
   line-height: 1.4;
   height: 1.3em;
   overflow: hidden;
-  color: #777;
+  color: #747474;
 }
 kg-section [uib-dropdown-menu].dropdown-menu {
   font-size: 1em;
@@ -715,7 +717,7 @@ kg-section [uib-dropdown-menu].dropdown-menu {
   display: block;
   z-index: -1;
   opacity: 0;
-  transition: .2s linear opacity;
+  transition: 0.2s linear opacity;
   box-shadow: 0 1em 1em rgba(100, 100, 100, 0.5);
 }
 kg-section [uib-dropdown-menu].dropdown-menu .c-pagination {

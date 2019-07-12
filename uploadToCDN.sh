@@ -14,7 +14,7 @@ if [[ $# -eq 0 ]] ; then
 fi
 
 # Dist file in the core of the CDN version
-aws s3 sync dist/ s3://geoplatform-cdn/gp.common/$1/
+aws s3 sync dist/ s3://geoplatform-cdn/geoplatform.common/$1/
 
 # Push or source files as well
-aws s3 sync src/ s3://geoplatform-cdn/gp.common/$1/src
+aws s3 sync src/ s3://geoplatform-cdn/geoplatform.common/$1/src

@@ -9,7 +9,7 @@ __Add from CDN__
 
 Major versions are made avaliable from CDN sources. You can include them in the following way:
 ```html
-<script src="https://s3.amazonaws.com/geoplatform-cdn/gp.common/VERSION/geoplatform.common.min.js"></script>
+<script src="https://s3.amazonaws.com/geoplatform-cdn/geoplatform.common/1.8.0/geoplatform.common.min.js"></script>
 ```
 
 __Add as an NPM dependency__
@@ -19,7 +19,8 @@ __Add as an NPM dependency__
     "name": "myns-myapp",
     "main": "index.js",
     "dependencies": {
-       "geoplatform.common": "git+https://github.com/GeoPlatform/ng-common.git#VERSION",
+        "@geoplatform/style": "git+https://github.com/GeoPlatform/style.git#2.1.0",
+        "@geoplatform/common": "git+https://github.com/GeoPlatform/ng-common.git#1.8.0",
     }
 }
 ```
@@ -33,26 +34,21 @@ __Include the JavaScript__
 ```html
 <!doctype html>
 <html ng="app" lang="en-us">
-  <head> <!-- head contents --> </head>
+  <head> <!-- head contents -->
+      <script src="node_modules/@geoplatform/style/dist/platform.css"></script>
+  </head>
   <body>
     <!-- body contents -->
-
-    <!-- JS dependencies
-    ...
-    ...
-    ...
-    -->
-
+    <!-- JS dependencies ... -->
     <script>
         GeoPlatform = {
-            portalUrl: "https://...",
-            idspUrl: "https://...",
-            idmUrl: "https://..."
+            ualUrl:     "https://ual.geoplatform.gov",
+            portalUrl:  "https://...",
+            idspUrl:    "https://...",
+            idmUrl:     "https://..."
         };
     </script>
-
-    <script src="node_modules/geoplatform.common/dist/geoplatform.common.min.js"></script>
-
+    <script src="node_modules/@geoplatform/common/dist/geoplatform.common.min.js"></script>
   </body>
 </html>
 ```
@@ -63,8 +59,8 @@ __Include the Less__
 Unlike the GeoPlatform Style library, NgCommon does not compile source less into CSS, but it does concatenate the source less files into one which can be included in other projects for compilation. **Be sure to include it after the style project's Less import(s).**
 
 ```less
-@import "node_modules/geoplatform.style/src/less/platform.less";
-@import "node_modules/geoplatform.common/dist/geoplatform.common.less";
+@import "node_modules/@geoplatform/style/src/less/platform.less";
+@import "node_modules/@geoplatform/common/dist/geoplatform.common.less";
 ```
 
 __Inject the Module__
@@ -85,7 +81,7 @@ The folling are values that can/should be set in the GeoPlatform global namespac
 
 > See additonal configurations in the Authentication section
 
-<br><br>
+
 ## Authentication
 NgCommon has an interface for authenticating and verifying user identity against gpoauth OAuth service. Ng-common will automatically direct a user to the Oauth provider and then back to the application with an accessToken/JWT. The received JWT will be sent with all subsequent requests and should allow users to access resources available to them.
 
