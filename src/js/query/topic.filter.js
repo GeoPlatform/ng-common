@@ -108,7 +108,7 @@
                             ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}">
                         </span>
                     </button>
-                    Filter by Topic(s)
+                    Filter by Topics
                 </div>
                 <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
 

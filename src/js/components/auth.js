@@ -84,6 +84,14 @@
             if(!item) return false;
             return item.createdBy && item.createdBy === this.authState.user.username;
         }
+
+        getUser() {
+            return this.authState ? this.authState.user : null;
+        }
+
+        getToken() {
+            return this.authService.getJWT();
+        }
     }
 
     return AuthenticatedComponent;

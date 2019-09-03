@@ -63,6 +63,11 @@
             querySources: {
                 url: baseUrl + '/sources',
                 isArray: false
+            },
+
+            createCustom: {
+                url: Constants.ualUrl + '/api/items',
+                method: "POST"
             }
 
         });
@@ -94,6 +99,19 @@
                 querySources: {
                     url: baseUrl + '/sources',
                     isArray: false
+                },
+
+                createCustom: {
+                    url: Constants.ualUrl + '/api/items',
+                    method: "POST"
+                },
+                getCustomUri: {
+                    url: Constants.ualUrl + '/api/utils/uri',
+                    method: "POST",
+                    responseType: 'text',
+                    transformResponse: function(data) {
+                        return { uri: data };
+                    }
                 }
 
             });
