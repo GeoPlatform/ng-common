@@ -107,6 +107,7 @@
                         <span class="gpicons"
                             ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}">
                         </span>
+                        <span class="sr-only">Toggle topic filter options</span>
                     </button>
                     Filter by Topics
                 </div>
@@ -118,7 +119,8 @@
                                 ng-model="$ctrl.typeaheadValue"
                                 ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                 ng-model-options="{debounce:200}"
-                                placeholder="Search by name">
+                                placeholder="Search by name"
+                                aria-label="Search topics by name">
                             <span class="gpicons times"
                                 title="Clear query"
                                 ng-if="$ctrl.typeaheadValue.length"

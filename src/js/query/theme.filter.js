@@ -192,6 +192,7 @@
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
                         <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
+                        <span class="sr-only">Toggle Theme filter options</span>
                     </button>
                     <span>Filter by Themes</span>
                 </div>

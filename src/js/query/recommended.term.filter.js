@@ -258,6 +258,7 @@
                         ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
                         <span class="gpicons"
                             ng-class="{'minus':!$ctrl.displayOpts.collapse,'plus':$ctrl.displayOpts.collapse}"></span>
+                            <span class="sr-only">Toggle semantic filter options</span>
                     </button>
                     <span>Filter using Semantic Concepts</span>
                 </div>

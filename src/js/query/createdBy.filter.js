@@ -85,6 +85,7 @@
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
                         <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
+                        <span class="sr-only">Toggle created by filter options</span>
                     </button>
                     <span class="flex-1">Filter by Author</span>
                 </div>
@@ -98,7 +99,8 @@
                                 ng-disabled="$ctrl.limitToUser"
                                 ng-model="$ctrl.value"
                                 ng-model-options="$ctrl.modelOptions"
-                                ng-change="$ctrl.filter()">
+                                ng-change="$ctrl.filter()"
+                                aria-label="Search authors">
                             <span class="gpicons times" title="Clear author"
                                 ng-if="$ctrl.value.length&&!$ctrl.limitToUser" ng-click="$ctrl.clear()"></span>
                         </div>

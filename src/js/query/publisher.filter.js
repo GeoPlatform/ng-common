@@ -112,6 +112,7 @@
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
                         <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
+                        <span class="sr-only">Toggle publisher filter options</span>
                     </button>
                     <span class="flex-1">Filter by Publishers</span>
                 </div>
