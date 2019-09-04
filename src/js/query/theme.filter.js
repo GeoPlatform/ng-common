@@ -186,8 +186,8 @@
         controller: ThemesFilter,
         template:
         `
-            <div class="card c-query-filter c-browse-filter">
-                <div class="card-title">
+            <div class="card o-query-filter c-browse-filter">
+                <div class="a-heading">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
@@ -196,83 +196,81 @@
                     </button>
                     <span>Filter by Themes</span>
                 </div>
-                <div class="card-content">
-                    <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
+                <div class="o-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
 
-                        <div class="c-facet__value">
-                            <div class="input-group-slick">
-                                <input name="theme-filter-schemes" type="text" class="form-control"
-                                    ng-model="$ctrl.scheme"
-                                    typeahead-on-select="$ctrl.onSchemeSelection($item, $model, $label, $event)"
-                                    uib-typeahead="opt as opt.label for opt in $ctrl.fetchSchemes($viewValue)"
-                                    typeahead-loading="$ctrl.areSchemesLoading"
-                                    typeahead-no-results="$ctrl.noSchemeResults"
-                                    ng-model-options="{ debounce: 250 }"
-                                    typeahead-min-length="2"
-                                    typeahead-editable="false"
-                                    placeholder="Filter Themes by Scheme..."
-                                    aria-label="Find scheme by name to filter theme options">
-                                <span class="gpicons times"
-                                    title="Clear selected Scheme"
-                                    ng-if="$ctrl.scheme"
-                                    ng-click="$ctrl.onSchemeChange($ctrl.scheme=null)">
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="c-facet__value">
-                            <div class="input-group-slick">
-                                <input name="scheme-typeahead" type="text" class="form-control"
-                                    ng-model="$ctrl.typeaheadValue"
-                                    ng-change="$ctrl.onKeywordsChange($ctrl.typeaheadValue)"
-                                    ng-model-options="{debounce:200}"
-                                    placeholder="Find a Theme by name..."
-                                    aria-label="Find a theme by name">
-                                <span class="gpicons times"
-                                    title="Clear query"
-                                    ng-if="$ctrl.typeaheadValue.length"
-                                    ng-click="$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)">
-                                </span>
-                            </div>
-                        </div>
-
-                        <a class="c-facet__value" ng-click="$ctrl.clear()"
-                            ng-class="{active:!$ctrl.hasSelections()}">
-                            <span class="gpicons"
-                                ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                    <div class="m-facet">
+                        <div class="input-group-slick">
+                            <input name="theme-filter-schemes" type="text" class="form-control"
+                                ng-model="$ctrl.scheme"
+                                typeahead-on-select="$ctrl.onSchemeSelection($item, $model, $label, $event)"
+                                uib-typeahead="opt as opt.label for opt in $ctrl.fetchSchemes($viewValue)"
+                                typeahead-loading="$ctrl.areSchemesLoading"
+                                typeahead-no-results="$ctrl.noSchemeResults"
+                                ng-model-options="{ debounce: 250 }"
+                                typeahead-min-length="2"
+                                typeahead-editable="false"
+                                placeholder="Filter Themes by Scheme..."
+                                aria-label="Find scheme by name to filter theme options">
+                            <span class="gpicons times"
+                                title="Clear selected Scheme"
+                                ng-if="$ctrl.scheme"
+                                ng-click="$ctrl.onSchemeChange($ctrl.scheme=null)">
                             </span>
-                            Any Theme
-                        </a>
-                        <a ng-repeat="theme in $ctrl.values track by $index"
-                            class="c-facet__value" ng-click="$ctrl.toggle(theme)"
-                            ng-class="{active:$ctrl.isSelected(theme)}">
-                            <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
-                            <span class="gpicons"
-                                ng-class="{'check':$ctrl.isSelected(theme),'square t-fg--gray-lt':!$ctrl.isSelected(theme)}"></span>
-                            {{theme.label || "Untitled Theme"}}
-                        </a>
-
-                        <div class="c-facet__value disabled t-fg--gray-md"
-                            ng-if="$ctrl.additionalValueCount">
-                            <em>
-                                plus {{$ctrl.additionalValueCount}} more options;
-                                use search box to limit options
-                            </em>
                         </div>
-
-
-                        <div class="c-facet__value disabled" ng-if="$ctrl.outsideResults.length">
-                            <em>The following selections are not in the above results</em>
-                        </div>
-
-                        <a ng-repeat="theme in $ctrl.outsideResults track by $index"
-                            class="c-facet__value active" ng-click="$ctrl.deselectOutside(theme)">
-                            <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
-                            <span class="gpicons check"></span>
-                            {{theme.label || "Untitled Theme"}}
-                        </a>
-
                     </div>
+
+                    <div class="m-facet">
+                        <div class="input-group-slick">
+                            <input name="scheme-typeahead" type="text" class="form-control"
+                                ng-model="$ctrl.typeaheadValue"
+                                ng-change="$ctrl.onKeywordsChange($ctrl.typeaheadValue)"
+                                ng-model-options="{debounce:200}"
+                                placeholder="Find a Theme by name..."
+                                aria-label="Find a theme by name">
+                            <span class="gpicons times"
+                                title="Clear query"
+                                ng-if="$ctrl.typeaheadValue.length"
+                                ng-click="$ctrl.onKeywordsChange($ctrl.typeaheadValue=null)">
+                            </span>
+                        </div>
+                    </div>
+
+                    <a class="m-facet" ng-click="$ctrl.clear()"
+                        ng-class="{active:!$ctrl.hasSelections()}">
+                        <span class="gpicons"
+                            ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                        </span>
+                        Any Theme
+                    </a>
+                    <a ng-repeat="theme in $ctrl.values track by $index"
+                        class="m-facet" ng-click="$ctrl.toggle(theme)"
+                        ng-class="{active:$ctrl.isSelected(theme)}">
+                        <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
+                        <span class="gpicons"
+                            ng-class="{'check':$ctrl.isSelected(theme),'square t-fg--gray-lt':!$ctrl.isSelected(theme)}"></span>
+                        {{theme.label || "Untitled Theme"}}
+                    </a>
+
+                    <div class="m-facet disabled t-fg--gray-md"
+                        ng-if="$ctrl.additionalValueCount">
+                        <em>
+                            plus {{$ctrl.additionalValueCount}} more options;
+                            use search box to limit options
+                        </em>
+                    </div>
+
+
+                    <div class="m-facet disabled" ng-if="$ctrl.outsideResults.length">
+                        <em>The following selections are not in the above results</em>
+                    </div>
+
+                    <a ng-repeat="theme in $ctrl.outsideResults track by $index"
+                        class="m-facet active" ng-click="$ctrl.deselectOutside(theme)">
+                        <span class="badge pull-right">{{$ctrl.getCount(theme)}}</span>
+                        <span class="gpicons check"></span>
+                        {{theme.label || "Untitled Theme"}}
+                    </a>
+
                 </div>
             </div>
         `

@@ -88,8 +88,8 @@
         },
         template:
         `
-            <div class="card c-query-filter">
-                <div class="card-title">
+            <div class="card o-query-filter">
+                <div class="a-heading">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
@@ -98,46 +98,44 @@
                     </button>
                     <span class="flex-1">Filter by Communities</span>
                 </div>
-                <div class="card-content">
-                    <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
+                <div class="o-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
 
-                        <div class="c-facet__value">
-                            <div class="input-group-slick">
-                                <input name="scheme-typeahead" type="text" class="form-control"
-                                    ng-model="$ctrl.typeaheadValue"
-                                    ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
-                                    ng-model-options="{debounce:200}"
-                                    placeholder="Search by name"
-                                    aria-label="Find a community by name">
-                                <span class="gpicons times"
-                                    title="Clear query"
-                                    ng-if="$ctrl.typeaheadValue.length"
-                                    ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
-                                </span>
-                            </div>
-                        </div>
-
-                        <a class="c-facet__value" ng-click="$ctrl.clear()"
-                            ng-class="{active:!$ctrl.hasSelections()}">
-                            <span class="gpicons"
-                                ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                    <div class="m-facet">
+                        <div class="input-group-slick">
+                            <input name="scheme-typeahead" type="text" class="form-control"
+                                ng-model="$ctrl.typeaheadValue"
+                                ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
+                                ng-model-options="{debounce:200}"
+                                placeholder="Search by name"
+                                aria-label="Find a community by name">
+                            <span class="gpicons times"
+                                title="Clear query"
+                                ng-if="$ctrl.typeaheadValue.length"
+                                ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
                             </span>
-                            Any Community
-                        </a>
-                        <a  ng-repeat="value in $ctrl.values track by $index"
-                            class="c-facet__value"
-                            ng-click="$ctrl.toggle(value)"
-                            ng-class="{active:$ctrl.isSelected(value)}">
-
-                            <span class="badge pull-right">{{$ctrl.getCount(value)}}</span>
-                            <span class="gpicons"
-                                ng-class="{'check':$ctrl.isSelected(value),'square t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
-                            {{value.label}}
-                        </a>
-                        <div class="c-facet__value disabled t-fg--gray-md"
-                            ng-if="$ctrl.additionalValueCount">
-                            <em>plus {{$ctrl.additionalValueCount}} more options</em>
                         </div>
+                    </div>
+
+                    <a class="m-facet" ng-click="$ctrl.clear()"
+                        ng-class="{active:!$ctrl.hasSelections()}">
+                        <span class="gpicons"
+                            ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                        </span>
+                        Any Community
+                    </a>
+                    <a  ng-repeat="value in $ctrl.values track by $index"
+                        class="m-facet"
+                        ng-click="$ctrl.toggle(value)"
+                        ng-class="{active:$ctrl.isSelected(value)}">
+
+                        <span class="badge pull-right">{{$ctrl.getCount(value)}}</span>
+                        <span class="gpicons"
+                            ng-class="{'check':$ctrl.isSelected(value),'square t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
+                        {{value.label}}
+                    </a>
+                    <div class="m-facet disabled t-fg--gray-md"
+                        ng-if="$ctrl.additionalValueCount">
+                        <em>plus {{$ctrl.additionalValueCount}} more options</em>
                     </div>
                 </div>
             </div>

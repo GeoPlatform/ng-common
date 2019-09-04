@@ -79,8 +79,8 @@
         controller: CreatedBy,
         template:
         `
-            <div class="card c-query-filter">
-                <div class="card-title">
+            <div class="card o-query-filter">
+                <div class="a-heading">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
@@ -89,26 +89,27 @@
                     </button>
                     <span class="flex-1">Filter by Author</span>
                 </div>
-                <div class="card-content">
 
-                    <div class="c-facets" ng-hide="$ctrl.collapse">
+                    <div class="o-facets" ng-hide="$ctrl.collapse">
 
-                        <div class="input-group-slick">
-                            <span class="gpicons user"></span>
-                            <input type="text" class="form-control" placeholder="Specify author username"
-                                ng-disabled="$ctrl.limitToUser"
-                                ng-model="$ctrl.value"
-                                ng-model-options="$ctrl.modelOptions"
-                                ng-change="$ctrl.filter()"
-                                aria-label="Search authors">
-                            <span class="gpicons times" title="Clear author"
-                                ng-if="$ctrl.value.length&&!$ctrl.limitToUser" ng-click="$ctrl.clear()"></span>
+                        <div class="m-facet">
+                            <div class="input-group-slick">
+                                <span class="gpicons user"></span>
+                                <input type="text" class="form-control" placeholder="Specify author username"
+                                    ng-disabled="$ctrl.limitToUser"
+                                    ng-model="$ctrl.value"
+                                    ng-model-options="$ctrl.modelOptions"
+                                    ng-change="$ctrl.filter()"
+                                    aria-label="Search authors">
+                                <span class="gpicons times" title="Clear author"
+                                    ng-if="$ctrl.value.length&&!$ctrl.limitToUser" ng-click="$ctrl.clear()"></span>
+                            </div>
+
+                            <label class="control-label u-text--sm text-muted u-pd-top--sm" ng-if="$ctrl.isAuthenticated()">
+                                <input type="checkbox" ng-model="$ctrl.limitToUser" ng-change="$ctrl.filter()">
+                                Only show my items
+                            </label>
                         </div>
-
-                        <label class="control-label u-text--sm text-muted u-pd-top--sm" ng-if="$ctrl.isAuthenticated()">
-                            <input type="checkbox" ng-model="$ctrl.limitToUser" ng-change="$ctrl.filter()">
-                            Only show my items
-                        </label>
 
                     </div>
                 </div>
