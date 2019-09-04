@@ -153,7 +153,7 @@
                     </span>
                 </div>
                 <div class="c-pagination__page-size" ng-if="!$ctrl.pageSizeDropdown">
-                    <select class="form-control"
+                    <select class="form-control" aria-label="Select page size"
                         ng-model="$ctrl.pageSize" ng-change="$ctrl.setPageSize($ctrl.pageSize)"
                         ng-options="opt.value as opt.label for opt in $ctrl.pageSizeOptions">
                     </select>
@@ -163,11 +163,13 @@
                         ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
                         ng-click="$ctrl.first()">
                         <span class="gpicons fast-backward"></span>
+                        <span class="sr-only">go to first page of results</span>
                     </div>
                     <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasPrevious()}"
                         ng-click="$ctrl.previous()">
                         <span class="gpicons backward"></span>
+                        <span class="sr-only">go to previous page of results</span>
                     </div>
                     <div class="c-pagination__page">
                         {{$ctrl.options.start+1}} - {{$ctrl.options.start+$ctrl.options.size}}
@@ -176,11 +178,13 @@
                         ng-class="{'is-disabled':!$ctrl.hasNext()}"
                         ng-click="$ctrl.next()">
                         <span class="gpicons forward"></span>
+                        <span class="sr-only">go to next page of results</span>
                     </div>
                     <div class="c-pagination__button"
                         ng-class="{'is-disabled':!$ctrl.hasNext()}"
                         ng-click="$ctrl.last()">
                         <span class="gpicons fast-forward"></span>
+                        <span class="sr-only">go to last page of results</span>
                     </div>
                 </div>
             </div>
