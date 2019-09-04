@@ -320,6 +320,7 @@
                 <div ng-repeat="item in $ctrl.ngModel track by $index" class="list-group-item">
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
                         <span class="gpicons times-circle t-fg--danger"></span>
+                        <span class="sr-only">Deselect this item</span>
                     </button>
                     <div class="flex-1 u-pd--xs">
                         <div class="t-text--strong">
@@ -351,7 +352,8 @@
                             ng-model="$ctrl.query"
                             ng-model-options="{ debounce: 250 }"
                             ng-change="$ctrl.fetchOptions($ctrl.query)"
-                            placeholder="Find values to add...">
+                            placeholder="Find values to add..."
+                            aria-label="Find values to add">
                     </div>
                 </div>
 
@@ -367,7 +369,8 @@
                                     ng-model="$ctrl.query"
                                     ng-model-options="{ debounce: 250 }"
                                     ng-change="$ctrl.fetchOptions($ctrl.query)"
-                                    placeholder="Find values to add...">
+                                    placeholder="Find values to add..."
+                                    aria-label="Find values to add">
                                 <span class="gpicons times"
                                     ng-if="$ctrl.query.length"
                                     ng-click="$event.stopPropagation();$ctrl.clearQuery()"></span>
@@ -386,6 +389,7 @@
                                     ng-class="{disabled:item._selected}">
                                     <span class="gpicons check t-fg--gray-md" ng-show="item._selected"></span>
                                     <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
+                                    <span class="sr-only">Select or deselect this item</span>
                                 </button>
                                 <div class="flex-1 u-pd--xs">
                                     <div class="u-break--all t-text--strong">{{item.prefLabel}}</div>
@@ -406,6 +410,7 @@
                                 <button type="button" class="btn btn-link" ng-click="$ctrl.toggleCreateCustom($event)"
                                     ng-class="{disabled:item._selected}">
                                     <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
+                                    <span class="sr-only">Toggle custom creation fields</span>
                                 </button>
                                 <div class="flex-1 u-pd--xs">
                                     <div class="t-text--strong">New custom classifier</div>
