@@ -1,5 +1,7 @@
+
+const   { src, dest, pipe, watch, task, series } = require('gulp');
+
 const pkg         = require('./package.json'),
-      gulp        = require('gulp'),
       gutil       = require('gulp-util'),
       jshint      = require('gulp-jshint');
       concat      = require('gulp-concat'),
@@ -9,12 +11,10 @@ const pkg         = require('./package.json'),
       assign      = require('babel-plugin-transform-object-assign'),
       uglify      = require('gulp-uglify'),
       rename      = require('gulp-rename'),
-      notify      = require('gulp-notify'),
       del         = require('del'),
       srcmaps     = require('gulp-sourcemaps'),
       ts          = require('gulp-typescript'),
       less        = require('gulp-less'),
-      cssmin      = require('gulp-cssmin'),
       autoprefixer= require('less-plugin-autoprefix');
 
 const jshintConfig = {
@@ -37,88 +37,94 @@ const autoprefix = new autoprefixer({
 });
 
 
-require('gulp-help')(gulp, { description: 'Help listing.' });
+const DISTRO = 'geoplatform.common';
 
-gulp.task('jshint', function () {
-    gulp.src(['src/js/**/*.js'])
-        .pipe(jshint(jshintConfig))
-        .pipe(jshint.reporter('default'))
-        // .pipe(livereload());
-});
+const SOURCE_FILES = [
+    'src/js/module.ts',
+    'src/js/kg/module.js',
+    'src/js/**/*.js',
+    'src/js/**/*.ts'
+];
 
 
-gulp.task('js', 'Concat, Ng-Annotate, Uglify JavaScript into a single file', function() {
+function jshintTask() {
+    return src( ['src/js/**/*.js'] )
+    .pipe( jshint(jshintConfig) )
+    // .pipe( jshint.reporter('default') );
+    .pipe( jshint.reporter('jshint-stylish') );
+}
+
+//Concat, Ng-Annotate, Uglify JavaScript into a single file
+function jsSrcTask() {
+
     const tsProject = ts.createProject('./tsconfig.json');
 
     //include module first, then other src files which depend on module
-    gulp.src([
-        'src/js/module.ts',
-        'src/js/kg/module.js',
-        'src/js/**/*.js',
-        'src/js/**/*.ts'
-    ])
-    .pipe(tsProject())
-    .pipe(srcmaps.init())
-    .pipe(concat(pkg.name + '.js'))
-    .pipe(babel({presets: [es2015], plugins: [assign]}))
-    .pipe(ngAnnotate())
-    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
-    .pipe(gulp.dest('dist/'))
-    .pipe(uglify())
-    .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
-    .pipe(rename({extname: ".min.js"}))
-    .pipe(srcmaps.write('./'))
-    .pipe(gulp.dest('dist/'))
-    .pipe(notify('Uglified JavaScript'));
-});
+    return src( SOURCE_FILES )
+    .pipe( tsProject() )
+    .pipe( srcmaps.init() )
+    .pipe( concat(DISTRO + '.js') )
+    .pipe( babel({presets: [es2015], plugins: [assign]}) )
+    .pipe( ngAnnotate() )
+    // .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe( dest('dist/') )
+    .pipe( uglify() )
+    // .on('error', function (err) { gutil.log(gutil.colors.red('[Error]'), err.toString()); })
+    .pipe( rename({extname: ".min.js"}) )
+    .pipe( srcmaps.write('./') )
+    .pipe( dest('dist/') );
+}
 
-gulp.task('concat', 'Concat only, do not minify', () => {
-    gulp.src(['src/js/module.js', 'src/js/**/*.js'])
-        .pipe(jshint(jshintConfig))
-        .pipe(srcmaps.init())
-        .pipe(concat(pkg.name + '.js'))
-        .pipe(srcmaps.write('./'))
-        .pipe(gulp.dest('dist/'))
-});
+var jsTask = series(jshintTask, jsSrcTask);
 
-gulp.task('jshint', function() {
-  return gulp.src(['src/js/module.js', 'src/js/**/*.js'])
-  .pipe(jshint(jshintConfig))
-  .pipe(jshint.reporter('jshint-stylish'));
-});
 
-gulp.task('clean', function() {
+//Concat only, do not minify',
+function concatTask() {
+    return src( ['src/js/module.js', 'src/js/**/*.js'] )
+    .pipe( jshint(jshintConfig) )
+    .pipe( srcmaps.init() )
+    .pipe( concat(DISTRO + '.js') )
+    .pipe( srcmaps.write('./') )
+    .pipe( dest('dist/') );
+}
+
+
+function cleanTask() {
   return del('dist');
-});
+}
 
-gulp.task('less', 'Compile less into a single app.css.', function() {
-
-    gulp.src([
-        'node_modules/geoplatform.style/src/less/variables.less',
-        'src/**/*.less'
-    ])
-        .pipe(concat(pkg.name + '.less'))
-        .pipe(gulp.dest('dist/'))
-        .pipe(notify('Compiled less'));
-
-    gulp.src(['dist/' + pkg.name + '.less'], {base: "."})
-        .pipe(less({
-            plugins: [autoprefix],
-            paths: ['./src/less']
-        }))
-        .on("error", notify.onError({message: 'LESS compile error: <%= error.message %>'}))
-        .pipe(gulp.dest('./'))
-        // .pipe(cssmin())
-        // .pipe(rename({ suffix: '.min' }))
-        // .pipe(gulp.dest('dist/css/'))
-        .pipe(notify('Compiled styles'));
-});
+//Compile less into a single app.css.
+var lessTask = series(
+    () => {
+        return src([
+            'node_modules/@geoplatform/style/src/less/variables.less',
+            'src/**/*.less'
+        ])
+        .pipe( concat(DISTRO + '.less') )
+        .pipe( dest('dist/') );
+    },
+    () => {
+        return src( ['dist/' + DISTRO + '.less'], {base: "."} )
+        .pipe( less({ plugins: [autoprefix], paths: ['./src/less'] }) )
+        // .on("error", notify.onError({message: 'LESS compile error: <%= error.message %>'}))
+        .pipe( dest('./') );
+        // .pipe(notify('Compiled styles'));
+    }
+);
 
 
-gulp.task('default', ['jshint', 'js', 'less']);
+var buildTask = series(jsTask, lessTask)
 
-gulp.task('watch', function() {
-    gulp.watch('src/**/*.less', ['less']);
-    gulp.watch('src/**/*.js', ['default']);
-    gulp.watch('src/**/*.ts', ['default']);
-});
+function watchTask() {
+    watch( 'src/**/*.less', lessTask );
+    watch( 'src/**/*.js',   buildTask );
+    watch( 'src/**/*.ts',   buildTask );
+}
+
+
+exports.js = jsTask;
+exports.less = lessTask;
+exports.clean = cleanTask;
+exports.concat = concatTask;
+exports.watch = watchTask;
+exports.default = buildTask;

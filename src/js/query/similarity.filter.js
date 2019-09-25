@@ -88,35 +88,33 @@
         },
         template:
         `
-            <div class="card c-query-filter" ng-if="$ctrl.value">
+            <div class="card o-query-filter" ng-if="$ctrl.value">
 
-                <div class="card-title">Find Similar</div>
-                <div class="card-content">
+                <div class="a-heading">Find Similar</div>
 
-                    <p class="u-text--sm">Searching for {{$ctrl.type}}s similar to the following: </p>
+                <p class="u-text--sm">Searching for {{$ctrl.type}}s similar to the following: </p>
 
-                    <div class="c-facets">
+                <div class="o-facets">
 
-                        <a class="c-facet__value" ng-if="$ctrl.value" ng-click="$ctrl.clearValue()">
-                            <span class="gpicons times-circle"></span>
-                            {{$ctrl.value.label}}
-                        </a>
+                    <a class="m-facet" ng-if="$ctrl.value" ng-click="$ctrl.clearValue()">
+                        <span class="gpicons times-circle"></span>
+                        {{$ctrl.value.label}}
+                    </a>
 
-                        <!--
-                        <a ng-if="$ctrl.mapId" class="c-facet__value"
-                            ng-click="$ctrl.toggleCurrentMap()" ng-class="{active:$ctrl.useMap}">
-                            <span class="gpicons check" ng-show="$ctrl.useMap"></span>
-                            <span class="gpicons square" ng-show="!$ctrl.useMap"></span>
-                            Find similar to my current map
-                        </a>
-                        -->
-
-                    </div>
-
-                    <br>
-                    <p class="u-text--sm">Note that query filters below are still being applied.</p>
+                    <!--
+                    <a ng-if="$ctrl.mapId" class="m-facet"
+                        ng-click="$ctrl.toggleCurrentMap()" ng-class="{active:$ctrl.useMap}">
+                        <span class="gpicons check" ng-show="$ctrl.useMap"></span>
+                        <span class="gpicons square" ng-show="!$ctrl.useMap"></span>
+                        Find similar to my current map
+                    </a>
+                    -->
 
                 </div>
+
+                <br>
+                <p class="u-text--sm">Note that query filters below are still being applied.</p>
+
             </div>
         `
     });

@@ -99,26 +99,28 @@
         },
         template:
         `
-            <div class="card c-query-filter">
-                <div class="card-title">
+            <div class="card o-query-filter">
+                <div class="a-heading">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
                         <span class="gpicons"
                             ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}">
                         </span>
+                        <span class="sr-only">Toggle topic filter options</span>
                     </button>
-                    Filter by Topic(s)
+                    Filter by Topics
                 </div>
-                <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
+                <div class="o-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
 
-                    <div class="c-facet__value">
+                    <div class="m-facet">
                         <div class="input-group-slick">
                             <input name="topic-typeahead" type="text" class="form-control"
                                 ng-model="$ctrl.typeaheadValue"
                                 ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
                                 ng-model-options="{debounce:200}"
-                                placeholder="Search by name">
+                                placeholder="Search by name"
+                                aria-label="Search topics by name">
                             <span class="gpicons times"
                                 title="Clear query"
                                 ng-if="$ctrl.typeaheadValue.length"
@@ -127,7 +129,7 @@
                         </div>
                     </div>
 
-                    <a class="c-facet__value" ng-click="$ctrl.clear()"
+                    <a class="m-facet" ng-click="$ctrl.clear()"
                         ng-class="{active:!$ctrl.hasSelections()}">
                         <span class="gpicons"
                             ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
@@ -136,7 +138,7 @@
                     </a>
 
                     <a ng-repeat="topic in $ctrl.values track by $index"
-                        class="c-facet__value"
+                        class="m-facet"
                         ng-click="$ctrl.toggle(topic.id)"
                         ng-class="{active:$ctrl.isSelected(topic.id)}">
                         <span class="gpicons check" ng-show="$ctrl.isSelected(topic.id)"></span>

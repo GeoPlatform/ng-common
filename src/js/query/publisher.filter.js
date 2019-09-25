@@ -106,70 +106,69 @@
         controller: PublisherFilter,
         template:
         `
-            <div class="card c-query-filter">
-                <div class="card-title">
+            <div class="card o-query-filter">
+                <div class="a-heading">
                     <button type="button" class="btn btn-sm btn-link"
                         title="{{$ctrl.collapse?'Expand':'Collapse'}}"
                         ng-click="$ctrl.collapse = !$ctrl.collapse">
                         <span class="gpicons" ng-class="{'minus':!$ctrl.collapse,'plus':$ctrl.collapse}"></span>
+                        <span class="sr-only">Toggle publisher filter options</span>
                     </button>
                     <span class="flex-1">Filter by Publishers</span>
                 </div>
-                <div class="card-content">
-                    <div class="c-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
+                <div class="o-facets" ng-class="{'is-collapsed':$ctrl.collapse}">
 
-                        <div class="c-facet__value">
-                            <div class="input-group-slick">
-                                <input name="publisher-typeahead" type="text" class="form-control"
-                                    ng-model="$ctrl.typeaheadValue"
-                                    ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
-                                    ng-model-options="{debounce:200}"
-                                    placeholder="Find a Publisher by name..."
-                                    aria-label="Find a publisher by name">
-                                <span class="gpicons times"
-                                    title="Clear query"
-                                    ng-if="$ctrl.typeaheadValue.length"
-                                    ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
-                                </span>
-                            </div>
-                        </div>
-
-                        <a class="c-facet__value" ng-click="$ctrl.clear()"
-                            ng-class="{active:!$ctrl.hasSelections()}">
-                            <span class="gpicons"
-                                ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                    <div class="m-facet">
+                        <div class="input-group-slick">
+                            <input name="publisher-typeahead" type="text" class="form-control"
+                                ng-model="$ctrl.typeaheadValue"
+                                ng-change="$ctrl.updateValues($ctrl.typeaheadValue)"
+                                ng-model-options="{debounce:200}"
+                                placeholder="Find a Publisher by name..."
+                                aria-label="Find a publisher by name">
+                            <span class="gpicons times"
+                                title="Clear query"
+                                ng-if="$ctrl.typeaheadValue.length"
+                                ng-click="$ctrl.updateValues($ctrl.typeaheadValue=null)">
                             </span>
-                            Any Publisher
-                        </a>
-                        <a  ng-repeat="value in $ctrl.values track by $index"
-                            class="c-facet__value"
-                            ng-click="$ctrl.toggle(value)"
-                            ng-class="{active:$ctrl.isSelected(value)}">
-
-                            <span class="badge pull-right">{{$ctrl.getCount(value)}}</span>
-                            <span class="gpicons"
-                                ng-class="{'check':$ctrl.isSelected(value),'square t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
-                            {{value.label}}
-                        </a>
-                        <div class="c-facet__value disabled t-fg--gray-md"
-                            ng-if="$ctrl.additionalValueCount">
-                            <em>plus {{$ctrl.additionalValueCount}} more options</em>
                         </div>
-
-
-
-                        <div class="c-facet__value disabled" ng-if="$ctrl.outsideResults.length">
-                            <em>The following selections are not in the above results</em>
-                        </div>
-
-                        <a ng-repeat="pub in $ctrl.outsideResults track by $index"
-                            class="c-facet__value active" ng-click="$ctrl.deselectOutside(pub)">
-                            <span class="badge pull-right">{{$ctrl.getCount(pub)}}</span>
-                            <span class="gpicons check"></span>
-                            {{pub.label || "Untitled Organization"}}
-                        </a>
-
                     </div>
+
+                    <a class="m-facet" ng-click="$ctrl.clear()"
+                        ng-class="{active:!$ctrl.hasSelections()}">
+                        <span class="gpicons"
+                            ng-class="{'check':!$ctrl.hasSelections(), 'square t-fg--gray-lt':$ctrl.hasSelections()}">
+                        </span>
+                        Any Publisher
+                    </a>
+                    <a  ng-repeat="value in $ctrl.values track by $index"
+                        class="m-facet"
+                        ng-click="$ctrl.toggle(value)"
+                        ng-class="{active:$ctrl.isSelected(value)}">
+
+                        <span class="badge pull-right">{{$ctrl.getCount(value)}}</span>
+                        <span class="gpicons"
+                            ng-class="{'check':$ctrl.isSelected(value),'square t-fg--gray-lt':!$ctrl.isSelected(value)}"></span>
+                        {{value.label}}
+                    </a>
+                    <div class="m-facet disabled t-fg--gray-md"
+                        ng-if="$ctrl.additionalValueCount">
+                        <em>plus {{$ctrl.additionalValueCount}} more options</em>
+                    </div>
+
+
+
+                    <div class="m-facet disabled" ng-if="$ctrl.outsideResults.length">
+                        <em>The following selections are not in the above results</em>
+                    </div>
+
+                    <a ng-repeat="pub in $ctrl.outsideResults track by $index"
+                        class="m-facet active" ng-click="$ctrl.deselectOutside(pub)">
+                        <span class="badge pull-right">{{$ctrl.getCount(pub)}}</span>
+                        <span class="gpicons check"></span>
+                        {{pub.label || "Untitled Organization"}}
+                    </a>
+
                 </div>
             </div>
         `

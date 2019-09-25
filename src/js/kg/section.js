@@ -5,9 +5,12 @@
     'use strict';
 
 
+    const CONCEPT = 'skos:Concept';
+
+
     class SectionController {
 
-        constructor($timeout, RecommenderService) {
+        constructor($timeout /*, RecommenderService */) {
             'ngInject';
 
             this.$timeout = $timeout;
@@ -19,7 +22,8 @@
             this.query = '';
             this.displayOptions = {
                 fetching: false,
-                showSuggested: false
+                showSuggested: false,
+                showCustom : false
             };
             this.paging = {
                 start: 0,
@@ -31,6 +35,10 @@
             //default section description if one was not provided
             if(!this.description)
                 this.description = '<em>No description provided</em>';
+
+            if(!this.service) {
+                console.log("[WARN] KG Section was not provided a service");
+            }
         }
 
         /**
@@ -116,6 +124,9 @@
             this.fetchOptions(this.query);
         }
 
+        /**
+         *
+         */
         clearOptions () {
 
             //clear query and available options
@@ -132,7 +143,7 @@
         }
 
         /**
-         * @param {integer} index - position in selected array of item removed
+         * @param index - integer position in selected array of item removed
          */
         remove (index) {
 
@@ -151,15 +162,15 @@
         }
 
         /**
-         * @param {object} value - item being checked for selection
-         * @return {boolean}
+         * @param value - item being checked for selection
+         * @return boolean
          */
         isSelected (value) {
             return value._selected || ~this.selected.indexOf( value.uri );
         }
 
         /**
-         * @param {object} value - item being selected
+         * @param value - item being selected
          */
         selectValue (value) {
             if(value._selected) return; //already selected
@@ -175,12 +186,93 @@
 
         }
 
+        /**
+         *
+         */
         updateCache () {
             this.selected = (this.ngModel || []).map( o => o.uri );
         }
 
+        /**
+         * @param open - boolean
+         */
         onDropdownToggled (open) {
             if(!open) this.clearOptions();
+        }
+
+        /**
+         * @param item GeoPlatform Concept resource
+         * @return string URL to access resource
+         */
+        getLinkTo( item ) {
+            let uri = item.uri;
+            if(!uri) return '#';
+
+            const GP_URI_PATTERN = new RegExp('^http(s)?\:\/\/www\.geoplatform\.gov\/id\/metadata\-codelists','i');
+            if(GP_URI_PATTERN.test(uri)) {
+                let baseHref = this.getPortalHref();
+                return baseHref + '/resources/concepts/' + item.id;
+            }
+            return uri;
+        }
+
+        /**
+         * @return string URL to Portal in same environment as this deployed code
+         */
+        getPortalHref() {
+            let url = Constants.portalUrl;
+            if(!url) {
+                url = Constants.ualUrl;
+                if(!url) return '';
+                if(url.indexOf("-ual.")) return url.replace('-ual', '');
+                else return url.replace('ual', 'www');
+            }
+            return url;
+        }
+
+        /**
+         *
+         */
+        toggleCreateCustom($event) {
+            this.displayOptions.showCustom = !this.displayOptions.showCustom;
+            if(!this.displayOptions.showCustom) {
+                this.customLabel = '';
+                this.customError = null;
+            }
+
+            if($event && $event.stopPropagation) {
+                $event.stopPropagation();
+            }
+        }
+
+        createCustom($event) {
+            let obj = {
+                type     : CONCEPT,
+                label    : this.customLabel,
+                prefLabel: this.customLabel
+            };
+
+            this.service.getCustomUri(obj).$promise
+            .then( response => {
+                obj.uri = response.uri;
+                return this.service.createCustom(obj).$promise;
+            })
+            .then( result => {
+                this.selectValue(result);   //add it to the selected list
+                this.toggleCreateCustom();
+            })
+            .catch( err => {
+                if(err.status === 409) {
+                    //Tell user their label is not unique enough...
+                    this.customError = "Your custom classifier's name is already taken";
+                } else {
+                    this.customError = err.message;
+                }
+            });
+
+            if($event && $event.stopPropagation) {
+                $event.stopPropagation();
+            }
         }
 
 
@@ -228,6 +320,7 @@
                 <div ng-repeat="item in $ctrl.ngModel track by $index" class="list-group-item">
                     <button type="button" class="btn btn-link" ng-click="$ctrl.remove($index)">
                         <span class="gpicons times-circle t-fg--danger"></span>
+                        <span class="sr-only">Deselect this item</span>
                     </button>
                     <div class="flex-1 u-pd--xs">
                         <div class="t-text--strong">
@@ -236,8 +329,8 @@
                             <span ng-if="!$ctrl.onActivate">{{item.label}}</span>
                         </div>
                         <div class="u-text--sm t-text--italic">
-                            <a href="{{item.uri}}" target="_blank" class="u-break--all"
-                                title="Open source info in new window">{{item.uri}}</a>
+                            <a href="{{$ctrl.getLinkTo(item)}}" target="_blank" class="u-break--all"
+                                title="Open source info in new window">{{$ctrl.getLinkTo(item)}}</a>
                         </div>
                         <div class="description" ng-if="item.description" ng-bind-html="item.description"></div>
                     </div>
@@ -259,54 +352,102 @@
                             ng-model="$ctrl.query"
                             ng-model-options="{ debounce: 250 }"
                             ng-change="$ctrl.fetchOptions($ctrl.query)"
-                            placeholder="Find values to add...">
+                            placeholder="Find values to add..."
+                            aria-label="Find values to add">
                     </div>
                 </div>
 
                 <div class="dropdown-menu" uib-dropdown-menu>
 
-                    <div class="form-group l-flex-container flex-justify-between flex-align-center">
-                        <div class="input-group-slick flex-1">
-                            <span class="gpicons"
-                                ng-class="{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}"></span>
-                            <input type="text" class="form-control"
-                                ng-model="$ctrl.query"
-                                ng-model-options="{ debounce: 250 }"
-                                ng-change="$ctrl.fetchOptions($ctrl.query)"
-                                placeholder="Find values to add...">
-                            <span class="gpicons times"
-                                ng-if="$ctrl.query.length"
-                                ng-click="$event.stopPropagation();$ctrl.clearQuery()"></span>
-                        </div>
-                        <button type="button" class="btn btn-info u-mg-left--xlg animated-show"
-                            ng-click="$ctrl.clearOptions();">
-                            Done
-                        </button>
-                    </div>
+                    <div ng-if="!$ctrl.displayOptions.showCustom">
 
-                    <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"></gp-pagination>
-
-                    <div class="list-group list-group-sm u-text--sm">
-                        <div ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item">
-                            <button type="button" class="btn btn-link" ng-click="$ctrl.selectValue(item)"
-                                ng-class="{disabled:item._selected}">
-                                <span class="gpicons check t-fg--gray-md" ng-show="item._selected"></span>
-                                <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
-                            </button>
-                            <div class="flex-1 u-pd--xs">
-                                <div class="u-break--all t-text--strong">{{item.prefLabel}}</div>
-                                <a href="{{item.uri}}" target="_blank"
-                                    class="u-break--all u-text--sm t-text--italic"
-                                    title="Open source info in new window">
-                                    {{item.uri}}
-                                </a>
-                                <div class="description">{{item.description||"No description provided"}}</div>
+                        <div class="form-group l-flex-container flex-justify-between flex-align-center">
+                            <div class="input-group-slick flex-1">
+                                <span class="gpicons"
+                                    ng-class="{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}"></span>
+                                <input type="text" class="form-control"
+                                    ng-model="$ctrl.query"
+                                    ng-model-options="{ debounce: 250 }"
+                                    ng-change="$ctrl.fetchOptions($ctrl.query)"
+                                    placeholder="Find values to add..."
+                                    aria-label="Find values to add">
+                                <span class="gpicons times"
+                                    ng-if="$ctrl.query.length"
+                                    ng-click="$event.stopPropagation();$ctrl.clearQuery()"></span>
                             </div>
+                            <button type="button" class="btn btn-info u-mg-left--xlg animated-show"
+                                ng-click="$ctrl.clearOptions();">
+                                Done
+                            </button>
                         </div>
-                        <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled u-pd--md">
-                            No results match your query
+
+                        <gp-pagination service="$ctrl" event-key="suggestions" use-select="true"></gp-pagination>
+
+                        <div class="list-group list-group-sm u-text--sm">
+                            <div ng-repeat="item in $ctrl.suggested track by $index" class="list-group-item">
+                                <button type="button" class="btn btn-link" ng-click="$ctrl.selectValue(item)"
+                                    ng-class="{disabled:item._selected}">
+                                    <span class="gpicons check t-fg--gray-md" ng-show="item._selected"></span>
+                                    <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
+                                    <span class="sr-only">Select or deselect this item</span>
+                                </button>
+                                <div class="flex-1 u-pd--xs">
+                                    <div class="u-break--all t-text--strong">{{item.prefLabel}}</div>
+                                    <a href="{{item.uri}}" target="_blank"
+                                        class="u-break--all u-text--sm t-text--italic"
+                                        title="Open source info in new window">
+                                        {{item.uri}}
+                                    </a>
+                                    <div class="description">{{item.description||"No description provided"}}</div>
+                                </div>
+                            </div>
+                            <div ng-if="!$ctrl.suggested.length" class="list-group-item disabled u-pd--md">
+                                No results match your query
+                            </div>
+
+                            <!-- create custom
+                            <div class="list-group-item">
+                                <button type="button" class="btn btn-link" ng-click="$ctrl.toggleCreateCustom($event)"
+                                    ng-class="{disabled:item._selected}">
+                                    <span class="gpicons plus-circle t-fg--success" ng-show="!item._selected"></span>
+                                    <span class="sr-only">Toggle custom creation fields</span>
+                                </button>
+                                <div class="flex-1 u-pd--xs">
+                                    <div class="t-text--strong">New custom classifier</div>
+                                    <div class="description">create a custom classifier to enrich this item</div>
+                                </div>
+                            </div>
+                            -->
+
+                        </div>
+
+                    </div>
+
+                    <div ng-if="$ctrl.displayOptions.showCustom">
+                        <div>
+                            Provide the name of the custom classifier and then a unique URI for it.
+                        </div>
+                        <div class="u-mg-top--sm>
+                            <label for="{{$ctrl.type}}CustomLabel">Name</label>
+                            <input type="text" class="form-control" id="{{$ctrl.type}}CustomLabel"
+                                ng-model="$ctrl.customLabel" placeholder="Name the classifier">
+                        </div>
+                        <div class="u-mg-top--sm">
+                            <button type="button" class="btn btn-sm btn-secondary"
+                                ng-click="$ctrl.toggleCreateCustom($event)">
+                                cancel
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success"
+                                ng-click="$ctrl.createCustom($event)"
+                                ng-disabled="!$ctrl.customLabel.length">
+                                create
+                            </button>
+                        </div>
+                        <div ng-if="$ctrl.customError">
+                            $ctrl.customError
                         </div>
                     </div>
+
                 </div>
             </div>
         `

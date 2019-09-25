@@ -249,7 +249,7 @@
 
         template:
         `
-            <div class="card c-query-filter c-filter__recommended-terms">
+            <div class="card o-query-filter c-filter__recommended-terms">
 
                 <div class="card-title">
                     <button type="button" class="btn btn-sm btn-link"
@@ -258,13 +258,14 @@
                         ng-click="$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse">
                         <span class="gpicons"
                             ng-class="{'minus':!$ctrl.displayOpts.collapse,'plus':$ctrl.displayOpts.collapse}"></span>
+                            <span class="sr-only">Toggle semantic filter options</span>
                     </button>
                     <span>Filter using Semantic Concepts</span>
                 </div>
 
-                <div class="c-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">
+                <div class="o-facets" ng-class="{'is-collapsed':$ctrl.displayOpts.collapse}">
 
-                    <div ng-hide="$ctrl.displayOpts.collapse">
+                    <div ng-hide="$ctrl.displayOpts.collapse" class="m-facet">
 
                         <div class="input-group-slick">
                             <span class="gpicons"
@@ -305,7 +306,7 @@
 
 
                     <!-- selected terms -->
-                    <div ng-repeat="term in $ctrl.values track by $index" class="c-facet__value active"
+                    <div ng-repeat="term in $ctrl.values track by $index" class="m-facet active"
                         title="Remove this term from the query"
                         ng-click="$ctrl.removeValue($index)">
 
