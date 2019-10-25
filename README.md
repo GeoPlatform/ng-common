@@ -96,7 +96,7 @@ Grant type authentication require a back end service (like node-gpoauth) to hand
 
 
 > **NOTE**:
-> For security reasons the JWT stored in local storage is scrambled. Passing the encoded value in the Authorization header will not validate server side.
+> For security reasons the JWT stored in cookie is scrambled. Passing the encoded value in the Authorization header will not validate server side.
 
 ### IFRAME Authentication
 Apps have the ability to allow for authentication via iframe and keep the user from having to redirect to the Oauth page for authentication. In the event that an app allows for iframe authentication it will need to implement handlers for login events. These events are fired from $rootScope for the application.
