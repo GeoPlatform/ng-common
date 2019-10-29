@@ -32,6 +32,7 @@ declare module ngcommon {
     LOGIN_URL?: string
     LOGOUT_URL?: string
     ALLOW_DEV_EDITS?: boolean
+    tokenCheckInterval: number
 
     // RPM Settings
     loadRPM?: boolean,

@@ -122,9 +122,9 @@
           };
         }
 
-        type userOrNothin = User
-                          | null
-                          | undefined
+        type userOrNothing = User
+                           | null
+                           | undefined
 
         /**
          * Authentication Service
@@ -132,6 +132,7 @@
         class AuthService implements ngcommon.AuthService {
 
           iframe: HTMLIFrameElement
+          preveiousTokenPresentCheck: boolean
 
           constructor(){
             const self = this;
@@ -202,11 +203,33 @@
               }
             }
 
+            // Setup active session checher
+            this.preveiousTokenPresentCheck = !!jwt
+            setInterval(() => { self.checkForLocalToken() }, Config.tokenCheckInterval)
+
             const user = this.getUserFromJWT(jwt)
             if(user)
-              $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
+              $rootScope.$broadcast("userAuthenticated", user)
 
             return user
+          }
+
+          /**
+           * Checks for the presence of token in cookie. If there has been a
+           * change (cookie appears or disapears) the fire event handlers to
+           * notify the appliction of the event.
+           */
+          private checkForLocalToken(){
+            const jwt = this.getJWT()
+            const tokenPresent = !!jwt
+            // compare with previous check
+            if (tokenPresent !== this.preveiousTokenPresentCheck)
+              tokenPresent ?
+                $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt)) :
+                $rootScope.$broadcast("userSignOut");
+
+            // update previous state for next check
+            this.preveiousTokenPresentCheck = tokenPresent
           }
 
           /**
@@ -328,7 +351,7 @@
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
-          getUser(callback?: (user: User) => any): userOrNothin {
+          getUser(callback?: (user: User) => any): User {
             const jwt = this.getJWT();
             // If callback provided we can treat async and call server
             if(callback && typeof(callback) === 'function'){
@@ -579,7 +602,8 @@
      * Interceptor that check for an updaed AccessToken coming from any request
      * and will take it and set it as the token to use in future outgoing
      * requests
-     */
+     *
+    */
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptors
 

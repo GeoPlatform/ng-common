@@ -9,7 +9,11 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 (function (jQuery, angular) {
     "use strict";
 
-    angular.module("gp-common", []).constant('GPConfig', function () {
+    angular.module("gp-common", [])
+    //Assumes a global object containing configuration values for GeoPlatform exists
+    // prior to this module being declared
+    // (using 'value' since config might change)
+    .constant('GPConfig', function () {
         // throw error if field missing
         function missing(field) {
             throw "ng.common: Required field in GeoPlatform is missing: " + field + "\n" + "Please see https://github.com/GeoPlatform/ng-common/tree/develop for configuration details";
@@ -42,6 +46,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
         GeoPlatform.ALLOWIFRAMELOGIN = !isIE11 && toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false);
         GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false);
+        GeoPlatform.tokenCheckInterval = GeoPlatform.tokenCheckInterval || 2000;
         return GeoPlatform;
     }());
 })(jQuery, angular);
@@ -69,7 +74,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 return RecommenderServiceFactory(type);
             }
         };
-    }]).service("RecommenderService", ["$resource", function ($resource) {
+    }])
+    /**
+     * Service that queries the recommendation service endpoint
+     * exposed by UAL
+     */
+    .service("RecommenderService", ["$resource", function ($resource) {
         var baseUrl = Constants.ualUrl + '/api/recommender';
         return $resource(baseUrl, {}, {
             query: {
@@ -89,7 +99,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 method: "POST"
             }
         });
-    }]).factory("RecommenderServiceFactory", ["$resource", function ($resource) {
+    }])
+    /**
+     * Factory for creating services that query the recommendation
+     * service endpoint exposed by UAL and includes object type
+     * parameter based upon owner of KG
+     */
+    .factory("RecommenderServiceFactory", ["$resource", function ($resource) {
         return function (type) {
             var baseUrl = Constants.ualUrl + '/api/recommender';
             return $resource(baseUrl, { 'for': type }, {
@@ -119,7 +135,12 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
                 }
             });
         };
-    }]).component('kgCompletionDisplay', {
+    }])
+    /**
+     * Component for rendering a brief % of completion
+     *
+     */
+    .component('kgCompletionDisplay', {
         bindings: {
             ngModel: '<' // the Asset containing the knowledge graph ('classifiers') property
         },
@@ -279,38 +300,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     }
 })();
 
-console.log('== local debugger scripts running ==');
-function getCurrentToken() {
-    return document.cookie.split(';').map(function (c) {
-        return c.trim().split('=');
-    }).reduce(function (acc, pair) {
-        acc[pair[0]] = pair[1];
-        return acc;
-    }, {})['gpoauth-a'];
-}
-function getJWT() {
-    var decoded = window.atob(window.decodeURIComponent(getCurrentToken()));
-    var base64Url = decoded.split('.')[1];
-    var base64 = base64Url.replace('-', '+').replace('_', '/');
-    return JSON.parse(window.atob(base64));
-}
-function timeToExp() {
-    var now = new Date();
-    var exp = new Date(getJWT().exp * 1000);
-    var diff = (exp - now) / 1000;
-    var mins = diff / 60;
-    return Math.floor(mins > 0 ? mins : 0) + ":" + Math.floor(mins > 0 ? diff % 60 : diff);
-}
-function tokenDemo(token) {
-    var len = token && token.length;
-    return len ? token.substring(0, 4) + "..[" + len + "].." + token.substring(len - 4) : '[No token]';
-}
-setInterval(function () {
-    try {
-        console.log(timeToExp());
-    } catch (e) {}
-}, 10000);
-
 (function (root, factory) {
     if (typeof define === "function" && define.amd) {
         // Now we're wrapping the factory and assigning the return
@@ -351,9 +340,10 @@ setInterval(function () {
             });
         }
         AuthenticatedComponent.prototype.$onInit = function () {
-            // this.authService.getUser( (user) => {
-            //     this.onAuthEvent(null, user);
-            // });
+            var _this = this;
+            this.authService.getUser(function (user) {
+                _this.onAuthEvent(null, user);
+            });
         };
         AuthenticatedComponent.prototype.$onDestroy = function () {
             this.authListener();
@@ -393,6 +383,104 @@ setInterval(function () {
     }();
     return AuthenticatedComponent;
 });
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common")
+    /**
+     * Custom filter to make label values visually helpful by
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular) {
     "use strict";
@@ -466,7 +554,6 @@ setInterval(function () {
         }
         return error;
     }
-<<<<<<< HEAD
     /**
      * converts a decimal (base 10) number to hex (base 16) string
      *
@@ -670,8 +757,6 @@ setInterval(function () {
     "use strict";
 
     angular.module("gp-common")
-=======
->>>>>>> DT-2812: Move to cookie storage of AccessToken
     /**
      * Header directive for GeoPlatform Angular-based web applications
      *
@@ -680,7 +765,6 @@ setInterval(function () {
      * The home link is not enabled by default but can be shown using 'show-home-link="true"'
      * parameter on the directive.
      *
-<<<<<<< HEAD
      * Note: any links transcluded should reference '$parent.user' to access authenticated user info
      *
      * ex:
@@ -693,192 +777,6 @@ setInterval(function () {
      *   </div>
      */
     .directive('gpHeader', ['GPConfig', 'AuthenticationService', function (Config, AuthenticationService) {
-=======
-     * @param rgb object { r: 0, g: 0, b: 0 }
-     * @returns {*} hexadecimal string
-     */
-    function rgbToHex(rgb) {
-        var result = null;
-        var r = componentToHex(parseInt(rgb.r, 10));
-        var g = componentToHex(parseInt(rgb.g, 10));
-        var b = componentToHex(parseInt(rgb.b, 10));
-        if (r && g && b) result = '#' + r + g + b;
-        return result;
-    }
-    /**
-     * determines whether a hex value is valid
-     *
-     * @param hex string value
-     * @returns hex value or null if hex is invalid
-     */
-    function validHex(hex) {
-        return (/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex) || null
-        );
-    }
-    /**
-     * converts a hex string to rgb object
-     *
-     * @param hex string
-     * @returns {*} rgb object { r: 0, g: 0, b: 0 }
-     */
-    function hexToRgb(hex) {
-        // Expand shorthand form (e.g. '03F') to full form (e.g. '0033FF')
-        var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-        hex = hex.replace(shorthandRegex, function (m, r, g, b) {
-            return r + r + g + g + b + b;
-        });
-        var result = validHex(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
-    }
-    /**
-     * Advanced Color Picker Directive (advanced-color-picker)
-     * This color picker is meant to augment the functionality in angular-bootstrap-colorpicker
-     * It adds the ability to change the color with RGB and Hex
-     * It needs to be used in a container that has at least 160px of vertical real estate
-     *
-     * You must pass in the following:
-     *   - ngModel  (a hexadecimal string color value)
-     *   - onChange (the event to be fired when the value changes)
-     *
-     * Usage Example:
-     * <div advanced-color-picker ng-model="hexColor" ng-change="changeEvent()"></div>
-     */
-    angular.module('gp-common').component('gpColorPicker', {
-        bindings: {
-            ngModel: '=',
-            onChange: '&'
-        },
-        controller: ["$timeout", "$q", function controller($timeout, $q) {
-            // fired when an rgb value is changed
-            this.changeRGB = function () {
-                // make sure rgb color value is correct
-                this.rgbError = invalidRGB(this.rgb);
-                // parse it anyways leaving hex value blank until valid rbg
-                this.ngModel = rgbToHex(this.rgb);
-                // have to use timeout to make sure ngModel is set before
-                // firing change event upstream
-                var self = this;
-                $timeout(function () {
-                    self.onChange({ value: self.ngModel });
-                });
-            };
-            // fired when a hex value is changed
-            this.changeHex = function () {
-                // make sure the hex color value is correct
-                if (!validHex(this.ngModel)) this.hexError = 'Invalid hex color value';else this.hexError = false;
-                // parse it anyway leaving rgb values blank until it's a valid hex
-                this.rgb = hexToRgb(this.ngModel);
-                // have to use timeout to make sure ngModel is set before
-                // firing change event upstream
-                var self = this;
-                $timeout(function () {
-                    self.onChange({ value: self.ngModel });
-                });
-            };
-            this.$onInit = function () {
-                this.rgb = hexToRgb(this.ngModel);
-            };
-        }],
-        template: "\n            <div class=\"gp-colorpicker\">\n                <div class=\"form-group hex-form-group\" ng-class=\"{'has-error':$ctrl.hexError}\">\n                    <input type=\"text\" class=\"form-control\"\n                        ng-model=\"$ctrl.ngModel\" ng-keyup=\"$ctrl.changeHex()\">\n                </div>\n                <div class=\"gp-colorpicker__wrapper\">\n                    <div colorpicker colorpicker-inline=\"true\" colorpicker-parent=\"true\" \n                        ng-model=\"$ctrl.ngModel\" ng-change=\"$ctrl.changeHex()\"></div>\n                </div>\n                <div class=\"form-group rgb-form-group\" ng-class=\"{'has-error':$ctrl.rgbError}\">\n                    <input type=\"text\" class=\"form-control\"\n                        placeholder=\"R\" ng-model=\"$ctrl.rgb.r\" ng-keyup=\"$ctrl.changeRGB()\" title=\"R\">\n                    <input type=\"text\" class=\"form-control\"\n                        placeholder=\"G\" ng-model=\"$ctrl.rgb.g\" ng-keyup=\"$ctrl.changeRGB()\" title=\"G\">\n                    <input type=\"text\" class=\"form-control\"\n                        placeholder=\"B\" ng-model=\"$ctrl.rgb.b\" ng-keyup=\"$ctrl.changeRGB()\" title=\"B\">\n                </div>\n            </div>\n        "
-    });
-})(jQuery, angular);
-
-(function (jQuery, angular) {
-    'use strict';
-
-    angular.module('gp-common').directive('gpDatePicker', ['$timeout', function ($timeout) {
-        return {
-            scope: {
-                label: '@',
-                format: '@',
-                date: '=',
-                onChange: '&?'
-            },
-            template: ['<div class="input-group-slick">', '    <input type="text" class="form-control" placeholder="{{::label}}"', '        datepicker-popup="{{format}}" ng-model="date" is-open="opened" />', '    <span class="gpicons calendar" ng-click="toggle($event)"></span>', '</div>', '<p class="help-block"><small><em>Ex: "2015-01-31" or "Jan 31 2015"</em></small></p>'].join(' '),
-            controller: ["$scope", "$element", "$attrs", function controller($scope, $element, $attrs) {
-                //toggle date picker
-                $scope.toggle = function (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    this.opened = !this.opened;
-                };
-                if (!$scope.format) $scope.format = 'MMM dd yyyy';
-                var promise = null;
-                $scope.debounce = function () {
-                    if (promise) $timeout.cancel(promise);
-                    promise = $timeout(function () {
-                        promise = null;
-                        if ($scope.onChange) $scope.onChange();
-                    }, 200);
-                };
-                $scope.$watch('date', function () {
-                    $scope.debounce();
-                });
-                var listener = $scope.$on('$destroy', function () {
-                    listener(); //deregister listener
-                    if (promise) $timeout.cancel(promise);
-                    promise = null;
-                    $scope.opened = false; //close picker if open
-                    $scope.onChange = null;
-                    $scope.format = null;
-                    $scope.debounce = null;
-                });
-            }]
-        };
-    }]);
-})(jQuery, angular);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").directive('gpGeolocation', ['$window', function ($window) {
-        var defaultBtnLabel = "Locate";
-        return {
-            scope: {
-                label: '=?'
-            },
-            restrict: "EA",
-            template: ['<a class="btn btn-primary" ng-click="geolocate()" ng-if="available">', '  <span class="gpicons crosshairs" ng-if="!loading"></span>', '  <span class="gpicons hourglass u-spin" ng-if="loading"></span>', '  {{btnLabel}}', '</a>', '<div ng-if="error">{{error}}</div>'].join(' '),
-            controller: ["$scope", function controller($scope) {
-                $scope.btnLabel = $scope.label || defaultBtnLabel;
-                $scope.loading = false;
-                $scope.available = $window.navigator && $window.navigator.geolocation;
-                if (!$scope.available) $scope.error = "Your browser does not support determining location";
-                $scope.geolocate = function () {
-                    $scope.loading = true;
-                    $window.navigator.geolocation.getCurrentPosition(function (position) {
-                        $scope.$apply(function () {
-                            $scope.loading = false;
-                        });
-                        $scope.$emit('map:geolocation', position.coords.latitude, position.coords.longitude);
-                    }, function (error) {
-                        switch (error.code) {
-                            case 1:
-                                $scope.error = "Permission was denied while attempting to determine location";
-                                break;
-                            case 2:
-                                $scope.error = "Unable to determine your location";
-                                break;
-                            case 3:
-                                $scope.error = "Unable to determine location in a reasonable amount of time";
-                                break;
-                        }
-                    });
-                };
-            }]
-        };
-    }]);
-})(jQuery, angular);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").directive('gpHeader', ['GPConfig', 'AuthenticationService', function (Config, AuthenticationService) {
->>>>>>> DT-2812: Move to cookie storage of AccessToken
         return {
             scope: {
                 brand: "@",
@@ -900,7 +798,23 @@ setInterval(function () {
                 $element.find('.transcluded').replaceWith(transcludeFn());
             }
         };
-    }]).directive('gpHeaderMenu', ['$location', function ($location) {
+    }])
+    /**
+     * Header Menu
+     *
+     * Monitors the current page URL and updates the header links
+     * to highlight whichever one is associated with the current page
+     *
+     * Usage:
+     *
+     *  <ul role="menu" class="header__menu" gp-header-menu>
+     *      <li><a href="#/maps">Maps</a></li>
+     *      <li><a href="#/galleries">Galleries</a></li>
+     *      ...
+     *  </ul>
+     *
+     */
+    .directive('gpHeaderMenu', ['$location', function ($location) {
         //default href for "home" link in header__menu
         //uses 'goHome' to avoid angular-route issues with empty hash not
         // triggering a page reload. Relies upon the "otherwise" condition
@@ -947,7 +861,20 @@ setInterval(function () {
                 });
             }
         };
-    }]).directive('gpFlexHeader', ['GPConfig', 'AuthenticationService', function (Config, AuthenticationService) {
+    }])
+    /**
+     *
+     * Usage:
+     *
+     *    <div ng-cloak gp-flex-header show-home-link="true" brand="Application Name">
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *      <li><a>Menu Item</a></li>
+     *    </div>
+     *
+     */
+    .directive('gpFlexHeader', ['GPConfig', 'AuthenticationService', function (Config, AuthenticationService) {
         return {
             scope: {
                 brand: "@",
@@ -1011,12 +938,14 @@ setInterval(function () {
                 var map = $scope.mapThumbnail;
                 if (map.$promise && !map.$resolved) {
                     map.$promise.then(function (m) {
-                        if (typeof m.thumbnail === 'string') $element.attr('src', getUrl(m));else buildThumbnail(m); //open map model
+                        if (typeof m.thumbnail === 'string') //old map model
+                            $element.attr('src', getUrl(m));else buildThumbnail(m); //open map model
                     }).catch(function (e) {
                         $element.attr('src', null);
                     });
                 } else {
-                    if (typeof map.thumbnail === 'string') $element.attr('src', getUrl(map));else buildThumbnail(map);
+                    if (typeof map.thumbnail === 'string') //old map model
+                        $element.attr('src', getUrl(map));else buildThumbnail(map);
                 }
                 function buildThumbnail(map) {
                     if (!map.thumbnail) {
@@ -1072,15 +1001,21 @@ setInterval(function () {
                 (item.$promise || $q.resolve(item)).then(function (obj) {
                     var url = $scope.fallback;
                     //maps
-                    if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";else if (obj.assetType && obj.assetType === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.assetId + "/thumbnail";else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;else if (obj.thumbnail && obj.thumbnail.contentData) {
-                        var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
-                        //if directive is on a responsive item (aka, in a gp-ui-card),
-                        // ignore thumbnail dimensions. Otherwise, use them
-                        if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
-                            style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
-                        }
-                        $element.find('img').attr('style', style);
-                    }
+                    if (obj.type && obj.type === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.id + "/thumbnail";
+                    //maps as gallery items
+                    else if (obj.assetType && obj.assetType === 'Map') url = Constants.ualUrl + "/api/maps/" + obj.assetId + "/thumbnail";
+                        //other thumbnail'ed items with URLs
+                        else if (obj.thumbnail && obj.thumbnail.url) url = obj.thumbnail.url;
+                            //other thumbnail'ed items with base64 content
+                            else if (obj.thumbnail && obj.thumbnail.contentData) {
+                                    var style = 'background-size:contain;' + 'background-repeat:no-repeat;' + 'background-image: url(data:' + (obj.thumbnail.mediaType || 'image/png') + ';base64,' + obj.thumbnail.contentData + ');';
+                                    //if directive is on a responsive item (aka, in a gp-ui-card),
+                                    // ignore thumbnail dimensions. Otherwise, use them
+                                    if ($element.attr('class').indexOf('embed-responsive-item') < 0) {
+                                        style += 'width:' + (obj.thumbnail.width || '32') + 'px;' + 'height:' + (obj.thumbnail.height || '32') + 'px;';
+                                    }
+                                    $element.find('img').attr('style', style);
+                                }
                     $scope.hasThumbnail = !!url;
                     $element.find('img').attr('src', url);
                     if ($scope.isLink) {
@@ -1098,7 +1033,9 @@ setInterval(function () {
 (function (angular) {
     "use strict";
 
-    angular.module('gp-common').service('NotificationService', ['$rootScope', function ($rootScope) {
+    angular.module('gp-common')
+    //
+    .service('NotificationService', ['$rootScope', function ($rootScope) {
         var Service = function Service() {
             this.items = [];
         };
@@ -1134,7 +1071,9 @@ setInterval(function () {
             }
         };
         return new Service();
-    }]).directive('gpNotifications', ['$timeout', 'NotificationService', function ($timeout, NotificationService) {
+    }])
+    // Usage: <gp-notifications />
+    .directive('gpNotifications', ['$timeout', 'NotificationService', function ($timeout, NotificationService) {
         return {
             scope: {
                 expiration: '@'
@@ -1311,7 +1250,9 @@ setInterval(function () {
 (function (jQuery, angular) {
     "use strict";
 
-    angular.module('gp-common').provider('responsiveHelper', ["$windowProvider", function ($windowProvider) {
+    angular.module('gp-common')
+    //helper to determine size of window for responsive breakpoint purposes
+    .provider('responsiveHelper', ["$windowProvider", function ($windowProvider) {
         var $window = $windowProvider.$get();
         function Helper($window) {
             this.window = $window;
@@ -1337,7 +1278,10 @@ setInterval(function () {
         this.$get = function () {
             return helper;
         };
-    }]).directive('gpResponsive', ['$window', 'responsiveHelper', function ($window, responsiveHelper) {
+    }])
+    //directive which appends appropriate responsive breakpoint classNames to the element
+    // on which it's set
+    .directive('gpResponsive', ['$window', 'responsiveHelper', function ($window, responsiveHelper) {
         return {
             restrict: "A",
             link: function link($scope, $element, $attrs) {
@@ -1464,7 +1408,8 @@ setInterval(function () {
                 // backspace, delete, and numbers
                 if (code === 8 || //backspace
                 code === 46 || //delete
-                code >= 44 && code <= 57) return;
+                code >= 44 && code <= 57) //comma, hyphen, period and numbers (0-9)
+                    return;
                 //NOTE: keyPress period is 46. keyDown it is 190
                 $event.preventDefault();
                 return false; //ignore key
@@ -1527,7 +1472,13 @@ setInterval(function () {
                 inputLinkFunction($scope, $element, $attrs, ngModelController, $timeout);
             }
         };
-    }]).directive('gpSlickFormDate', ['$timeout', '$filter', function ($timeout, $filter) {
+    }])
+    /**
+     *
+     * Notes:
+     *  - use 'form form-inline' classes for editable date so the field doesn't take up whole line
+     */
+    .directive('gpSlickFormDate', ['$timeout', '$filter', function ($timeout, $filter) {
         return {
             restrict: 'AE',
             require: 'ngModel',
@@ -1619,8 +1570,10 @@ setInterval(function () {
                 };
                 $scope.onKeyUp = function (code) {
                     if (code === 13) {
+                        //enter
                         $scope.done();
                     } else if (code === 27) {
+                        //esc
                         $scope.cancel();
                     }
                 };
@@ -1747,8 +1700,10 @@ setInterval(function () {
                 };
                 $scope.onKeyUp = function (code) {
                     if (code === 13 && !$scope.error) {
+                        //enter
                         $scope.save();
                     } else if (code === 27) {
+                        //esc
                         $scope.cancel();
                     }
                 };
@@ -2213,1700 +2168,6 @@ setInterval(function () {
     });
 })(angular, GeoPlatform);
 
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common").filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    }).filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common")
-    /**
-     * Custom filter to make label values visually helpful by
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
-
-(function (angular, Constants) {
-    'use strict';
-
-    var KGEditor = /** @class */function () {
-        KGEditor.$inject = ["$rootScope", "$element", "KGFields", "KGHelper"];
-        function KGEditor($rootScope, $element, KGFields, KGHelper) {
-            'ngInject';
-
-            this.$rootScope = $rootScope;
-            this.$element = $element;
-            this.fields = KGFields.slice(0);
-            this.helper = KGHelper;
-        }
-        KGEditor.prototype.$onInit = function () {
-            this.displayOptions = {};
-            this.completion = 0;
-            this.service = this.helper.getService(this.ngModel.type);
-            this.descriptions = {
-                purpose: 'The intended use or reason for the Object (i.e., layer, map, gallery) e.g., environmental impact of an oil spill.',
-                'function': 'The business actions, activities, or tasks this Object is intended to support (i.e., the role it plays in supporting an activity).  e.g., environmental impact assessment.',
-                audience: 'The group of people for which this Object was intended to be used. e.g., general public, disaster recovery personnel, Congress.',
-                community: 'The GeoPlatform community this Object was produced for. e.g., "Ecosystems and Biodiversity" community',
-                place: 'The central locale or common names for the place where the Subjects of the Object occur. e.g.,  USA/Gulf Coast',
-                category: 'The type or category of the Object.  e.g., topographic map, elevation layer',
-                primarySubject: 'The selected things, events, or concepts forming part of or represented by the Object. e.g., Deep Water Horizon oil rig, oil slick extent, oil slick movement over time, predicted oil slick movement, impacted sites, impact severity.',
-                secondarySubject: 'Second-order subjects derived by machine processing/ analysis of the target Object',
-                primaryTopic: 'The central branch of knowledge or theme pertaining to the thing, concept, situation, issue, or event of interest. e.g., environmental impact of oil spill.',
-                secondaryTopic: 'Second-order topics derived by machine processing/ analysis of the target Object'
-            };
-            if (!this.ngModel.classifiers) this.ngModel.classifiers = {};
-            this.calculatePercentage();
-        };
-        KGEditor.prototype.$onDestroy = function () {
-            this.$rootScope = null;
-            this.ngModel = null;
-            this.helper = null;
-            this.fields = null;
-            this.service = null;
-        };
-        /**
-         * @param {string} property - name of KG property being modified
-         * @param {array[object]} values - new values to assign to the property (includes old values)
-         */
-        KGEditor.prototype.onChange = function (property, values) {
-            // console.log("Changed " + property + " with " + (values?values.length:0) + " values");
-            this.ngModel.classifiers[property] = values;
-            this.calculatePercentage();
-        };
-        /**
-         * @param {string} classifier - KG property whose value has been activated
-         * @param {object} value - selected value being activated
-         */
-        KGEditor.prototype.onValueClick = function (classifier, value) {
-            if (this.onActivate) {
-                this.onActivate({ classifier: classifier, value: value });
-            }
-        };
-        /**
-         *
-         */
-        KGEditor.prototype.calculatePercentage = function () {
-            this.completion = this.helper.calculate(this.ngModel.classifiers);
-        };
-        return KGEditor;
-    }();
-    angular.module('gp-common-kg').component('kgEditor', {
-        require: {
-            // formCtrl: '^form',
-            ngModelCtrl: 'ngModel'
-        },
-        bindings: {
-            ngModel: '=',
-            onActivate: '&' //function to invoke on KG item activation (click)
-        },
-        controller: KGEditor,
-        template: "\n            <div class=\"c-kg-editor\">\n                <div class=\"c-kg-editor__header l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"flex-1 m-article\">\n                        <div class=\"m-article__heading\">Knowledge Graph</div>\n                        <div class=\"u-text--sm\">\n                            Knowledge graphs (KGs) are formed from classifiers for several dimensions of GeoPlatform items\n                            (layers, maps, galleries, etc), including <em>Purpose</em>, <em>Scope</em>,\n                            <em>Fitness for Use</em>, and <em>Social Context</em>.\n                            <br>\n                            <br>\n                            Knowledge graphs are used to answer questions about items, such as:\n                            <ul>\n                            <li>Why was the item created?</li>\n                            <li>Why is it useful for others?</li>\n                            <li>Why is it appropriate to be used?</li>\n                            </ul>\n                        </div>\n                    </div>\n                    <gp-progress-circle ng-model=\"$ctrl.completion\" class=\"u-mg-left--xlg u-mg-right--xlg\"></gp-progress-circle>\n                </div>\n\n                <div class=\"c-kg-editor__content\">\n\n                    <div class=\"m-article\">\n                        <div class=\"m-article__heading\">Purpose</div>\n                        <div class=\"m-article__desc c-kg-editor__section\">\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.purposes\"\n                                on-change=\"$ctrl.onChange('purposes', values)\"\n                                on-activate=\"$ctrl.onValueClick('purposes', value)\"\n                                type=\"Purpose\"\n                                label=\"Purpose\"\n                                description=\"{{$ctrl.descriptions.purpose}}\">\n                            </kg-section>\n                        </div>\n                    </div>\n\n\n                    <div class=\"m-article\">\n                        <div class=\"m-article__heading\">Scope</div>\n                        <div class=\"m-article__desc c-kg-editor__section\">\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.primaryTopics\"\n                                on-change=\"$ctrl.onChange('primaryTopics', values)\"\n                                on-activate=\"$ctrl.onValueClick('primaryTopics', value)\"\n                                type=\"Topic\"\n                                label=\"Primary Topics\"\n                                description=\"{{$ctrl.descriptions.primaryTopic}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.secondaryTopics\"\n                                on-change=\"$ctrl.onChange('secondaryTopics', values)\"\n                                on-activate=\"$ctrl.onValueClick('secondaryTopics', value)\"\n                                type=\"Topic\"\n                                label=\"Secondary Topics\"\n                                description=\"{{$ctrl.descriptions.secondaryTopic}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.primarySubjects\"\n                                on-change=\"$ctrl.onChange('primarySubjects', values)\"\n                                on-activate=\"$ctrl.onValueClick('primarySubjects', value)\"\n                                type=\"Subject\"\n                                label=\"Primary Subjects\"\n                                description=\"{{$ctrl.descriptions.primarySubject}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.secondarySubjects\"\n                                on-change=\"$ctrl.onChange('secondarySubjects', values)\"\n                                on-activate=\"$ctrl.onValueClick('secondarySubjects', value)\"\n                                type=\"Subject\"\n                                label=\"Secondary Subjects\"\n                                description=\"{{$ctrl.descriptions.secondarySubject}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.categories\"\n                                on-change=\"$ctrl.onChange('categories', values)\"\n                                on-activate=\"$ctrl.onValueClick('categories', value)\"\n                                type=\"Category\"\n                                label=\"Categories\"\n                                description=\"{{$ctrl.descriptions.category}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.communities\"\n                                on-change=\"$ctrl.onChange('communities', values)\"\n                                on-activate=\"$ctrl.onValueClick('communities', value)\"\n                                type=\"Community\"\n                                label=\"Communities\"\n                                description=\"{{$ctrl.descriptions.community}}\">\n                            </kg-section>\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.places\"\n                                on-change=\"$ctrl.onChange('places', values)\"\n                                on-activate=\"$ctrl.onValueClick('places', value)\"\n                                type=\"Place\"\n                                label=\"Places\"\n                                description=\"{{$ctrl.descriptions.place}}\">\n                            </kg-section>\n                        </div>\n                    </div>\n\n                    <div class=\"m-article\">\n                        <div class=\"m-article__heading\">Fitness for Use</div>\n                        <div class=\"m-article__desc c-kg-editor__section\">\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.functions\"\n                                on-change=\"$ctrl.onChange('functions', values)\"\n                                on-activate=\"$ctrl.onValueClick('functions', value)\"\n                                type=\"Function\"\n                                label=\"Function\"\n                                description=\"{{$ctrl.descriptions.function}}\">\n                            </kg-section>\n                        </div>\n                    </div>\n\n                    <div class=\"m-article\">\n                        <div class=\"m-article__heading\">Social Context</div>\n                        <div class=\"m-article__desc c-kg-editor__section\">\n                            <kg-section\n                                service=\"$ctrl.service\"\n                                ng-model=\"$ctrl.ngModel.classifiers.audiences\"\n                                on-change=\"$ctrl.onChange('audiences', values)\"\n                                on-activate=\"$ctrl.onValueClick('audiences', value)\"\n                                type=\"Audience\"\n                                label=\"Audiences\"\n                                description=\"{{$ctrl.descriptions.audience}}\">\n                            </kg-section>\n                        </div>\n                    </div>\n\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
-(function (angular, Constants) {
-    'use strict';
-
-    var CONCEPT = 'skos:Concept';
-    var SectionController = /** @class */function () {
-        SectionController.$inject = ["$timeout"];
-        function SectionController($timeout /*, RecommenderService */) {
-            'ngInject';
-
-            this.$timeout = $timeout;
-            // this.service = RecommenderService;
-        }
-        SectionController.prototype.$onInit = function () {
-            this.noResults = false;
-            this.query = '';
-            this.displayOptions = {
-                fetching: false,
-                showSuggested: false,
-                showCustom: false
-            };
-            this.paging = {
-                start: 0,
-                size: 5,
-                sizeOptions: [5, 10, 20]
-            };
-            this.updateCache();
-            //default section description if one was not provided
-            if (!this.description) this.description = '<em>No description provided</em>';
-            if (!this.service) {
-                console.log("[WARN] KG Section was not provided a service");
-            }
-        };
-        /**
-         * Update cache when bound 'ngModel' is actually assigned in the component lifecycle
-         */
-        SectionController.prototype.$onChanges = function () {
-            this.updateCache();
-        };
-        SectionController.prototype.$onDestroy = function () {
-            this.eventHandlers = null;
-            this.clearOptions();
-            this.selected = null;
-            this.service = null;
-            this.$timeout = null;
-        };
-        /**
-         *
-         * @param {object} item - selected value being activated (clicked on for navigation)
-         */
-        SectionController.prototype.activate = function (item) {
-            if (this.onActivate) this.onActivate({ value: item });
-        };
-        SectionController.prototype.on = function (event, callback) {
-            this.eventHandlers = this.eventHandlers || {};
-            this.eventHandlers[event] = this.eventHandlers[event] || [];
-            this.eventHandlers[event].push(callback);
-        };
-        SectionController.prototype.notify = function (event, data) {
-            if (!this.eventHandlers || !this.eventHandlers[event]) return;
-            angular.forEach(this.eventHandlers[event], function (handler) {
-                try {
-                    handler(data);
-                } catch (e) {}
-            });
-        };
-        /**
-         * @param {string} query - keywords provided by user input
-         * @return {Promise} resolving an array of results
-         */
-        SectionController.prototype.fetchOptions = function (query) {
-            var _this = this;
-            //need this timeout or else 'this.query' isn't being
-            // seen as having the same value as 'query'
-            this.$timeout(function () {
-                _this.query = query;
-            }, 10);
-            this.displayOptions.fetching = true;
-            var params = {
-                type: this.type,
-                q: query,
-                page: Math.floor(this.paging.start / this.paging.size),
-                size: this.paging.size
-            };
-            // if(this.forType)
-            //     params['for'] = this.forType;
-            return this.service.query(params).$promise.then(function (response) {
-                _this.paging.total = response.totalResults;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-                _this.suggested = response.results.map(function (result) {
-                    result._selected = _this.isSelected(result);
-                    return result;
-                });
-                _this.displayOptions.showSuggested = true;
-                return _this.suggested;
-            }).catch(function (e) {
-                _this.paging.total = 0;
-                _this.notify('gp:browse:suggestions:pagination', _this.paging);
-                _this.suggested = [];
-                return _this.suggested;
-            }).finally(function () {
-                return _this.displayOptions.fetching = false;
-            });
-        };
-<<<<<<< HEAD
-        SectionController.prototype.clearQuery = function () {
-            this.query = '';
-            this.fetchOptions(this.query);
-=======
-        RecommendedTermFilter.prototype.hasSelections = function () {
-            return this.values.length;
-        };
-        RecommendedTermFilter.prototype.isSelected = function (item) {
-            return this.values.filter(function (v) {
-                return v.uri === item.uri;
-            }).length;
-        };
-        RecommendedTermFilter.prototype.removeValue = function (index) {
-            if (this.values.length >= index) {
-                var removed_1 = this.values.splice(index, 1)[0]; //remove from selected
-                this.update(); //update overall browse query
-                //update associated item in suggested list (if visible)
-                if (this.suggested.length) {
-                    var match = this.suggested.find(function (i) {
-                        return i.uri === removed_1.uri;
-                    });
-                    if (match) match._selected = false;
-                }
-            }
-        };
-        RecommendedTermFilter.prototype.clear = function () {
-            this.values = [];
-            this.update();
-        };
-        RecommendedTermFilter.prototype.update = function () {
-            var value = this.values.length ? this.values.map(function (v) {
-                return v.uri;
-            }) : null;
-            this.service.applyOption(PARAMETER, value, true);
-        };
-        /* -------- pagination methods ----------- */
-        RecommendedTermFilter.prototype.on = function (event, callback) {
-            this.eventHandlers = this.eventHandlers || {};
-            this.eventHandlers[event] = this.eventHandlers[event] || [];
-            this.eventHandlers[event].push(callback);
-        };
-        RecommendedTermFilter.prototype.notify = function (event, data) {
-            var _this = this;
-            if (!this.$timeout || !this.eventHandlers || !this.eventHandlers[event]) return;
-            this.$timeout(function () {
-                angular.forEach(_this.eventHandlers[event], function (handler) {
-                    try {
-                        handler(data);
-                    } catch (e) {}
-                });
-            }, 100);
-        };
-        RecommendedTermFilter.prototype.getPagination = function () {
-            return this.paging;
-        };
-        RecommendedTermFilter.prototype.start = function (index) {
-            this.paging.start = index;
-            this.getOptions();
-        };
-        RecommendedTermFilter.prototype.size = function (value) {
-            this.paging.size = value;
-            this.getOptions();
-        };
-        return RecommendedTermFilter;
-    }();
-    angular.module('gp-common').component('recommendedTermFilter', {
-        bindings: {
-            //type of object being searched (ie, Layer, Map)
-            type: '@',
-            //BrowseObjectService the filter will affect
-            service: "<"
-        },
-        controller: RecommendedTermFilter,
-        template: "\n            <div class=\"card o-query-filter c-filter__recommended-terms\">\n\n                <div class=\"card-title\">\n                    <button type=\"button\" class=\"btn btn-sm btn-link\"\n                        title=\"{{$ctrl.displayOpts.collapse?'Expand':'Collapse'}}\"\n                        aria-label=\"Toggle collapsed state of this filter\"\n                        ng-click=\"$ctrl.displayOpts.collapse = !$ctrl.displayOpts.collapse\">\n                        <span class=\"gpicons\"\n                            ng-class=\"{'minus':!$ctrl.displayOpts.collapse,'plus':$ctrl.displayOpts.collapse}\"></span>\n                            <span class=\"sr-only\">Toggle semantic filter options</span>\n                    </button>\n                    <span>Filter using Semantic Concepts</span>\n                </div>\n\n                <div class=\"o-facets\" ng-class=\"{'is-collapsed':$ctrl.displayOpts.collapse}\">\n\n                    <div ng-hide=\"$ctrl.displayOpts.collapse\" class=\"m-facet\">\n\n                        <div class=\"input-group-slick\">\n                            <span class=\"gpicons\"\n                                ng-class=\"{'search':!$ctrl.displayOpts.fetching, 'hourglass spin':$ctrl.displayOpts.fetching}\"></span>\n                            <input type=\"text\" class=\"form-control\"\n                                ng-model=\"$ctrl.termQuery\"\n                                ng-model-options=\"{ debounce: 250 }\"\n                                ng-change=\"$ctrl.getOptions()\"\n                                placeholder=\"Find concepts\"\n                                aria-label=\"Find concepts\">\n                            <span class=\"gpicons times\" ng-if=\"$ctrl.displayOpts.suggest\"\n                                ng-click=\"$ctrl.hideSuggested()\"></span>\n                        </div>\n\n                        <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"\n                            ng-if=\"$ctrl.displayOpts.suggest\">\n                        </gp-pagination>\n\n                        <div class=\"list-group list-group-sm u-text--sm\"\n                            ng-if=\"$ctrl.displayOpts.suggest && !$ctrl.displayOpts.fetching\">\n\n                            <a ng-repeat=\"item in $ctrl.suggested track by $index\"\n                                class=\"list-group-item\"\n                                ng-class=\"{disabled:item._selected}\"\n                                ng-click=\"$ctrl.select(item)\">\n                                <span class=\"u-break--all t-text--strong u-pd-bottom--sm\">{{item.prefLabel}}</span>\n                                <br>\n                                <span class=\"u-break--all u-text--sm t-text--italic\">{{item.uri}}</span>\n                            </a>\n\n                            <div ng-if=\"$ctrl.displayOpts.empty\" class=\"list-group-item disabled u-pd--md\">\n                                No concepts found\n                            </div>\n\n                        </div>\n\n                    </div>\n\n\n                    <!-- selected terms -->\n                    <div ng-repeat=\"term in $ctrl.values track by $index\" class=\"m-facet active\"\n                        title=\"Remove this term from the query\"\n                        ng-click=\"$ctrl.removeValue($index)\">\n\n                        <div class=\"u-break--all t-text--strong u-pd-bottom--sm\">\n                            <button type=\"button\" class=\"btn btn-sm btn-link pull-right\">\n                                <span class=\"gpicons times t-fg--danger\"></span>\n                            </button>\n                            <span class=\"gpicons check\"></span>\n                            {{term.prefLabel}}\n                        </div>\n                        <div class=\"u-break--all u-text--sm t-text--italic\">{{term.uri}}</div>\n                    </div>\n\n                </div>\n\n            </div>\n        "
-    });
-})(angular);
-
-(function (angular) {
-    'use strict';
-
-    var PARAMETER = 'similarTo';
-    angular.module('gp-common').component('similarityFilter', {
-        bindings: {
-            //type of object being searched (ie, Layer, Map)
-            type: '@',
-            //BrowseObjectService the filter will affect
-            service: "<",
-            //optional, id of current map (if one exists)
-            mapId: '@'
-        },
-        controller: function controller() {
-            this.$onInit = function () {
-                var _this = this;
-                this.collapse = true;
-                this.value = null;
-                this.useMap = false;
-                var evtName = this.service.events.SIMILARITY;
-                this.applyListener = this.service.on(evtName, function (event, layer) {
-                    _this.value = layer;
-                    _this.service.applyOption(PARAMETER, _this.value.id, true);
-                });
-                //listen to service for loading event so we can track if the user
-                // has cleared the entire set of constraints outside of each filter
-                // component
-                this.checkListener = this.service.on(this.service.events.LOADING, function () {
-                    var value = _this.service.getQueryOption(PARAMETER);
-                    if (!value) _this.value = null;
-                });
-                if (!this.type) this.type = "item";
-            };
-            this.$onDestroy = function () {
-                this.applyListener(); //dispose of listeners
-                this.checkListener(); //...
-                this.collapse = null;
-                this.value = null;
-                this.service = null;
-                this.mapId = null;
-            };
-            this.hasSelections = function () {
-                return !!this.value;
-            };
-            this.clearValue = function () {
-                if (this.useMap) {
-                    this.useMap = false;
-                    this.service.applyOption(PARAMETER, this.value.id, true);
-                } else {
-                    this.value = null;
-                    this.service.applyOption(PARAMETER, null, true);
-                }
-            };
-            this.toggleCurrentMap = function (bool) {
-                if (this.useMap) {
-                    this.useMap = false;
-                    if (this.value) {
-                        this.service.applyOption(PARAMETER, this.value.id, true);
-                    } else {
-                        this.service.applyOption(PARAMETER, false, true);
-                    }
-                } else {
-                    this.useMap = true;
-                    this.service.applyOption(PARAMETER, this.mapId, true);
-                }
-            };
-        },
-        template: "\n            <div class=\"card o-query-filter\" ng-if=\"$ctrl.value\">\n\n                <div class=\"a-heading\">Find Similar</div>\n\n                <p class=\"u-text--sm\">Searching for {{$ctrl.type}}s similar to the following: </p>\n\n                <div class=\"o-facets\">\n\n                    <a class=\"m-facet\" ng-if=\"$ctrl.value\" ng-click=\"$ctrl.clearValue()\">\n                        <span class=\"gpicons times-circle\"></span>\n                        {{$ctrl.value.label}}\n                    </a>\n\n                    <!--\n                    <a ng-if=\"$ctrl.mapId\" class=\"m-facet\"\n                        ng-click=\"$ctrl.toggleCurrentMap()\" ng-class=\"{active:$ctrl.useMap}\">\n                        <span class=\"gpicons check\" ng-show=\"$ctrl.useMap\"></span>\n                        <span class=\"gpicons square\" ng-show=\"!$ctrl.useMap\"></span>\n                        Find similar to my current map\n                    </a>\n                    -->\n\n                </div>\n\n                <br>\n                <p class=\"u-text--sm\">Note that query filters below are still being applied.</p>\n\n            </div>\n        "
-    });
-})(angular);
-
-(function (angular, Constants) {
-    'use strict';
-
-    var ThemesFilter = /** @class */function () {
-        ThemesFilter.$inject = ["$element", "$http"];
-        function ThemesFilter($element, $http) {
-            this.$el = $element;
-            this.$http = $http;
-        }
-        ThemesFilter.prototype.$onInit = function () {
-            this.collapse = true;
-            this.query = {
-                type: 'skos:Concept',
-                fields: 'scheme',
-                size: 20,
-                sort: '_score,desc' // DT-2417
-            };
-            this.updateValues();
-        };
-        ThemesFilter.prototype.$onDestroy = function () {
-            this.values = null;
-            this.service = null;
-            this.$el = null;
-            this.$http = null;
->>>>>>> DT-2812: Move to cookie storage of AccessToken
-        };
-        /**
-         *
-         */
-        SectionController.prototype.clearOptions = function () {
-            //clear query and available options
-            this.query = '';
-            this.suggested = null;
-            //reset paging
-            this.paging.start = 0;
-            this.paging.total = 0;
-            // this.notify('gp:browse:suggestions:pagination', this.paging);
-            //hide available options
-            this.displayOptions.showSuggested = false;
-        };
-        /**
-         * @param index - integer position in selected array of item removed
-         */
-        SectionController.prototype.remove = function (index) {
-            var removed = this.ngModel[index].uri;
-            this.ngModel.splice(index, 1);
-            //remove from suggested list if one is populated (being shown)
-            if (this.suggested && this.suggested.length) {
-                var found = this.suggested.find(function (it) {
-                    return it.uri === removed;
-                });
-                if (found) found._selected = false;
-            }
-            this.updateCache(); //update cache of selected ids
-            if (this.onChange) this.onChange({ values: this.ngModel }); //notify others of change
-        };
-        /**
-         * @param value - item being checked for selection
-         * @return boolean
-         */
-        SectionController.prototype.isSelected = function (value) {
-            return value._selected || ~this.selected.indexOf(value.uri);
-        };
-        /**
-         * @param value - item being selected
-         */
-        SectionController.prototype.selectValue = function (value) {
-            if (value._selected) return; //already selected
-            value._selected = true;
-            this.ngModel = this.ngModel || [];
-            this.ngModel.push(value);
-            this.updateCache();
-            if (this.onChange) this.onChange({ values: this.ngModel });
-        };
-        /**
-         *
-         */
-        SectionController.prototype.updateCache = function () {
-            this.selected = (this.ngModel || []).map(function (o) {
-                return o.uri;
-            });
-        };
-        /**
-         * @param open - boolean
-         */
-        SectionController.prototype.onDropdownToggled = function (open) {
-            if (!open) this.clearOptions();
-        };
-        /**
-         * @param item GeoPlatform Concept resource
-         * @return string URL to access resource
-         */
-        SectionController.prototype.getLinkTo = function (item) {
-            var uri = item.uri;
-            if (!uri) return '#';
-            var GP_URI_PATTERN = new RegExp('^http(s)?\:\/\/www\.geoplatform\.gov\/id\/metadata\-codelists', 'i');
-            if (GP_URI_PATTERN.test(uri)) {
-                var baseHref = this.getPortalHref();
-                return baseHref + '/resources/concepts/' + item.id;
-            }
-            return uri;
-        };
-        /**
-         * @return string URL to Portal in same environment as this deployed code
-         */
-        SectionController.prototype.getPortalHref = function () {
-            var url = Constants.portalUrl;
-            if (!url) {
-                url = Constants.ualUrl;
-                if (!url) return '';
-                if (url.indexOf("-ual.")) return url.replace('-ual', '');else return url.replace('ual', 'www');
-            }
-            return url;
-        };
-        /**
-         *
-         */
-        SectionController.prototype.toggleCreateCustom = function ($event) {
-            this.displayOptions.showCustom = !this.displayOptions.showCustom;
-            if (!this.displayOptions.showCustom) {
-                this.customLabel = '';
-                this.customError = null;
-            }
-            if ($event && $event.stopPropagation) {
-                $event.stopPropagation();
-            }
-        };
-        SectionController.prototype.createCustom = function ($event) {
-            var _this = this;
-            var obj = {
-                type: CONCEPT,
-                label: this.customLabel,
-                prefLabel: this.customLabel
-            };
-            this.service.getCustomUri(obj).$promise.then(function (response) {
-                obj.uri = response.uri;
-                return _this.service.createCustom(obj).$promise;
-            }).then(function (result) {
-                _this.selectValue(result); //add it to the selected list
-                _this.toggleCreateCustom();
-            }).catch(function (err) {
-                if (err.status === 409) {
-                    //Tell user their label is not unique enough...
-                    _this.customError = "Your custom classifier's name is already taken";
-                } else {
-                    _this.customError = err.message;
-                }
-            });
-            if ($event && $event.stopPropagation) {
-                $event.stopPropagation();
-            }
-        };
-        /* -------- pagination methods ----------- */
-        SectionController.prototype.getPagination = function () {
-            return this.paging;
-        };
-        SectionController.prototype.start = function (index) {
-            this.paging.start = index;
-            this.fetchOptions(this.query);
-        };
-        SectionController.prototype.size = function (value) {
-            this.paging.size = value;
-            this.fetchOptions(this.query);
-        };
-        return SectionController;
-    }();
-    angular.module('gp-common-kg').component('kgSection', {
-        bindings: {
-            ngModel: '<',
-            service: '<',
-            label: '@',
-            description: '@',
-            type: '@',
-            onChange: '&?',
-            onActivate: '&?' //fire when selected value link is clicked
-        },
-        controller: SectionController,
-        template: "\n            <div class=\"a-heading\">{{$ctrl.label}}</div>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"gpicons times-circle t-fg--danger\"></span>\n                        <span class=\"sr-only\">Deselect this item</span>\n                    </button>\n                    <div class=\"flex-1 u-pd--xs\">\n                        <div class=\"t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{$ctrl.getLinkTo(item)}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{$ctrl.getLinkTo(item)}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>\n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\"\n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"gpicons\"\n                            ng-class=\"{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\"\n                            ng-model=\"$ctrl.query\"\n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\"\n                            aria-label=\"Find values to add\">\n                    </div>\n                </div>\n\n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n\n                    <div ng-if=\"!$ctrl.displayOptions.showCustom\">\n\n                        <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                            <div class=\"input-group-slick flex-1\">\n                                <span class=\"gpicons\"\n                                    ng-class=\"{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}\"></span>\n                                <input type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.query\"\n                                    ng-model-options=\"{ debounce: 250 }\"\n                                    ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                    placeholder=\"Find values to add...\"\n                                    aria-label=\"Find values to add\">\n                                <span class=\"gpicons times\"\n                                    ng-if=\"$ctrl.query.length\"\n                                    ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                            </div>\n                            <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                                ng-click=\"$ctrl.clearOptions();\">\n                                Done\n                            </button>\n                        </div>\n\n                        <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                        <div class=\"list-group list-group-sm u-text--sm\">\n                            <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                                <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                    ng-class=\"{disabled:item._selected}\">\n                                    <span class=\"gpicons check t-fg--gray-md\" ng-show=\"item._selected\"></span>\n                                    <span class=\"gpicons plus-circle t-fg--success\" ng-show=\"!item._selected\"></span>\n                                    <span class=\"sr-only\">Select or deselect this item</span>\n                                </button>\n                                <div class=\"flex-1 u-pd--xs\">\n                                    <div class=\"u-break--all t-text--strong\">{{item.prefLabel}}</div>\n                                    <a href=\"{{item.uri}}\" target=\"_blank\"\n                                        class=\"u-break--all u-text--sm t-text--italic\"\n                                        title=\"Open source info in new window\">\n                                        {{item.uri}}\n                                    </a>\n                                    <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                                </div>\n                            </div>\n                            <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                                No results match your query\n                            </div>\n\n                            <!-- create custom\n                            <div class=\"list-group-item\">\n                                <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.toggleCreateCustom($event)\"\n                                    ng-class=\"{disabled:item._selected}\">\n                                    <span class=\"gpicons plus-circle t-fg--success\" ng-show=\"!item._selected\"></span>\n                                    <span class=\"sr-only\">Toggle custom creation fields</span>\n                                </button>\n                                <div class=\"flex-1 u-pd--xs\">\n                                    <div class=\"t-text--strong\">New custom classifier</div>\n                                    <div class=\"description\">create a custom classifier to enrich this item</div>\n                                </div>\n                            </div>\n                            -->\n\n                        </div>\n\n                    </div>\n\n                    <div ng-if=\"$ctrl.displayOptions.showCustom\">\n                        <div>\n                            Provide the name of the custom classifier and then a unique URI for it.\n                        </div>\n                        <div class=\"u-mg-top--sm>\n                            <label for=\"{{$ctrl.type}}CustomLabel\">Name</label>\n                            <input type=\"text\" class=\"form-control\" id=\"{{$ctrl.type}}CustomLabel\"\n                                ng-model=\"$ctrl.customLabel\" placeholder=\"Name the classifier\">\n                        </div>\n                        <div class=\"u-mg-top--sm\">\n                            <button type=\"button\" class=\"btn btn-sm btn-secondary\"\n                                ng-click=\"$ctrl.toggleCreateCustom($event)\">\n                                cancel\n                            </button>\n                            <button type=\"button\" class=\"btn btn-sm btn-success\"\n                                ng-click=\"$ctrl.createCustom($event)\"\n                                ng-disabled=\"!$ctrl.customLabel.length\">\n                                create\n                            </button>\n                        </div>\n                        <div ng-if=\"$ctrl.customError\">\n                            $ctrl.customError\n                        </div>\n                    </div>\n\n                </div>\n            </div>\n        "
-    });
-})(angular, GeoPlatform);
-
-(function (angular, Constants) {
-    "use strict";
-    //fields list sent to MDR in order to have these properties for display in search results
-
-    var FIELDS = ['created', 'modified', 'publishers', 'themes', 'description', 'extent'];
-    //facets list sent to MDR in order to get aggregation numbers
-    var FACETS = ['types', 'themes', 'publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy'];
-    var SORT_OPTIONS = [{ value: "label,asc", label: "Name (A-Z)" }, { value: "label,desc", label: "Name (Z-A)" }, { value: "type,asc", label: "Type (A-Z)" }, { value: "type,desc", label: "Type (Z-A)" }, { value: "modified,desc", label: "Most recently modified" }, { value: "modified,asc", label: "Least recently modified" }, { value: "_score,desc", label: "Relevance" }];
-    //list of _options variables for mapping to parameters
-    var VAR_TYPES = 'types';
-    var VAR_THEMES = 'themes';
-    var VAR_TOPICS = 'topics';
-    var VAR_PUBLISHERS = 'publishers';
-    var VAR_USED_BY = 'usedBy';
-    var VAR_USER = 'user';
-    var VAR_CREATED_BY = 'createdBy';
-    var VAR_SERVICE_TYPES = 'serviceTypes';
-    var VAR_SCHEMES = 'schemes';
-    var VAR_VISIBILITY = "visibility";
-    var VAR_QUERY = 'query';
-    var VAR_EXTENT = 'bbox';
-    var VAR_MODIFIED_BEFORE = 'modified.max';
-    var VAR_MODIFIED_AFTER = 'modified.min';
-    var VAR_RESOURCE_TYPES = 'resourceTypes';
-    //parameter names for various query constraints used in requests to MDR for results
-    var PARAMETER_TYPE = 'type';
-    var PARAMETER_THEME = 'theme.id';
-    var PARAMETER_TOPIC = 'topic.id';
-    var PARAMETER_PUBLISHER = 'publisher.id';
-    var PARAMETER_USED_BY = 'usedBy.id';
-    var PARAMETER_CREATED_BY = 'createdBy';
-    var PARAMETER_CONTRIBUTED_BY = 'contributedBy';
-    var PARAMETER_CREATOR = 'creator.id';
-    var PARAMETER_SVC_TYPE = 'serviceType.id';
-    var PARAMETER_IN_SCHEME = 'scheme.id';
-    var PARAMETER_VISIBILITY = 'visibility';
-    var PARAMETER_QUERY = 'q';
-    var PARAMETER_EXTENT = 'extent';
-    var PARAMETER_MODIFIED_BEFORE = 'modified.max';
-    var PARAMETER_MODIFIED_AFTER = 'modified.min';
-    var PARAMETER_RESOURCE_TYPES = 'resourceType';
-    // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
-    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_TOPICS, parameter: PARAMETER_TOPIC }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USED_BY, parameter: PARAMETER_USED_BY }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }, { option: VAR_MODIFIED_BEFORE, parameter: PARAMETER_MODIFIED_BEFORE }, { option: VAR_MODIFIED_AFTER, parameter: PARAMETER_MODIFIED_AFTER }, { option: VAR_RESOURCE_TYPES, parameter: PARAMETER_RESOURCE_TYPES }];
-    var PAGE_SIZE_BASE_10 = [10, 20, 50, 100];
-    var PAGE_SIZE_BASE_12 = [12, 24, 48, 96];
-    /**
-     *
-     *
-     */
-    function BrowseObjectsService($rootScope, $timeout, $resource, options) {
-        /* -------- private data ----------- */
-        var url = options && options.url ? options.url + "/:id" : Constants.ualUrl + '/api/items/:id';
-        var eventKey = 'gp:browse:' + (options && options.key ? options.key : 'objects') + ":";
-        var svc = $resource(url, { id: '@id' }, {
-            query: {
-                isArray: false
-            }
-        });
-        var _pageSizeBase = PAGE_SIZE_BASE_10.slice(0);
-        if (options && options.pageSizeBase && options.pageSizeBase === 12) _pageSizeBase = PAGE_SIZE_BASE_12.slice(0);
-        var _options = {
-            start: 0,
-            size: _pageSizeBase[0],
-            total: 0,
-            sort: options && options.sort ? options.sort : "modified,desc",
-            facets: {}
-        };
-        //list of field names to request in response
-        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
-        //list of facet names to request
-        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
-        var _facets = [];
-        var _selectedFacets = [];
-        var _results = [];
-        var _dirtyPromise = null;
-        var _isLoading = false;
-        var _selected = [];
-        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
-        /**
-         *
-         */
-        function notify(eventName, arg) {
-            // console.log("Notifying of " + eventName + " with " + arg);
-            $rootScope.$broadcast(eventName, arg);
-        }
-        /**
-         * when marked as dirty, debounce for rapid fire events like onKeyUp
-         */
-        function dirty(delay, resetStart) {
-            var doReset = typeof resetStart === 'undefined' || resetStart === true;
-            if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-            _dirtyPromise = $timeout(function () {
-                _dirtyPromise = null;
-                _doUpdate(doReset);
-            }, delay || 100);
-        }
-        /**
-         *
-         */
-        function _doUpdate(resetStart) {
-            if (resetStart) _options.start = 0;
-            _isLoading = true;
-            notify(eventKey + 'querying');
-            var params = {};
-            // -------- QUERY FILTERS --------
-            //create a temporary options object
-            var opts = angular.copy(_options);
-            //apply options as parameters
-            angular.forEach(PARAM_OPTIONS, function (po) {
-                var name = po.parameter;
-                var value = opts[po.option];
-                var isSet = value !== null && typeof value !== 'undefined';
-                var isArr = isSet && typeof value.push !== 'undefined';
-                if (isSet && (!isArr || value.length)) {
-                    params[name] = isArr ? value.join(',') : value;
-                } else {
-                    delete params[name];
-                }
-                delete opts[po.option]; //remove from temp opts
-            });
-            //apply remaining options to query
-            // these are not keyed with specific parameters (ie, custom params)
-            angular.forEach(opts, function (value, name) {
-                if (value !== null && typeof value !== 'undefined') {
-                    var isArr = typeof value.push !== 'undefined';
-                    params[name] = isArr ? value.join(',') : value;
-                } else {
-                    //make sure it doesn't get sent if no value provided
-                    delete params[name];
-                }
-            });
-            // -------- QUERY FILTERS --------
-            var arr = [];
-            for (var k in _options.facets) {
-                if (_options.facets.hasOwnProperty(k)) {
-                    //encode commas in facet name since it's used to separate multiple
-                    // facet values
-                    arr.push(k + ":" + _options.facets[k].replace(/,/g, '%2C'));
-                }
-            }
-            _selectedFacets = arr;
-            var start = _options.start;
-            if (isNaN(start)) start = 0;else start = start * 1;
-            params.page = Math.floor(start / _options.size);
-            params.size = _options.size;
-            params.sort = _options.sort;
-            if (arr.length) params.facets = arr.join(',');
-            //prevent CORS cache bug in Chrome
-            params.bust = new Date().getTime();
-            //request facets
-            params.includeFacet = _requestFacets.join(',');
-            //request fields
-            params.fields = _fields.join(',');
-            svc.query(params).$promise.then(function (response) {
-                _results = response.results;
-                _facets = response.facets || [];
-                //auto select objects if user has marked it as selected previously
-                // this is needed to maintain selections across pagination pages
-                _selected.each(function (id) {
-                    var map = _results.find(function (map) {
-                        return map._id === id;
-                    });
-                    if (map) map.selected = true;
-                });
-                //will trigger update on pagination directive
-                _options.total = response.totalResults;
-                _isLoading = false;
-                notify(eventKey + 'results');
-                notify(eventKey + 'pagination');
-                if (options.trackingService) {
-                    //If an instanceof APIClient.TrackingService has been provided
-                    // using the constructor options, report the event of this search
-                    // using the TrackingService API
-                    setTimeout( //call using timeout to avoid any errors breaking search
-                    function (trSvc, qp, total) {
-                        trSvc.logSearch(qp, total);
-                    }, 50, options.trackingService, params, response.totalResults);
-                }
-            }).catch(function (response) {
-                _isLoading = false;
-                //fallback
-                var obj = { error: "An Error Occurred", message: "No details provided" };
-                //http response error
-                if (response && response.data) obj = response.data;else if (response && response.message) obj = response;
-                //serialized json
-                if (typeof obj === 'string') {
-                    try {
-                        obj = JSON.parse(obj);
-                    } catch (e) {
-                        obj.message = "Bad response from server";
-                    }
-                }
-                var error = {
-                    label: obj.error || "An Error Occurred",
-                    message: obj.message || "No details provided"
-                };
-                notify(eventKey + 'error', error);
-            });
-        }
-        function setOption(name, value, fire) {
-            _options[name] = value;
-            if (typeof fire === 'undefined' || !!fire) {
-                var delay = 500;
-                if (value === null || value === undefined) delay = 0;else if (typeof value.push !== 'undefined' && value.length) delay = 0; //arrays
-                else if (!value.length) delay = 0; //strings
-                dirty(delay, shouldResetPageStart(name));
-            }
-        }
-        /**
-         * @param {string} key - option being set
-         * @return {boolean} true if the property change should reset pagination start
-         */
-        function shouldResetPageStart(key) {
-            return key !== 'start' && key !== 'size' && key !== 'count' && key !== 'pageSize' && key !== 'sort';
-        }
-        /* ------------ public api ------------- */
-        return {
-            events: {
-                LOADING: eventKey + 'querying',
-                RESULTS: eventKey + 'results',
-                PAGINATION: eventKey + 'pagination',
-                SELECTED: eventKey + 'selected',
-                ERROR: eventKey + 'error',
-                SELECTED_ADDED: eventKey + 'selected:added',
-                SELECTED_REMOVED: eventKey + 'selected:removed',
-                SIMILARITY: eventKey + 'similarTo',
-                CLEARED: eventKey + 'cleared'
-            },
-            /**
-             * @return {bool}
-             */
-            getLoadingStatus: function getLoadingStatus() {
-                return _isLoading;
-            },
-            /**
-             * NOTE: Make sure event names are prefixed with
-             *  eventKey + ''
-             * @param {string} eventName
-             * @param {function} listener
-             */
-            on: function on(eventName, listener) {
-                // if(eventName.indexOf(eventKey + ":") !== 0)
-                //     eventName = eventKey + '' + eventName;
-                return $rootScope.$on(eventName, listener);
-            },
-            /**
-             * @param {string} eventName
-             * @param {*} args
-             */
-            trigger: function trigger(eventName, args) {
-                notify(eventName, args);
-            },
-            /**
-             * @return {array[object]}
-             */
-            getResults: function getResults() {
-                return _results;
-            },
-            /**
-             * @return {array[string]} list of facet names
-             */
-            getFacetNames: function getFacetNames() {
-                return FACETS.slice(0);
-            },
-            /**
-             * @return {object} in form of <facet>: [<values>]
-             */
-            getFacets: function getFacets() {
-                return _facets;
-            },
-            /**
-             * @param {string} name
-             * @return {object|null}
-             */
-            getFacet: function getFacet(name) {
-                if (_facets) {
-                    return _facets.find(function (facet) {
-                        return facet.name === name;
-                    });
-                }
-                return null;
-            },
-            addFacet: function addFacet(name) {
-                _requestFacets.push(name);
-            },
-            applyConstraints: function applyConstraints(obj) {
-                for (var p in obj) {
-                    if (obj.hasOwnProperty(p)) {
-                        _options[p] = obj[p];
-                    }
-                }
-                _doUpdate(true);
-            },
-            applyOption: function applyOption(key, value, fire) {
-                setOption(key, value, fire);
-            },
-            applyOptions: function applyOptions(opts, fire) {
-                angular.forEach(opts, function (value, key) {
-                    setOption(key, value, false);
-                });
-                if (fire) _doUpdate(true);
-            },
-            /**
-             * @param {string} name - name of query parameter
-             * @return {any} value of specified query parameter
-             */
-            getQueryOption: function getQueryOption(name) {
-                return _options[name];
-            },
-            /**
-             * @param {string} text - free text query
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setQuery: function setQuery(text, fireUpdate) {
-                setOption(VAR_QUERY, text, fireUpdate);
-            },
-            getQuery: function getQuery() {
-                return _options[VAR_QUERY];
-            },
-            /**
-             * @param {array[string]} types - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setTypes: function setTypes(types, fireUpdate) {
-                setOption(VAR_TYPES, types, fireUpdate);
-            },
-            getTypes: function getTypes() {
-                return _options[VAR_TYPES];
-            },
-            /**
-             * @param {string} userId - identifier of user
-             * @param {boolean} fireUpdate -
-             */
-            setUser: function setUser(userId, fireUpdate) {
-                setOption(VAR_USER, userId, fireUpdate);
-            },
-            getUser: function getUser() {
-                return _options[VAR_USER];
-            },
-            /**
-             * @param {array[string]} creators - ids of creators
-             * @param {boolean} fireUpdate -
-             */
-            setCreatedBy: function setCreatedBy(creators, fireUpdate) {
-                setOption(VAR_CREATED_BY, creators, fireUpdate);
-            },
-            getCreatedBy: function getCreatedBy() {
-                return _options[VAR_CREATED_BY];
-            },
-            /**
-             * @param {array[string]} themes - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setThemes: function setThemes(themes, fireUpdate) {
-                setOption(VAR_THEMES, themes, fireUpdate);
-            },
-            getThemes: function getThemes() {
-                return _options[VAR_THEMES];
-            },
-            /**
-             * @param {array[string]} publishers - name of class(es) to request
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setAgencies: function setAgencies(publishers, fireUpdate) {
-                setOption(VAR_PUBLISHERS, publishers, fireUpdate);
-            },
-            getAgencies: function getAgencies() {
-                return _options[VAR_PUBLISHERS];
-            },
-            /**
-             * @param {array[string]} ids - ids of agents using this item
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setUsedBy: function setUsedBy(ids, fireUpdate) {
-                setOption(VAR_USED_BY, ids, fireUpdate);
-            },
-            getUsedBy: function getUsedBy() {
-                return _options[VAR_USED_BY];
-            },
-            /**
-             * @param {array[string]} svcTypes - ids
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setServiceTypes: function setServiceTypes(svcTypes, fireUpdate) {
-                setOption(VAR_SERVICE_TYPES, svcTypes, fireUpdate);
-            },
-            getServiceTypes: function getServiceTypes() {
-                return _options[VAR_SERVICE_TYPES];
-            },
-            /**
-             * @param {array[string]} resTypes - uris
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setResourceTypes: function setResourceTypes(resTypes, fireUpdate) {
-                setOption(VAR_RESOURCE_TYPES, resTypes, fireUpdate);
-            },
-            getResourceTypes: function getResourceTypes() {
-                return _options[VAR_RESOURCE_TYPES];
-            },
-            /**
-             * @param {array[string]} schemes - ids
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setSchemes: function setSchemes(schemes, fireUpdate) {
-                setOption(VAR_SCHEMES, schemes, fireUpdate);
-            },
-            getSchemes: function getSchemes() {
-                return _options[VAR_SCHEMES];
-            },
-            /**
-             * @param {array[string]} schemes - ids
-             * @param {bool} fireUpdate - trigger update (default is true)
-             */
-            setTopics: function setTopics(topics, fireUpdate) {
-                setOption(VAR_TOPICS, topics, fireUpdate);
-            },
-            getTopics: function getTopics() {
-                return _options[VAR_TOPICS];
-            },
-            /**
-             * @param {string} visibility - one of 'public' or 'private'
-             * @param {boolean} fireUpdate
-             */
-            setVisibility: function setVisibility(visibility, fireUpdate) {
-                setOption(VAR_VISIBILITY, visibility, fireUpdate);
-            },
-            getVisibility: function getVisibility() {
-                return _options[VAR_VISIBILITY];
-            },
-            /**
-             * @param {Date} date - date to compare against
-             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
-             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
-             */
-            setModified: function setModified(date, beforeOrAfter, fireUpdate) {
-                //if no date was supplied, consider it "unset" for both properties
-                if (!date) {
-                    setOption(VAR_MODIFIED_BEFORE, null, false);
-                    setOption(VAR_MODIFIED_AFTER, null, true);
-                    return;
-                }
-                var dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
-                var prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER; //property being set
-                var oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE; //unset opposite property
-                var arg = date && date.getTime ? date.getTime() : date;
-                setOption(oppProp, null, false);
-                setOption(prop, arg, true);
-            },
-            getModified: function getModified() {
-                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
-            },
-            /**
-             * @param {string} bboxStr - form of "minx,miny,maxx,maxy"
-             * @param {boolean} fireUpdate
-             */
-            setExtent: function setExtent(bboxStr) {
-                setOption(VAR_EXTENT, bboxStr, true);
-            },
-            /** @return {string} bbox string or null if not set */
-            getExtent: function getExtent() {
-                return _options[VAR_EXTENT];
-            },
-            /**
-             * @return {array} list of selected items from current search results
-             */
-            getSelected: function getSelected() {
-                return _selected;
-            },
-            /**
-             * @param {array} arr - list of items to select in current search results
-             */
-            setSelected: function setSelected(arr) {
-                _selected = arr;
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * @param {string} id - identifier of item in current search results to add to selected list
-             */
-            select: function select(id) {
-                var finder = function finder(l) {
-                    return l.id === id;
-                };
-                var existing = _selected.find(finder);
-                if (existing) {
-                    var idx = _selected.indexOf(existing);
-                    if (idx >= 0) {
-                        _selected.splice(idx, 1);
-                        notify(eventKey + 'selected:removed', existing);
-                    }
-                } else {
-                    var obj = _results.find(finder);
-                    if (obj) {
-                        if (_onSelectFn) {
-                            _onSelectFn(id, function (err, item) {
-                                if (item) {
-                                    _selected.unshift(item);
-                                    notify(eventKey + 'selected:added', item);
-                                }
-                            });
-                        } else {
-                            _selected.unshift(obj);
-                            notify(eventKey + 'selected:added', obj);
-                        }
-                    }
-                }
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * @param {string} id - identifier of item to check
-             * @return {boolean} true if selected, false otherwise
-             */
-            isSelected: function isSelected(id) {
-                return _selected.find(function (obj) {
-                    return obj.id === id;
-                });
-            },
-            /**
-             * select all items in current page of results
-             */
-            selectAll: function selectAll() {
-                var _this = this;
-                angular.forEach(_results, function (obj) {
-                    if (!_this.isSelected(obj.id)) _selected.unshift(obj);
-                });
-                notify(this.events.SELECTED, _selected);
-            },
-            /**
-             * empty list of selected items
-             */
-            clearSelected: function clearSelected() {
-                var prev = _selected.slice(0);
-                notify(this.events.SELECTED_REMOVED, prev);
-                _selected = [];
-                notify(this.events.SELECTED, []);
-            },
-            /**
-             *
-             */
-            clear: function clear(refresh) {
-                for (var prop in _options) {
-                    if (!_options.hasOwnProperty(prop)) continue;
-                    if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
-                }
-                notify(this.events.CLEARED);
-                if (refresh || typeof refresh === 'undefined') _doUpdate(true);
-            },
-            /*
-             * @param {string} category - name of facet
-             * @param {string} value - value of facet
-             */
-            setFacet: function setFacet(category, value) {
-                var f = _options.facets[category];
-                if (!f) _options.facets[category] = value;else {
-                    if (f === value) {
-                        //unset it
-                        delete _options.facets[category];
-                    } else {
-                        //set it
-                        _options.facets[category] = value;
-                    }
-                }
-                _doUpdate(true);
-            },
-            /**
-             * @param {array[string]} fields - list of field names to request for each search result
-             */
-            setFields: function setFields(fields) {
-                if (fields && typeof fields.push !== 'undefined') _fields = fields;
-            },
-            /**
-             * @param {int} start - beginning index of results to request
-             * @param {bool} andUpdate - trigger update (default is true)
-             */
-            start: function start(_start, andUpdate) {
-                _options.start = _start;
-                if (andUpdate && andUpdate === true) _doUpdate(false);
-            },
-            /**
-             * @param {int} size - page size to request
-             * @param {bool} andUpdate - trigger update (default is true)
-             */
-            size: function size(_size, andUpdate) {
-                _options.size = _size;
-                //find out which page in the new scheme the current first-result of current page
-                // will show up in, and set start so that it shows up with the new page size
-                var page = Math.floor(_options.start * 1 / _options.size * 1);
-                _options.start = page * (_options.size * 1);
-                if (andUpdate && andUpdate === true) _doUpdate(false);
-            },
-            /**
-             * @param {int} size - number of items to return in each page of results
-             */
-            pageSize: function pageSize(size) {
-                this.size(size, true);
-            },
-            /**
-             * @param {string} sort - form of <field>,<dir>
-             */
-            sort: function sort(_sort) {
-                _options.sort = _sort;
-                _doUpdate(false);
-            },
-            /**
-             * return {object} containing start index, page size, and total results
-             */
-            getPagination: function getPagination() {
-                return {
-                    start: _options.start,
-                    size: _options.size,
-                    pageSize: _options.size,
-                    total: _options.total,
-                    sizeOptions: _pageSizeBase
-                };
-            },
-            /**
-             * @return {array} list of key-value pairs of sort options
-             */
-            getSortOptions: function getSortOptions() {
-                return SORT_OPTIONS.slice(0);
-            },
-            /**
-             * @return {string} sorting parameter (field,order)
-             */
-            getSortValue: function getSortValue() {
-                return _options.sort;
-            },
-            /**
-             * @return {object} clone of the current set of query options
-             */
-            getQueryOptions: function getQueryOptions() {
-                return jQuery.extend({}, _options);
-            },
-            /**
-             *
-             */
-            hasQueryOptions: function hasQueryOptions() {
-                var result = false;
-                for (var k in _options) {
-                    if (_options.hasOwnProperty(k)) {
-                        if ('start' === k || 'size' === k || 'total' === k || 'sort' === k || 'order' === k || 'within' === k || 'facets' === k) continue;
-                        if (_selectedFacets.length) result = true;
-                        if (typeof _options[k] !== 'undefined' && _options[k] !== null) {
-                            result = true;
-                        }
-                    }
-                }
-                return result;
-            },
-            /**
-             * Triggers a refresh of current search results
-             * @param {boolean} resetStart - reset 'start' to 0 flag
-             */
-            update: function update(resetStart) {
-                dirty(0, resetStart);
-            },
-            reset: function reset() {
-                _options = {
-                    start: 0,
-                    size: _pageSizeBase[0],
-                    total: 0,
-                    sort: "modified,desc", order: "asc",
-                    facets: {}
-                };
-                notify(this.events.CLEARED);
-                _facets = [];
-                _selectedFacets = [];
-                _results = [];
-                _isLoading = false;
-                _selected = [];
-                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-                _dirtyPromise = null;
-            },
-            destroy: function destroy() {
-                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
-            }
-        };
-    }
-    /**
-     * Factory for creating instances of BrowseObjectsService
-     */
-    function BrowseServiceFactory($rootScope, $timeout, $resource) {
-        return function (options) {
-            var svc = BrowseObjectsService($rootScope, $timeout, $resource, options);
-            if (options && options.params) svc.applyOptions(options.params);
-            return svc;
-        };
-    }
-    angular.module('gp-common')
-    //generic browse service
-    .service("BrowseObjectsService", ['$rootScope', '$timeout', '$resource', BrowseObjectsService])
-    //factory for creating specific browse services
-    .factory("BrowseServiceFactory", ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
-    /*
-        Example of how to use the factory to customize a service
-    
-        //layer-specific browse service
-        .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
-            let service = BrowseServiceFactory({
-                key: 'layers',
-                url: Constants.ualUrl + '/api/layers'
-            });
-    
-            //add custom methods here
-    
-            return service;
-        }])
-    */
-})(angular, GeoPlatform);
-
-(function (angular) {
-    'use strict';
-    /* *********************************************
-     * Requires socket.io be in the global namespace
-     * tested with version 2.x
-     * ********************************************* */
-    /*
-       Usage:
-        let service = ...
-        let svcId = service.getId();
-        //listen to events from the server
-       service.on('testing', (event) => {
-           if(event.clientId === svcId) return; //ignore our own events
-           ... do something ...
-       });
-       
-       //sends out a message to others
-       service.emit( service.events.CREATED, 'test');
-        //sends out a message to others
-       service.begin(service.events.EDITING, 'test');
-        //sends out a message to others
-       service.end(service.events.EDITING, 'test');
-        //stop listening and close the socket
-       service.close();
-      */
-    /**
-     *
-     */
-
-    var SocketService = /** @class */function () {
-        SocketService.$inject = ["url", "options"];
-        function SocketService(url, options) {
-            'ngInject';
-
-            var _this = this;
-            var opts = (typeof options === "undefined" ? "undefined" : _typeof(options)) === 'object' ? options : {};
-            for (var key in opts) {
-                this[key] = opts[key];
-            }this.socket = null;
-            //list of ids of things being tracked, such as 
-            // items edited, in order to send messages
-            // about the things lifecycle
-            this.tracking = {};
-            //events supported.
-            // Note that lifecycles can be added by using the 
-            // begin() and end() methods on the service,
-            // which appends '_start' and '_end' respectively
-            this.events = {
-                CREATED: 'created',
-                UPDATED: 'updated',
-                DELETED: 'deleted',
-                EDITING: 'editing',
-                STATUS: 'status'
-            };
-            if (typeof io === 'undefined') {
-                console.log("Socket.IO not found in global namespace");
-                return;
-            }
-            if (!url) {
-                //TODO validate URL with regex?
-                console.log("No web socket URL configured for this app to communicate with");
-                return;
-            }
-            //make connection
-            this.socket = io.connect(url);
-            //listen for the init event indicating connection has been made
-            // and to get the socket's id from the server
-            this.socket.on("init", function (evt) {
-                _this.socketId = evt.id;
-            });
-            //if unable to connect
-            this.socket.on('error', function () {
-                console.log("Unable to connect to " + url + " with websockets");
-            });
-        }
-        /**
-         *
-         */
-        SocketService.prototype.getId = function () {
-            return this.socketId;
-        };
-        /**
-         * @param {string} eventName
-         * @param {Function} callback
-         * @return {Function} to remove the listener
-         */
-        SocketService.prototype.on = function (eventName, callback) {
-            var _this = this;
-            if (!this.socket) return function () {};
-            //add the listener to the socket
-            this.socket.on(eventName, callback);
-            //return an 'off' function to remove the listener
-            return function () {
-                _this.socket.off(eventName, callback);
-            };
-        };
-        /**
-         *
-         */
-        SocketService.prototype.emit = function (eventName, data, callback) {
-            if (!this.socket) return;
-            this.socket.emit(eventName, data, callback);
-        };
-        /**
-         * Closes this service's socket
-         */
-        SocketService.prototype.close = function () {
-            var _this = this;
-            //if this app was tracking an obj, 
-            // notify listeners that it is no longer
-            for (var event in this.tracking) {
-                if (this.tracking.hasOwnProperty(event)) {
-                    var tracks = this.tracking[event];
-                    if (tracks && tracks.length) {
-                        /* jshint ignore:start */
-                        angular.forEach(tracks, function (id) {
-                            _this.end(event, id);
-                        });
-                        /* jshint ignore:end */
-                    }
-                }
-            }
-            if (this.socket) {
-                this.socket.close();
-                this.socket = null;
-            }
-            return null;
-        };
-        /**
-         * @param {string} event - name of the event being started
-         * @param {string} objId - identifier of the item being tracked
-         */
-        SocketService.prototype.begin = function (event, objId) {
-            var _this = this;
-            this.tracking[event] = this.tracking[event] || [];
-            this.tracking[event].push(objId);
-            var room = objId + "_" + event.toLowerCase();
-            this.join(room, function () {
-                _this.socket.emit(event, room, _this.socketId, true);
-            });
-        };
-        /**
-         * @param {string} event - name of the event being ended
-         * @param {string} objId - identifier of the item being tracked
-         */
-        SocketService.prototype.end = function (event, objId) {
-            var _this = this;
-            this.tracking[event] = this.tracking[event] || [];
-            if (!this.tracking[event].length) return; //empty, ignore request
-            var idx = this.tracking[event].indexOf(objId);
-            if (idx < 0) //not found, ignore request
-                //remove tracker
-                this.tracking[event].splice(idx, 1);
-            //send event to server about client stopping it's tracking
-            var room = objId + "_" + event.toLowerCase();
-            this.socket.emit(event, room, this.socketId, false, function () {
-                _this.leave(room);
-            });
-        };
-        /**
-         *
-         */
-        SocketService.prototype.join = function (objId, callback) {
-            this.emit('join', objId, callback);
-        };
-        /**
-         *
-         */
-        SocketService.prototype.leave = function (objId, callback) {
-            this.emit('leave', objId, callback);
-        };
-        return SocketService;
-    }();
-    /**
-     * Factory to get a Service used to listen for WebSocket messages from a server
-     *
-     * Usage:
-     *
-     * let wsUrl = ...
-     * let service = SocketServiceFactory(wsUrl);
-     *
-     */
-    angular.module('gp-common').factory('SocketServiceFactory', ["$rootScope", "$window", "UUID", function ($rootScope, $window, UUID) {
-        var cache = {};
-        //disconnect whenever the app is closed
-        var onClose = function onClose(e) {
-            for (var key in cache) {
-                if (cache.hasOwnProperty(key)) {
-                    cache[key].close();
-                    cache[key] = null;
-                }
-            }
-            cache = null;
-            return null;
-        };
-        //needed for reload/backbtn
-        if ($window.onbeforeunload === 'function') {
-            var existing_1 = $window.onbeforeunload;
-            $window.onbeforeunload = function (e) {
-                onClose(e);
-                return existing_1(e);
-            };
-        } else {
-            $window.onbeforeunload = onClose;
-        }
-        $rootScope.$on('$destroy', onClose);
-        //-------------------
-        return function (url) {
-            // if(!url) return null;
-            // if(cache[url]) return cache[url];
-            var cacheRef = UUID();
-            var service = new SocketService(url, $rootScope, { cacheRef: cacheRef });
-            var closeDelegate = service.close;
-            service.close = function () {
-                var id = service.cacheRef;
-                closeDelegate.call(service); //have service disconnect and clean up itself
-                //then clean up cache reference
-                delete cache[id];
-            };
-            var onDelegate = service.on;
-            service.on = function (event, callback) {
-                if (typeof callback === 'function') {
-                    //have to use old-school refs instead of arrow functions
-                    // or else the arguments get scrambled
-                    var handle = function handle() {
-                        var args = arguments;
-                        $rootScope.$apply(function () {
-                            callback.apply(service.socket, args);
-                        });
-                    };
-                    return onDelegate.call(service, event, handle);
-                } else {
-                    return onDelegate.call(service, event);
-                }
-            };
-            var emitDelegate = service.emit;
-            service.emit = function (event, data, callback) {
-                if (typeof callback === 'function') {
-                    //have to use old-school refs instead of arrow functions
-                    // or else the arguments get scrambled
-                    var handle = function handle() {
-                        var args = arguments;
-                        $rootScope.$apply(function () {
-                            callback.apply(service.socket, args);
-                        });
-                    };
-                    emitDelegate.call(service, event, data, handle);
-                } else {
-                    emitDelegate.call(service, event, data);
-                }
-            };
-            // cache[url] = service;
-            cache[cacheRef] = service;
-            return service;
-        };
-    }]);
-})(angular);
-
-(function (angular) {
-    'use strict';
-
-    angular.module("gp-common").factory('UUID', function () {
-        function s4() {
-            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-        }
-        /*
-        return function() {
-                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
-                    s4() + '-' + s4() + s4() + s4();
-            }
-         */
-        return function () {
-            // http://www.ietf.org/rfc/rfc4122.txt
-            var s = [];
-            var hexDigits = "0123456789abcdef";
-            for (var i = 0; i < 36; i++) {
-                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
-            }
-            s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
-            s[19] = hexDigits.substr(s[19] & 0x3 | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
-            s[8] = s[13] = s[18] = s[23] = "-";
-            return s.join("");
-        };
-    });
-})(angular);
-
 (function (angular, Constants) {
     'use strict';
 
@@ -4347,7 +2608,6 @@ var __extends = undefined && undefined.__extends || function () {
             this.values = [];
             this.update();
         };
-<<<<<<< HEAD
         RecommendedTermFilter.prototype.update = function () {
             var value = this.values.length ? this.values.map(function (v) {
                 return v.uri;
@@ -4467,26 +2727,6 @@ var __extends = undefined && undefined.__extends || function () {
         template: "\n            <div class=\"card o-query-filter\" ng-if=\"$ctrl.value\">\n\n                <div class=\"a-heading\">Find Similar</div>\n\n                <p class=\"u-text--sm\">Searching for {{$ctrl.type}}s similar to the following: </p>\n\n                <div class=\"o-facets\">\n\n                    <a class=\"m-facet\" ng-if=\"$ctrl.value\" ng-click=\"$ctrl.clearValue()\">\n                        <span class=\"gpicons times-circle\"></span>\n                        {{$ctrl.value.label}}\n                    </a>\n\n                    <!--\n                    <a ng-if=\"$ctrl.mapId\" class=\"m-facet\"\n                        ng-click=\"$ctrl.toggleCurrentMap()\" ng-class=\"{active:$ctrl.useMap}\">\n                        <span class=\"gpicons check\" ng-show=\"$ctrl.useMap\"></span>\n                        <span class=\"gpicons square\" ng-show=\"!$ctrl.useMap\"></span>\n                        Find similar to my current map\n                    </a>\n                    -->\n\n                </div>\n\n                <br>\n                <p class=\"u-text--sm\">Note that query filters below are still being applied.</p>\n\n            </div>\n        "
     });
 })(angular);
-=======
-    }
-    angular.module('gp-common').service("BrowseObjectsService", ['$rootScope', '$timeout', '$resource', BrowseObjectsService]).factory("BrowseServiceFactory", ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
-    /*
-        Example of how to use the factory to customize a service
-    
-        //layer-specific browse service
-        .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
-            let service = BrowseServiceFactory({
-                key: 'layers',
-                url: Constants.ualUrl + '/api/layers'
-            });
-    
-            //add custom methods here
-    
-            return service;
-        }])
-    */
-})(angular, GeoPlatform);
->>>>>>> DT-2812: Move to cookie storage of AccessToken
 
 (function (angular, Constants) {
     'use strict';
@@ -4505,7 +2745,6 @@ var __extends = undefined && undefined.__extends || function () {
                 size: 20,
                 sort: '_score,desc' // DT-2417
             };
-<<<<<<< HEAD
             this.updateValues();
         };
         ThemesFilter.prototype.$onDestroy = function () {
@@ -4549,26 +2788,6 @@ var __extends = undefined && undefined.__extends || function () {
             //remove selected item that is outside current filtered set of options
             this.outsideResults = (this.outsideResults || []).filter(function (v) {
                 return v.id !== value.id;
-=======
-            if (typeof io === 'undefined') {
-                console.log("Socket.IO not found in global namespace");
-                return;
-            }
-            if (!url) {
-                console.log("No web socket URL configured for this app to communicate with");
-                return;
-            }
-            //make connection
-            this.socket = io.connect(url);
-            //listen for the init event indicating connection has been made
-            // and to get the socket's id from the server
-            this.socket.on("init", function (evt) {
-                _this.socketId = evt.id;
-            });
-            //if unable to connect
-            this.socket.on('error', function () {
-                console.log("Unable to connect to " + url + " with websockets");
->>>>>>> DT-2812: Move to cookie storage of AccessToken
             });
             this.toggle(value);
         };
@@ -4650,7 +2869,6 @@ var __extends = undefined && undefined.__extends || function () {
          */
         ThemesFilter.prototype.fetchSchemes = function (q) {
             var _this = this;
-<<<<<<< HEAD
             this.areSchemesLoading = true;
             var params = { type: 'skos:ConceptScheme', size: 12, sort: 'label,asc' };
             if (q && q.length) params.q = q;
@@ -4660,18 +2878,6 @@ var __extends = undefined && undefined.__extends || function () {
                 return hits;
             }).finally(function () {
                 _this.areSchemesLoading = false;
-=======
-            this.tracking[event] = this.tracking[event] || [];
-            if (!this.tracking[event].length) return; //empty, ignore request
-            var idx = this.tracking[event].indexOf(objId);
-            if (idx < 0)
-                //remove tracker
-                this.tracking[event].splice(idx, 1);
-            //send event to server about client stopping it's tracking
-            var room = objId + "_" + event.toLowerCase();
-            this.socket.emit(event, room, this.socketId, false, function () {
-                _this.leave(room);
->>>>>>> DT-2812: Move to cookie storage of AccessToken
             });
         };
         /**
@@ -4783,6 +2989,1009 @@ var __extends = undefined && undefined.__extends || function () {
     });
 })(angular, GeoPlatform);
 
+(function (angular, Constants) {
+    "use strict";
+    //fields list sent to MDR in order to have these properties for display in search results
+
+    var FIELDS = ['created', 'modified', 'publishers', 'themes', 'description', 'extent'];
+    //facets list sent to MDR in order to get aggregation numbers
+    var FACETS = ['types', 'themes', 'publishers', 'serviceTypes', 'schemes', 'visibility', 'createdBy'];
+    var SORT_OPTIONS = [{ value: "label,asc", label: "Name (A-Z)" }, { value: "label,desc", label: "Name (Z-A)" }, { value: "type,asc", label: "Type (A-Z)" }, { value: "type,desc", label: "Type (Z-A)" }, { value: "modified,desc", label: "Most recently modified" }, { value: "modified,asc", label: "Least recently modified" }, { value: "_score,desc", label: "Relevance" }];
+    //list of _options variables for mapping to parameters
+    var VAR_TYPES = 'types';
+    var VAR_THEMES = 'themes';
+    var VAR_TOPICS = 'topics';
+    var VAR_PUBLISHERS = 'publishers';
+    var VAR_USED_BY = 'usedBy';
+    var VAR_USER = 'user';
+    var VAR_CREATED_BY = 'createdBy';
+    var VAR_SERVICE_TYPES = 'serviceTypes';
+    var VAR_SCHEMES = 'schemes';
+    var VAR_VISIBILITY = "visibility";
+    var VAR_QUERY = 'query';
+    var VAR_EXTENT = 'bbox';
+    var VAR_MODIFIED_BEFORE = 'modified.max';
+    var VAR_MODIFIED_AFTER = 'modified.min';
+    var VAR_RESOURCE_TYPES = 'resourceTypes';
+    //parameter names for various query constraints used in requests to MDR for results
+    var PARAMETER_TYPE = 'type';
+    var PARAMETER_THEME = 'theme.id';
+    var PARAMETER_TOPIC = 'topic.id';
+    var PARAMETER_PUBLISHER = 'publisher.id';
+    var PARAMETER_USED_BY = 'usedBy.id';
+    var PARAMETER_CREATED_BY = 'createdBy';
+    var PARAMETER_CONTRIBUTED_BY = 'contributedBy';
+    var PARAMETER_CREATOR = 'creator.id';
+    var PARAMETER_SVC_TYPE = 'serviceType.id';
+    var PARAMETER_IN_SCHEME = 'scheme.id';
+    var PARAMETER_VISIBILITY = 'visibility';
+    var PARAMETER_QUERY = 'q';
+    var PARAMETER_EXTENT = 'extent';
+    var PARAMETER_MODIFIED_BEFORE = 'modified.max';
+    var PARAMETER_MODIFIED_AFTER = 'modified.min';
+    var PARAMETER_RESOURCE_TYPES = 'resourceType';
+    // const PARAMETER_CONTRIBUTOR     = 'contributor.id';
+    var PARAM_OPTIONS = [{ option: VAR_TYPES, parameter: PARAMETER_TYPE }, { option: VAR_THEMES, parameter: PARAMETER_THEME }, { option: VAR_TOPICS, parameter: PARAMETER_TOPIC }, { option: VAR_PUBLISHERS, parameter: PARAMETER_PUBLISHER }, { option: VAR_USED_BY, parameter: PARAMETER_USED_BY }, { option: VAR_USER, parameter: PARAMETER_CREATOR }, { option: VAR_CREATED_BY, parameter: PARAMETER_CREATED_BY }, { option: VAR_SERVICE_TYPES, parameter: PARAMETER_SVC_TYPE }, { option: VAR_SCHEMES, parameter: PARAMETER_IN_SCHEME }, { option: VAR_VISIBILITY, parameter: PARAMETER_VISIBILITY }, { option: VAR_QUERY, parameter: PARAMETER_QUERY }, { option: VAR_EXTENT, parameter: PARAMETER_EXTENT }, { option: VAR_MODIFIED_BEFORE, parameter: PARAMETER_MODIFIED_BEFORE }, { option: VAR_MODIFIED_AFTER, parameter: PARAMETER_MODIFIED_AFTER }, { option: VAR_RESOURCE_TYPES, parameter: PARAMETER_RESOURCE_TYPES }];
+    var PAGE_SIZE_BASE_10 = [10, 20, 50, 100];
+    var PAGE_SIZE_BASE_12 = [12, 24, 48, 96];
+    /**
+     *
+     *
+     */
+    function BrowseObjectsService($rootScope, $timeout, $resource, options) {
+        /* -------- private data ----------- */
+        var url = options && options.url ? options.url + "/:id" : Constants.ualUrl + '/api/items/:id';
+        var eventKey = 'gp:browse:' + (options && options.key ? options.key : 'objects') + ":";
+        var svc = $resource(url, { id: '@id' }, {
+            query: {
+                isArray: false
+            }
+        });
+        var _pageSizeBase = PAGE_SIZE_BASE_10.slice(0);
+        if (options && options.pageSizeBase && options.pageSizeBase === 12) _pageSizeBase = PAGE_SIZE_BASE_12.slice(0);
+        var _options = {
+            start: 0,
+            size: _pageSizeBase[0],
+            total: 0,
+            sort: options && options.sort ? options.sort : "modified,desc",
+            facets: {}
+        };
+        //list of field names to request in response
+        var _fields = options && options.fields ? options.fields : FIELDS.slice(0);
+        //list of facet names to request
+        var _requestFacets = options && options.facets ? options.facets : FACETS.slice(0);
+        var _facets = [];
+        var _selectedFacets = [];
+        var _results = [];
+        var _dirtyPromise = null;
+        var _isLoading = false;
+        var _selected = [];
+        var _onSelectFn = options && options.onSelect ? options.onSelect : null;
+        /**
+         *
+         */
+        function notify(eventName, arg) {
+            // console.log("Notifying of " + eventName + " with " + arg);
+            $rootScope.$broadcast(eventName, arg);
+        }
+        /**
+         * when marked as dirty, debounce for rapid fire events like onKeyUp
+         */
+        function dirty(delay, resetStart) {
+            var doReset = typeof resetStart === 'undefined' || resetStart === true;
+            if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+            _dirtyPromise = $timeout(function () {
+                _dirtyPromise = null;
+                _doUpdate(doReset);
+            }, delay || 100);
+        }
+        /**
+         *
+         */
+        function _doUpdate(resetStart) {
+            if (resetStart) _options.start = 0;
+            _isLoading = true;
+            notify(eventKey + 'querying');
+            var params = {};
+            // -------- QUERY FILTERS --------
+            //create a temporary options object
+            var opts = angular.copy(_options);
+            //apply options as parameters
+            angular.forEach(PARAM_OPTIONS, function (po) {
+                var name = po.parameter;
+                var value = opts[po.option];
+                var isSet = value !== null && typeof value !== 'undefined';
+                var isArr = isSet && typeof value.push !== 'undefined';
+                if (isSet && (!isArr || value.length)) {
+                    params[name] = isArr ? value.join(',') : value;
+                } else {
+                    delete params[name];
+                }
+                delete opts[po.option]; //remove from temp opts
+            });
+            //apply remaining options to query
+            // these are not keyed with specific parameters (ie, custom params)
+            angular.forEach(opts, function (value, name) {
+                if (value !== null && typeof value !== 'undefined') {
+                    var isArr = typeof value.push !== 'undefined';
+                    params[name] = isArr ? value.join(',') : value;
+                } else {
+                    //make sure it doesn't get sent if no value provided
+                    delete params[name];
+                }
+            });
+            // -------- QUERY FILTERS --------
+            var arr = [];
+            for (var k in _options.facets) {
+                if (_options.facets.hasOwnProperty(k)) {
+                    //encode commas in facet name since it's used to separate multiple
+                    // facet values
+                    arr.push(k + ":" + _options.facets[k].replace(/,/g, '%2C'));
+                }
+            }
+            _selectedFacets = arr;
+            var start = _options.start;
+            if (isNaN(start)) start = 0;else start = start * 1;
+            params.page = Math.floor(start / _options.size);
+            params.size = _options.size;
+            params.sort = _options.sort;
+            if (arr.length) params.facets = arr.join(',');
+            //prevent CORS cache bug in Chrome
+            params.bust = new Date().getTime();
+            //request facets
+            params.includeFacet = _requestFacets.join(',');
+            //request fields
+            params.fields = _fields.join(',');
+            svc.query(params).$promise.then(function (response) {
+                _results = response.results;
+                _facets = response.facets || [];
+                //auto select objects if user has marked it as selected previously
+                // this is needed to maintain selections across pagination pages
+                _selected.each(function (id) {
+                    var map = _results.find(function (map) {
+                        return map._id === id;
+                    });
+                    if (map) map.selected = true;
+                });
+                //will trigger update on pagination directive
+                _options.total = response.totalResults;
+                _isLoading = false;
+                notify(eventKey + 'results');
+                notify(eventKey + 'pagination');
+                if (options.trackingService) {
+                    //If an instanceof APIClient.TrackingService has been provided
+                    // using the constructor options, report the event of this search
+                    // using the TrackingService API
+                    setTimeout( //call using timeout to avoid any errors breaking search
+                    function (trSvc, qp, total) {
+                        trSvc.logSearch(qp, total);
+                    }, 50, options.trackingService, params, response.totalResults);
+                }
+            }).catch(function (response) {
+                _isLoading = false;
+                //fallback
+                var obj = { error: "An Error Occurred", message: "No details provided" };
+                //http response error
+                if (response && response.data) obj = response.data;
+                //normal error
+                else if (response && response.message) obj = response;
+                //serialized json
+                if (typeof obj === 'string') {
+                    try {
+                        obj = JSON.parse(obj);
+                    } catch (e) {
+                        obj.message = "Bad response from server";
+                    }
+                }
+                var error = {
+                    label: obj.error || "An Error Occurred",
+                    message: obj.message || "No details provided"
+                };
+                notify(eventKey + 'error', error);
+            });
+        }
+        function setOption(name, value, fire) {
+            _options[name] = value;
+            if (typeof fire === 'undefined' || !!fire) {
+                var delay = 500;
+                if (value === null || value === undefined) delay = 0;else if (typeof value.push !== 'undefined' && value.length) delay = 0; //arrays
+                else if (!value.length) delay = 0; //strings
+                dirty(delay, shouldResetPageStart(name));
+            }
+        }
+        /**
+         * @param {string} key - option being set
+         * @return {boolean} true if the property change should reset pagination start
+         */
+        function shouldResetPageStart(key) {
+            return key !== 'start' && key !== 'size' && key !== 'count' && key !== 'pageSize' && key !== 'sort';
+        }
+        /* ------------ public api ------------- */
+        return {
+            events: {
+                LOADING: eventKey + 'querying',
+                RESULTS: eventKey + 'results',
+                PAGINATION: eventKey + 'pagination',
+                SELECTED: eventKey + 'selected',
+                ERROR: eventKey + 'error',
+                SELECTED_ADDED: eventKey + 'selected:added',
+                SELECTED_REMOVED: eventKey + 'selected:removed',
+                SIMILARITY: eventKey + 'similarTo',
+                CLEARED: eventKey + 'cleared'
+            },
+            /**
+             * @return {bool}
+             */
+            getLoadingStatus: function getLoadingStatus() {
+                return _isLoading;
+            },
+            /**
+             * NOTE: Make sure event names are prefixed with
+             *  eventKey + ''
+             * @param {string} eventName
+             * @param {function} listener
+             */
+            on: function on(eventName, listener) {
+                // if(eventName.indexOf(eventKey + ":") !== 0)
+                //     eventName = eventKey + '' + eventName;
+                return $rootScope.$on(eventName, listener);
+            },
+            /**
+             * @param {string} eventName
+             * @param {*} args
+             */
+            trigger: function trigger(eventName, args) {
+                notify(eventName, args);
+            },
+            /**
+             * @return {array[object]}
+             */
+            getResults: function getResults() {
+                return _results;
+            },
+            /**
+             * @return {array[string]} list of facet names
+             */
+            getFacetNames: function getFacetNames() {
+                return FACETS.slice(0);
+            },
+            /**
+             * @return {object} in form of <facet>: [<values>]
+             */
+            getFacets: function getFacets() {
+                return _facets;
+            },
+            /**
+             * @param {string} name
+             * @return {object|null}
+             */
+            getFacet: function getFacet(name) {
+                if (_facets) {
+                    return _facets.find(function (facet) {
+                        return facet.name === name;
+                    });
+                }
+                return null;
+            },
+            addFacet: function addFacet(name) {
+                _requestFacets.push(name);
+            },
+            applyConstraints: function applyConstraints(obj) {
+                for (var p in obj) {
+                    if (obj.hasOwnProperty(p)) {
+                        _options[p] = obj[p];
+                    }
+                }
+                _doUpdate(true);
+            },
+            applyOption: function applyOption(key, value, fire) {
+                setOption(key, value, fire);
+            },
+            applyOptions: function applyOptions(opts, fire) {
+                angular.forEach(opts, function (value, key) {
+                    setOption(key, value, false);
+                });
+                if (fire) _doUpdate(true);
+            },
+            /**
+             * @param {string} name - name of query parameter
+             * @return {any} value of specified query parameter
+             */
+            getQueryOption: function getQueryOption(name) {
+                return _options[name];
+            },
+            /**
+             * @param {string} text - free text query
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setQuery: function setQuery(text, fireUpdate) {
+                setOption(VAR_QUERY, text, fireUpdate);
+            },
+            getQuery: function getQuery() {
+                return _options[VAR_QUERY];
+            },
+            /**
+             * @param {array[string]} types - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setTypes: function setTypes(types, fireUpdate) {
+                setOption(VAR_TYPES, types, fireUpdate);
+            },
+            getTypes: function getTypes() {
+                return _options[VAR_TYPES];
+            },
+            /**
+             * @param {string} userId - identifier of user
+             * @param {boolean} fireUpdate -
+             */
+            setUser: function setUser(userId, fireUpdate) {
+                setOption(VAR_USER, userId, fireUpdate);
+            },
+            getUser: function getUser() {
+                return _options[VAR_USER];
+            },
+            /**
+             * @param {array[string]} creators - ids of creators
+             * @param {boolean} fireUpdate -
+             */
+            setCreatedBy: function setCreatedBy(creators, fireUpdate) {
+                setOption(VAR_CREATED_BY, creators, fireUpdate);
+            },
+            getCreatedBy: function getCreatedBy() {
+                return _options[VAR_CREATED_BY];
+            },
+            /**
+             * @param {array[string]} themes - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setThemes: function setThemes(themes, fireUpdate) {
+                setOption(VAR_THEMES, themes, fireUpdate);
+            },
+            getThemes: function getThemes() {
+                return _options[VAR_THEMES];
+            },
+            /**
+             * @param {array[string]} publishers - name of class(es) to request
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setAgencies: function setAgencies(publishers, fireUpdate) {
+                setOption(VAR_PUBLISHERS, publishers, fireUpdate);
+            },
+            getAgencies: function getAgencies() {
+                return _options[VAR_PUBLISHERS];
+            },
+            /**
+             * @param {array[string]} ids - ids of agents using this item
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setUsedBy: function setUsedBy(ids, fireUpdate) {
+                setOption(VAR_USED_BY, ids, fireUpdate);
+            },
+            getUsedBy: function getUsedBy() {
+                return _options[VAR_USED_BY];
+            },
+            /**
+             * @param {array[string]} svcTypes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setServiceTypes: function setServiceTypes(svcTypes, fireUpdate) {
+                setOption(VAR_SERVICE_TYPES, svcTypes, fireUpdate);
+            },
+            getServiceTypes: function getServiceTypes() {
+                return _options[VAR_SERVICE_TYPES];
+            },
+            /**
+             * @param {array[string]} resTypes - uris
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setResourceTypes: function setResourceTypes(resTypes, fireUpdate) {
+                setOption(VAR_RESOURCE_TYPES, resTypes, fireUpdate);
+            },
+            getResourceTypes: function getResourceTypes() {
+                return _options[VAR_RESOURCE_TYPES];
+            },
+            /**
+             * @param {array[string]} schemes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setSchemes: function setSchemes(schemes, fireUpdate) {
+                setOption(VAR_SCHEMES, schemes, fireUpdate);
+            },
+            getSchemes: function getSchemes() {
+                return _options[VAR_SCHEMES];
+            },
+            /**
+             * @param {array[string]} schemes - ids
+             * @param {bool} fireUpdate - trigger update (default is true)
+             */
+            setTopics: function setTopics(topics, fireUpdate) {
+                setOption(VAR_TOPICS, topics, fireUpdate);
+            },
+            getTopics: function getTopics() {
+                return _options[VAR_TOPICS];
+            },
+            /**
+             * @param {string} visibility - one of 'public' or 'private'
+             * @param {boolean} fireUpdate
+             */
+            setVisibility: function setVisibility(visibility, fireUpdate) {
+                setOption(VAR_VISIBILITY, visibility, fireUpdate);
+            },
+            getVisibility: function getVisibility() {
+                return _options[VAR_VISIBILITY];
+            },
+            /**
+             * @param {Date} date - date to compare against
+             * @param {boolean} beforeOrAfter - flag specifying which boundary condition (true = before, false = after)
+             * @param {boolean} fireUpdate - flag specifying whether to trigger update automatically
+             */
+            setModified: function setModified(date, beforeOrAfter, fireUpdate) {
+                //if no date was supplied, consider it "unset" for both properties
+                if (!date) {
+                    setOption(VAR_MODIFIED_BEFORE, null, false);
+                    setOption(VAR_MODIFIED_AFTER, null, true);
+                    return;
+                }
+                var dir = beforeOrAfter && (beforeOrAfter === true || beforeOrAfter === "true");
+                var prop = dir ? VAR_MODIFIED_BEFORE : VAR_MODIFIED_AFTER; //property being set
+                var oppProp = dir ? VAR_MODIFIED_AFTER : VAR_MODIFIED_BEFORE; //unset opposite property
+                var arg = date && date.getTime ? date.getTime() : date;
+                setOption(oppProp, null, false);
+                setOption(prop, arg, true);
+            },
+            getModified: function getModified() {
+                return this._options[VAR_MODIFIED_BEFORE] || this._options[VAR_MODIFIED_AFTER];
+            },
+            /**
+             * @param {string} bboxStr - form of "minx,miny,maxx,maxy"
+             * @param {boolean} fireUpdate
+             */
+            setExtent: function setExtent(bboxStr) {
+                setOption(VAR_EXTENT, bboxStr, true);
+            },
+            /** @return {string} bbox string or null if not set */
+            getExtent: function getExtent() {
+                return _options[VAR_EXTENT];
+            },
+            /**
+             * @return {array} list of selected items from current search results
+             */
+            getSelected: function getSelected() {
+                return _selected;
+            },
+            /**
+             * @param {array} arr - list of items to select in current search results
+             */
+            setSelected: function setSelected(arr) {
+                _selected = arr;
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * @param {string} id - identifier of item in current search results to add to selected list
+             */
+            select: function select(id) {
+                var finder = function finder(l) {
+                    return l.id === id;
+                };
+                var existing = _selected.find(finder);
+                if (existing) {
+                    //already selected, deselect it
+                    var idx = _selected.indexOf(existing);
+                    if (idx >= 0) {
+                        _selected.splice(idx, 1);
+                        notify(eventKey + 'selected:removed', existing);
+                    }
+                } else {
+                    //not selected, select it
+                    var obj = _results.find(finder);
+                    if (obj) {
+                        if (_onSelectFn) {
+                            _onSelectFn(id, function (err, item) {
+                                if (item) {
+                                    _selected.unshift(item);
+                                    notify(eventKey + 'selected:added', item);
+                                }
+                            });
+                        } else {
+                            _selected.unshift(obj);
+                            notify(eventKey + 'selected:added', obj);
+                        }
+                    }
+                }
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * @param {string} id - identifier of item to check
+             * @return {boolean} true if selected, false otherwise
+             */
+            isSelected: function isSelected(id) {
+                return _selected.find(function (obj) {
+                    return obj.id === id;
+                });
+            },
+            /**
+             * select all items in current page of results
+             */
+            selectAll: function selectAll() {
+                var _this = this;
+                angular.forEach(_results, function (obj) {
+                    if (!_this.isSelected(obj.id)) _selected.unshift(obj);
+                });
+                notify(this.events.SELECTED, _selected);
+            },
+            /**
+             * empty list of selected items
+             */
+            clearSelected: function clearSelected() {
+                var prev = _selected.slice(0);
+                notify(this.events.SELECTED_REMOVED, prev);
+                _selected = [];
+                notify(this.events.SELECTED, []);
+            },
+            /**
+             *
+             */
+            clear: function clear(refresh) {
+                for (var prop in _options) {
+                    if (!_options.hasOwnProperty(prop)) continue;
+                    if ('start' === prop) _options[prop] = 0;else if ('size' === prop) {} else if ('sort' === prop) _options[prop] = 'modified,desc';else if ('facets' === prop) _options[prop] = {};else _options[prop] = null;
+                }
+                notify(this.events.CLEARED);
+                if (refresh || typeof refresh === 'undefined') _doUpdate(true);
+            },
+            /*
+             * @param {string} category - name of facet
+             * @param {string} value - value of facet
+             */
+            setFacet: function setFacet(category, value) {
+                var f = _options.facets[category];
+                if (!f) //this facet category not set yet
+                    _options.facets[category] = value;else {
+                    //this facet category already set
+                    if (f === value) {
+                        //this facet value already set
+                        //unset it
+                        delete _options.facets[category];
+                    } else {
+                        //this facet value not set
+                        //set it
+                        _options.facets[category] = value;
+                    }
+                }
+                _doUpdate(true);
+            },
+            /**
+             * @param {array[string]} fields - list of field names to request for each search result
+             */
+            setFields: function setFields(fields) {
+                if (fields && typeof fields.push !== 'undefined') _fields = fields;
+            },
+            /**
+             * @param {int} start - beginning index of results to request
+             * @param {bool} andUpdate - trigger update (default is true)
+             */
+            start: function start(_start, andUpdate) {
+                _options.start = _start;
+                if (andUpdate && andUpdate === true) _doUpdate(false);
+            },
+            /**
+             * @param {int} size - page size to request
+             * @param {bool} andUpdate - trigger update (default is true)
+             */
+            size: function size(_size, andUpdate) {
+                _options.size = _size;
+                //find out which page in the new scheme the current first-result of current page
+                // will show up in, and set start so that it shows up with the new page size
+                var page = Math.floor(_options.start * 1 / _options.size * 1);
+                _options.start = page * (_options.size * 1);
+                if (andUpdate && andUpdate === true) _doUpdate(false);
+            },
+            /**
+             * @param {int} size - number of items to return in each page of results
+             */
+            pageSize: function pageSize(size) {
+                this.size(size, true);
+            },
+            /**
+             * @param {string} sort - form of <field>,<dir>
+             */
+            sort: function sort(_sort) {
+                _options.sort = _sort;
+                _doUpdate(false);
+            },
+            /**
+             * return {object} containing start index, page size, and total results
+             */
+            getPagination: function getPagination() {
+                return {
+                    start: _options.start,
+                    size: _options.size,
+                    pageSize: _options.size,
+                    total: _options.total,
+                    sizeOptions: _pageSizeBase
+                };
+            },
+            /**
+             * @return {array} list of key-value pairs of sort options
+             */
+            getSortOptions: function getSortOptions() {
+                return SORT_OPTIONS.slice(0);
+            },
+            /**
+             * @return {string} sorting parameter (field,order)
+             */
+            getSortValue: function getSortValue() {
+                return _options.sort;
+            },
+            /**
+             * @return {object} clone of the current set of query options
+             */
+            getQueryOptions: function getQueryOptions() {
+                return jQuery.extend({}, _options);
+            },
+            /**
+             *
+             */
+            hasQueryOptions: function hasQueryOptions() {
+                var result = false;
+                for (var k in _options) {
+                    if (_options.hasOwnProperty(k)) {
+                        if ('start' === k || 'size' === k || 'total' === k || 'sort' === k || 'order' === k || 'within' === k || 'facets' === k) continue;
+                        if (_selectedFacets.length) result = true;
+                        if (typeof _options[k] !== 'undefined' && _options[k] !== null) {
+                            result = true;
+                        }
+                    }
+                }
+                return result;
+            },
+            /**
+             * Triggers a refresh of current search results
+             * @param {boolean} resetStart - reset 'start' to 0 flag
+             */
+            update: function update(resetStart) {
+                dirty(0, resetStart);
+            },
+            reset: function reset() {
+                _options = {
+                    start: 0,
+                    size: _pageSizeBase[0],
+                    total: 0,
+                    sort: "modified,desc", order: "asc",
+                    facets: {}
+                };
+                notify(this.events.CLEARED);
+                _facets = [];
+                _selectedFacets = [];
+                _results = [];
+                _isLoading = false;
+                _selected = [];
+                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+                _dirtyPromise = null;
+            },
+            destroy: function destroy() {
+                if (_dirtyPromise) $timeout.cancel(_dirtyPromise);
+            }
+        };
+    }
+    /**
+     * Factory for creating instances of BrowseObjectsService
+     */
+    function BrowseServiceFactory($rootScope, $timeout, $resource) {
+        return function (options) {
+            var svc = BrowseObjectsService($rootScope, $timeout, $resource, options);
+            if (options && options.params) svc.applyOptions(options.params);
+            return svc;
+        };
+    }
+    angular.module('gp-common')
+    //generic browse service
+    .service("BrowseObjectsService", ['$rootScope', '$timeout', '$resource', BrowseObjectsService])
+    //factory for creating specific browse services
+    .factory("BrowseServiceFactory", ['$rootScope', '$timeout', '$resource', 'BrowseObjectsService', BrowseServiceFactory]);
+    /*
+        Example of how to use the factory to customize a service
+    
+        //layer-specific browse service
+        .service('BrowseLayerObjService', ['BrowseServiceFactory', function(BrowseServiceFactory) {
+            let service = BrowseServiceFactory({
+                key: 'layers',
+                url: Constants.ualUrl + '/api/layers'
+            });
+    
+            //add custom methods here
+    
+            return service;
+        }])
+    */
+})(angular, GeoPlatform);
+
+(function (angular) {
+    'use strict';
+    /* *********************************************
+     * Requires socket.io be in the global namespace
+     * tested with version 2.x
+     * ********************************************* */
+    /*
+       Usage:
+        let service = ...
+        let svcId = service.getId();
+        //listen to events from the server
+       service.on('testing', (event) => {
+           if(event.clientId === svcId) return; //ignore our own events
+           ... do something ...
+       });
+       
+       //sends out a message to others
+       service.emit( service.events.CREATED, 'test');
+        //sends out a message to others
+       service.begin(service.events.EDITING, 'test');
+        //sends out a message to others
+       service.end(service.events.EDITING, 'test');
+        //stop listening and close the socket
+       service.close();
+      */
+    /**
+     *
+     */
+
+    var SocketService = /** @class */function () {
+        SocketService.$inject = ["url", "options"];
+        function SocketService(url, options) {
+            'ngInject';
+
+            var _this = this;
+            var opts = (typeof options === "undefined" ? "undefined" : _typeof(options)) === 'object' ? options : {};
+            for (var key in opts) {
+                this[key] = opts[key];
+            }this.socket = null;
+            //list of ids of things being tracked, such as 
+            // items edited, in order to send messages
+            // about the things lifecycle
+            this.tracking = {};
+            //events supported.
+            // Note that lifecycles can be added by using the 
+            // begin() and end() methods on the service,
+            // which appends '_start' and '_end' respectively
+            this.events = {
+                CREATED: 'created',
+                UPDATED: 'updated',
+                DELETED: 'deleted',
+                EDITING: 'editing',
+                STATUS: 'status'
+            };
+            if (typeof io === 'undefined') {
+                console.log("Socket.IO not found in global namespace");
+                return;
+            }
+            if (!url) {
+                //TODO validate URL with regex?
+                console.log("No web socket URL configured for this app to communicate with");
+                return;
+            }
+            //make connection
+            this.socket = io.connect(url);
+            //listen for the init event indicating connection has been made
+            // and to get the socket's id from the server
+            this.socket.on("init", function (evt) {
+                _this.socketId = evt.id;
+            });
+            //if unable to connect
+            this.socket.on('error', function () {
+                console.log("Unable to connect to " + url + " with websockets");
+            });
+        }
+        /**
+         *
+         */
+        SocketService.prototype.getId = function () {
+            return this.socketId;
+        };
+        /**
+         * @param {string} eventName
+         * @param {Function} callback
+         * @return {Function} to remove the listener
+         */
+        SocketService.prototype.on = function (eventName, callback) {
+            var _this = this;
+            if (!this.socket) return function () {};
+            //add the listener to the socket
+            this.socket.on(eventName, callback);
+            //return an 'off' function to remove the listener
+            return function () {
+                _this.socket.off(eventName, callback);
+            };
+        };
+        /**
+         *
+         */
+        SocketService.prototype.emit = function (eventName, data, callback) {
+            if (!this.socket) return;
+            this.socket.emit(eventName, data, callback);
+        };
+        /**
+         * Closes this service's socket
+         */
+        SocketService.prototype.close = function () {
+            var _this = this;
+            //if this app was tracking an obj, 
+            // notify listeners that it is no longer
+            for (var event in this.tracking) {
+                if (this.tracking.hasOwnProperty(event)) {
+                    var tracks = this.tracking[event];
+                    if (tracks && tracks.length) {
+                        /* jshint ignore:start */
+                        angular.forEach(tracks, function (id) {
+                            _this.end(event, id);
+                        });
+                        /* jshint ignore:end */
+                    }
+                }
+            }
+            if (this.socket) {
+                this.socket.close();
+                this.socket = null;
+            }
+            return null;
+        };
+        /**
+         * @param {string} event - name of the event being started
+         * @param {string} objId - identifier of the item being tracked
+         */
+        SocketService.prototype.begin = function (event, objId) {
+            var _this = this;
+            this.tracking[event] = this.tracking[event] || [];
+            this.tracking[event].push(objId);
+            var room = objId + "_" + event.toLowerCase();
+            this.join(room, function () {
+                _this.socket.emit(event, room, _this.socketId, true);
+            });
+        };
+        /**
+         * @param {string} event - name of the event being ended
+         * @param {string} objId - identifier of the item being tracked
+         */
+        SocketService.prototype.end = function (event, objId) {
+            var _this = this;
+            this.tracking[event] = this.tracking[event] || [];
+            if (!this.tracking[event].length) return; //empty, ignore request
+            var idx = this.tracking[event].indexOf(objId);
+            if (idx < 0) //not found, ignore request
+                //remove tracker
+                this.tracking[event].splice(idx, 1);
+            //send event to server about client stopping it's tracking
+            var room = objId + "_" + event.toLowerCase();
+            this.socket.emit(event, room, this.socketId, false, function () {
+                _this.leave(room);
+            });
+        };
+        /**
+         *
+         */
+        SocketService.prototype.join = function (objId, callback) {
+            this.emit('join', objId, callback);
+        };
+        /**
+         *
+         */
+        SocketService.prototype.leave = function (objId, callback) {
+            this.emit('leave', objId, callback);
+        };
+        return SocketService;
+    }();
+    /**
+     * Factory to get a Service used to listen for WebSocket messages from a server
+     *
+     * Usage:
+     *
+     * let wsUrl = ...
+     * let service = SocketServiceFactory(wsUrl);
+     *
+     */
+    angular.module('gp-common').factory('SocketServiceFactory', ["$rootScope", "$window", "UUID", function ($rootScope, $window, UUID) {
+        var cache = {};
+        //disconnect whenever the app is closed
+        var onClose = function onClose(e) {
+            for (var key in cache) {
+                if (cache.hasOwnProperty(key)) {
+                    cache[key].close();
+                    cache[key] = null;
+                }
+            }
+            cache = null;
+            return null;
+        };
+        //needed for reload/backbtn
+        if ($window.onbeforeunload === 'function') {
+            var existing_1 = $window.onbeforeunload;
+            $window.onbeforeunload = function (e) {
+                onClose(e);
+                return existing_1(e);
+            };
+        } else {
+            $window.onbeforeunload = onClose;
+        }
+        $rootScope.$on('$destroy', onClose);
+        //-------------------
+        return function (url) {
+            // if(!url) return null;
+            // if(cache[url]) return cache[url];
+            var cacheRef = UUID();
+            var service = new SocketService(url, $rootScope, { cacheRef: cacheRef });
+            var closeDelegate = service.close;
+            service.close = function () {
+                var id = service.cacheRef;
+                closeDelegate.call(service); //have service disconnect and clean up itself
+                //then clean up cache reference
+                delete cache[id];
+            };
+            var onDelegate = service.on;
+            service.on = function (event, callback) {
+                if (typeof callback === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    var handle = function handle() {
+                        var args = arguments;
+                        $rootScope.$apply(function () {
+                            callback.apply(service.socket, args);
+                        });
+                    };
+                    return onDelegate.call(service, event, handle);
+                } else {
+                    return onDelegate.call(service, event);
+                }
+            };
+            var emitDelegate = service.emit;
+            service.emit = function (event, data, callback) {
+                if (typeof callback === 'function') {
+                    //have to use old-school refs instead of arrow functions
+                    // or else the arguments get scrambled
+                    var handle = function handle() {
+                        var args = arguments;
+                        $rootScope.$apply(function () {
+                            callback.apply(service.socket, args);
+                        });
+                    };
+                    emitDelegate.call(service, event, data, handle);
+                } else {
+                    emitDelegate.call(service, event, data);
+                }
+            };
+            // cache[url] = service;
+            cache[cacheRef] = service;
+            return service;
+        };
+    }]);
+})(angular);
+
+(function (angular) {
+    'use strict';
+
+    angular.module("gp-common").factory('UUID', function () {
+        function s4() {
+            return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+        }
+        /*
+        return function() {
+                return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+                    s4() + '-' + s4() + s4() + s4();
+            }
+         */
+        return function () {
+            // http://www.ietf.org/rfc/rfc4122.txt
+            var s = [];
+            var hexDigits = "0123456789abcdef";
+            for (var i = 0; i < 36; i++) {
+                s[i] = hexDigits.substr(Math.floor(Math.random() * 0x10), 1);
+            }
+            s[14] = "4"; // bits 12-15 of the time_hi_and_version field to 0010
+            s[19] = hexDigits.substr(s[19] & 0x3 | 0x8, 1); // bits 6-7 of the clock_seq_hi_and_reserved to 01
+            s[8] = s[13] = s[18] = s[23] = "-";
+            return s.join("");
+        };
+    });
+})(angular);
+
 /// <reference path="../types.d.ts" />
 /// <reference path="../commonNG.ts" />
 (function (angular) {
@@ -4832,7 +4041,19 @@ var __extends = undefined && undefined.__extends || function () {
      *   - idmUrl : the url to the identity management server
      *   - portalUrl : the url to the main landing page of GeoPlatform (www.geoplatform.gov in production)
      */
-    angular.module('gp-common').service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig', function ($q, $http, $location, $rootScope, $window, Config) {
+    angular.module('gp-common')
+    /**
+     * Authentication Service
+     *
+     * Because the auth service redirects the page to the IDM portal
+     * and WMV is reloaded once the login/logout processes are complete,
+     * there's no need to bind listeners informing other components of
+     * an auth change.
+     *
+     * Inside "DEV", you should close and re-open any components' widgets
+     * to get current auth status.
+     */
+    .service('AuthenticationService', ['$q', '$http', '$location', '$rootScope', '$window', 'GPConfig', function ($q, $http, $location, $rootScope, $window, Config) {
         var User = /** @class */function () {
             function User(opts) {
                 this.id = opts.sub;
@@ -4903,6 +4124,7 @@ var __extends = undefined && undefined.__extends || function () {
                 try {
                     return raw ? atob(decodeURIComponent(raw)) : undefined;
                 } catch (e) {
+                    // Catch bad encoding or formally not encoded
                     return undefined;
                 }
             };
@@ -4935,9 +4157,27 @@ var __extends = undefined && undefined.__extends || function () {
                         $window.location.search.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '');
                     }
                 }
+                // Setup active session checher
+                this.preveiousTokenPresentCheck = !!jwt;
+                setInterval(function () {
+                    self.checkForLocalToken();
+                }, Config.tokenCheckInterval);
                 var user = this.getUserFromJWT(jwt);
-                if (user) $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
+                if (user) $rootScope.$broadcast("userAuthenticated", user);
                 return user;
+            };
+            /**
+             * Checks for the presence of token in cookie. If there has been a
+             * change (cookie appears or disapears) the fire event handlers to
+             * notify the appliction of the event.
+             */
+            AuthService.prototype.checkForLocalToken = function () {
+                var jwt = this.getJWT();
+                var tokenPresent = !!jwt;
+                // compare with previous check
+                if (tokenPresent !== this.preveiousTokenPresentCheck) tokenPresent ? $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt)) : $rootScope.$broadcast("userSignOut");
+                // update previous state for next check
+                this.preveiousTokenPresentCheck = tokenPresent;
             };
             /**
              * Create an invisable iframe and appends it to the bottom of the page.
@@ -5134,11 +4374,13 @@ var __extends = undefined && undefined.__extends || function () {
                 var jwt = this.getJWT();
                 if (!jwt) return $q.when(null);
                 if (!this.isImplicitJWT(jwt)) {
+                    // Grant token
                     return this.isExpired(jwt) ? this.checkWithClient(jwt).then(function (jwt) {
                         return _this.getUserFromJWT(jwt);
                     }) : // Check with server
                     $q.when(this.getUserFromJWT(jwt));
                 } else {
+                    // Implicit JWT
                     return this.isExpired(jwt) ? $q.reject(null) : $q.when(this.getUserFromJWT(jwt));
                 }
             };
@@ -5244,7 +4486,7 @@ var __extends = undefined && undefined.__extends || function () {
                         var base64Url = token.split('.')[1];
                         var base64 = base64Url.replace('-', '+').replace('_', '/');
                         parsed = JSON.parse(atob(base64));
-                    } catch (e) {}
+                    } catch (e) {/* Don't throw parse error */}
                 }
                 return parsed;
             };
@@ -5278,7 +4520,14 @@ var __extends = undefined && undefined.__extends || function () {
             return AuthService;
         }();
         return new AuthService();
-    }]).factory('ng-common-AuthenticationInterceptor', ["$injector", "$window", function ($injector, $window) {
+    }])
+    /**
+     * Interceptor that check for an updaed AccessToken coming from any request
+     * and will take it and set it as the token to use in future outgoing
+     * requests
+     *
+    */
+    .factory('ng-common-AuthenticationInterceptor', ["$injector", "$window", function ($injector, $window) {
         // Interceptors
         // Request Handler
         function requestHandler(config) {
