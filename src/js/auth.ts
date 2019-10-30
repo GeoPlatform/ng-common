@@ -351,7 +351,7 @@
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
-          getUser(callback?: (user: User) => any): userOrNothing {
+          getUser(callback?: (user: User) => any): User {
             const jwt = this.getJWT();
             // If callback provided we can treat async and call server
             if(callback && typeof(callback) === 'function'){
@@ -602,7 +602,7 @@
      * Interceptor that check for an updaed AccessToken coming from any request
      * and will take it and set it as the token to use in future outgoing
      * requests
-     */
+     *
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptors
 
@@ -626,6 +626,7 @@
     .config(function myAppConfig ($httpProvider:  ng.IHttpProvider) {
       $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
     })
+    */
 
 
     .directive('gpLoginModal', ['$rootScope', 'AuthenticationService', 'GPConfig',
