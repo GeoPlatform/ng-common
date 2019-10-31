@@ -159,7 +159,8 @@
             };
 
             this.update = function() {
-
+                if(!this.ngModel) return;
+                
                 if(this.ngModel.$promise && !this.ngModel.$resolved) {
                     this.ngModel.$promise.then( model => { this.update(); });
                     return;
