@@ -1,5 +1,7 @@
-// Types Created by and used in ng-common
+// Common types:
+type StringObj = {[x: string]: string}
 
+// Types Created by and used in ng-common
 declare module ngcommon {
 
   /**
@@ -30,6 +32,7 @@ declare module ngcommon {
     LOGIN_URL?: string
     LOGOUT_URL?: string
     ALLOW_DEV_EDITS?: boolean
+    tokenCheckInterval: number
 
     // RPM Settings
     loadRPM?: boolean,
@@ -152,7 +155,7 @@ declare module ngcommon {
      * Get User object from the JWT.
      *
      * If no JWT is provided it will be looked for at the normal JWT
-     * locations (localStorage or URL queryString).
+     * locations (cookie or URL queryString).
      *
      * @param {JWT} [jwt] - the JWT to extract user from.
      */
@@ -223,9 +226,9 @@ declare module ngcommon {
      */
     getJWTFromUrl(): string
     /**
-     * Load the JWT stored in local storage.
+     * Load the JWT stored in cookie.
      *
-     * @method getJWTfromLocalStorage
+     * @method getJWTfromCookie
      *
      * @return {JWT | undefined} An object wih the following format:
      */
@@ -233,7 +236,7 @@ declare module ngcommon {
     /**
      * Attempt and pull JWT from the following locations (in order):
      *  - URL query parameter 'access_token' (returned from IDP)
-     *  - Browser local storage (saved from previous request)
+     *  - Browser cookie (saved from previous request)
      *
      * @method getJWT
      *
@@ -273,7 +276,7 @@ declare module ngcommon {
      */
     validateJwt(token: string): boolean
 
-    getFromLocalStorage(key: string): string
+    getFromCookie(key: string): string
   }
 }
 

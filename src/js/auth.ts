@@ -1,11 +1,12 @@
 /// <reference path="../types.d.ts" />
 /// <reference path="../commonNG.ts" />
 
+
 (function(angular) {
 
   'use strict';
 
-  const REVOKE_RESPONSE = '<REVOKED>';
+  const ACCESS_TOKEN_COOKIE  = 'gpoauth-a'
 
   /**
    * Get token from query string
@@ -24,6 +25,18 @@
 
   function RPMLoaded():  boolean {
    return typeof RPMService != 'undefined'
+  }
+
+  /**
+   * Get an associated array of cookies.
+   */
+  function getCookieObject(): StringObj  {
+    return document.cookie.split(';')
+                          .map(c => c.trim().split('='))
+                          .reduce((acc: StringObj, pair) => {
+                            acc[pair[0]] = pair[1]
+                            return acc
+                          }, {})
   }
 
   /**
@@ -109,9 +122,9 @@
           };
         }
 
-        type userOrNothin = User
-                          | null
-                          | undefined
+        type userOrNothing = User
+                           | null
+                           | undefined
 
         /**
          * Authentication Service
@@ -119,6 +132,7 @@
         class AuthService implements ngcommon.AuthService {
 
           iframe: HTMLIFrameElement
+          preveiousTokenPresentCheck: boolean
 
           constructor(){
             const self = this;
@@ -136,50 +150,26 @@
               }
             })
 
-            const user = self.init()
-            if(!user && Config.AUTH_TYPE === 'grant') self.ssoCheck()
+            // const user =
+            self.init()
           }
 
-        /**
-         * Security wrapper for obfuscating values passed into local storage
-         */
-        private saveToLocalStorage(key: string, value: any) {
-          localStorage.setItem(key, btoa(value));
-        };
+          /**
+           * Extract and decode from cookie
+           *
+           * @param key
+           */
+          getFromCookie(key: string) {
+            const raw = getCookieObject()[key]
+            try{
+              return raw ?
+                      atob(decodeURIComponent(raw)) :
+                      undefined;
+            } catch (e){ // Catch bad encoding or formally not encoded
+              return undefined;
+            }
+          };
 
-        getFromLocalStorage(key: string) {
-          const raw = localStorage.getItem(key)
-          try{
-            return raw ?
-                    atob(raw) :
-                    undefined;
-          } catch (e){ // Catch bad encoding or formally not encoded
-            return undefined;
-          }
-        };
-
-          private ssoCheck(){
-            const self = this;
-            const ssoURL = `/login?sso=true&cachebuster=${(new Date()).getTime()}`
-            const ssoIframe = this.createIframe(ssoURL)
-
-            // Setup ssoIframe specific handlers
-            addEventListener('message', (event: any) => {
-              // Handle SSO login failure
-              if(event.data === 'iframe:ssoFailed'){
-                if(ssoIframe && ssoIframe.remove) // IE 11 - gotcha
-                  ssoIframe.remove()
-                // Force login only after SSO has failed
-                if(Config.FORCE_LOGIN) self.forceLogin()
-              }
-
-              // Handle User Authenticated
-              if(event.data === 'iframe:userAuthenticated'){
-                if(ssoIframe && ssoIframe.remove) // IE 11 - gotcha
-                  ssoIframe.remove()
-              }
-            })
-          }
 
           /**
            * We keep this outside the constructor so that other services call
@@ -203,7 +193,6 @@
             }
 
             const jwt = this.getJWT();
-            if(jwt) this.setAuth(jwt)
 
             //clean hosturl on redirect from oauth
             if (getJWTFromUrl()) {
@@ -214,7 +203,33 @@
               }
             }
 
-            return this.getUserFromJWT(jwt)
+            // Setup active session checher
+            this.preveiousTokenPresentCheck = !!jwt
+            setInterval(() => { self.checkForLocalToken() }, Config.tokenCheckInterval)
+
+            const user = this.getUserFromJWT(jwt)
+            if(user)
+              $rootScope.$broadcast("userAuthenticated", user)
+
+            return user
+          }
+
+          /**
+           * Checks for the presence of token in cookie. If there has been a
+           * change (cookie appears or disapears) the fire event handlers to
+           * notify the appliction of the event.
+           */
+          private checkForLocalToken(){
+            const jwt = this.getJWT()
+            const tokenPresent = !!jwt
+            // compare with previous check
+            if (tokenPresent !== this.preveiousTokenPresentCheck)
+              tokenPresent ?
+                $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt)) :
+                $rootScope.$broadcast("userSignOut");
+
+            // update previous state for next check
+            this.preveiousTokenPresentCheck = tokenPresent
           }
 
           /**
@@ -315,7 +330,7 @@
            * Get User object from the JWT.
            *
            * If no JWT is provided it will be looked for at the normal JWT
-           * locations (localStorage or URL queryString).
+           * locations (cookie or URL queryString).
            *
            * @param {JWT} [jwt] - the JWT to extract user from.
            */
@@ -336,7 +351,7 @@
            * @param callback optional function to invoke with the user
            * @return object representing current user
            */
-          getUser(callback?: (user: User) => any): userOrNothin {
+          getUser(callback?: (user: User) => any): User {
             const jwt = this.getJWT();
             // If callback provided we can treat async and call server
             if(callback && typeof(callback) === 'function'){
@@ -455,19 +470,11 @@
            *
            * @return {Promise<jwt>} - promise resolving with a JWT
            */
-          checkWithClient(originalJWT: string): ng.IPromise<string> {
-            if(Config.AUTH_TYPE === 'token'){
-              return $q.when(null)
-            } else {
-              return $http.get('/checktoken')
-                .then(resp => {
-                  const header = resp.headers('Authorization')
-                  const newJWT = header && header.replace('Bearer ','')
-                  if(newJWT) this.setAuth(newJWT);
-
-                  return newJWT ? newJWT : originalJWT;
-                })
-            }
+          checkWithClient(originalJWT?: string): ng.IPromise<string> {
+            return Config.AUTH_TYPE === 'token' ?
+                    $q.when(null) :
+                    $http.get('/checktoken')
+                          .then(() => this.getJWTfromLocalStorage())
           }
 
           //=====================================================
@@ -486,20 +493,20 @@
           };
 
           /**
-           * Load the JWT stored in local storage.
+           * Load the JWT stored in cookie.
            *
-           * @method getJWTfromLocalStorage
+           * @method getJWTfromCookie
            *
            * @return {JWT | undefined} An object wih the following format:
            */
           getJWTfromLocalStorage(): string {
-            return this.getFromLocalStorage('gpoauthJWT')
+            return this.getFromCookie(ACCESS_TOKEN_COOKIE)
           };
 
           /**
            * Attempt and pull JWT from the following locations (in order):
            *  - URL query parameter 'access_token' (returned from IDP)
-           *  - Browser local storage (saved from previous request)
+           *  - Browser cookie (saved from previous request)
            *
            * @method getJWT
            *
@@ -513,17 +520,6 @@
             } else {
               return jwt;
             }
-          };
-
-          /**
-           * Remove the JWT saved in local storge.
-           *
-           * @method clearLocalStorageJWT
-           *
-           * @return  {undefined}
-           */
-          private clearLocalStorageJWT(): void {
-            localStorage.removeItem('gpoauthJWT')
           };
 
           /**
@@ -586,34 +582,10 @@
           };
 
           /**
-           * Save JWT to localStorage and in the request headers for accessing
-           * protected resources.
-           *
-           * @param {JWT} jwt
-           */
-          private setAuth(jwt: string): void {
-            if(jwt == REVOKE_RESPONSE){
-              this.logout()
-            } else {
-
-              if(RPMLoaded() && jwt.length){
-                const parsedJWT = this.parseJwt(jwt)
-                parsedJWT ?
-                    RPMService().setUserId(parsedJWT.sub) :
-                    null;
-              }
-
-              this.saveToLocalStorage('gpoauthJWT', jwt)
-              $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt))
-
-            }
-          };
-
-          /**
-           * Purge the JWT from localStorage and authorization headers.
+           * Removal of data when logging out.
            */
           private removeAuth(): void {
-            localStorage.removeItem('gpoauthJWT')
+            // TODO: call to revoke endpoint
             delete $http.defaults.headers.common.Authorization;
             // Send null user as well (backwards compatability)
             $rootScope.$broadcast("userAuthenticated", null)
@@ -630,7 +602,7 @@
      * Interceptor that check for an updaed AccessToken coming from any request
      * and will take it and set it as the token to use in future outgoing
      * requests
-     */
+     *
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptors
 
@@ -644,43 +616,17 @@
         return config;
       }
 
-      // Generic Response Handler
-      function respHandler(resp: ng.IHttpResponse<any>) {
-        const AuthenticationService = $injector.get('AuthenticationService')
-        const jwt = getJWTFromUrl();
-        const authHeader = resp.headers('Authorization');
-
-        if(jwt){
-          AuthenticationService.setAuth(jwt);
-        } else if (authHeader) {
-          const token = authHeader.replace('Bearer', '').trim();
-          AuthenticationService.setAuth(token);
-        }
-
-        return resp;
-      }
-
-      //in order for $http to resolve error responses, the responseErrorHandler
-      // needs to reject the response.  But it also should update the auth token
-      // before doing so in case the token was refreshed as a part of the bad request
-      function respErrorHandler(resp: ng.IHttpResponse<any>) {
-          respHandler(resp);
-          let $q = $injector.get('$q');
-          return $q.reject(resp);
-      }
-
       // Apply handler to all responses (regular and error as to not miss
       // tokens passed from node-gpoauth even on 4XX and 5XX responses)
       return {
-        request: requestHandler,
-        response: respHandler,
-        responseError: respErrorHandler
+        request: requestHandler
       };
     })
 
     .config(function myAppConfig ($httpProvider:  ng.IHttpProvider) {
       $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
     })
+    */
 
 
     .directive('gpLoginModal', ['$rootScope', 'AuthenticationService', 'GPConfig',
