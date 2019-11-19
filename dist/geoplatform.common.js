@@ -46,6 +46,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
         GeoPlatform.ALLOWIFRAMELOGIN = !isIE11 && toREALBoolean(GeoPlatform.ALLOWIFRAMELOGIN || false);
         GeoPlatform.FORCE_LOGIN = toREALBoolean(GeoPlatform.FORCE_LOGIN || false);
+        GeoPlatform.tokenCheckInterval = GeoPlatform.tokenCheckInterval || 2000;
         return GeoPlatform;
     }());
 })(jQuery, angular);
@@ -382,6 +383,104 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     }();
     return AuthenticatedComponent;
 });
+
+(function (jQuery, angular) {
+    "use strict";
+
+    angular.module("gp-common")
+    /**
+     * Custom filter to make label values visually helpful by
+     * replacing bad characters with spaces or meaningful equivalents
+     */
+    .filter('fixLabel', function () {
+        return function (value) {
+            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
+            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
+            return result.charAt(0).toUpperCase() + result.slice(1);
+        };
+    }).filter('pluralize', function () {
+        return function (text) {
+            if (!text || !text.length) return "";
+            if (text.endsWith('ss')) return text + 'es'; //classes, etc
+            if (text.endsWith('s')) return text; //already plural
+            return text + 's';
+            //TODO support irregular words like "foot" -> "feet"
+            // and words that need duplicate letters: "quiz" -> "quizzes"
+        };
+    }).filter('capitalize', function () {
+        return function (text) {
+            return text[0].toUpperCase() + text.substring(1);
+        };
+    }).filter('facets', function () {
+        return function (arr, facetName) {
+            if (!facetName) return arr;
+            if (!arr || !arr.length) return [];
+            return arr.filter(function (f) {
+                return f.toLowerCase().startsWith(facetName + ":");
+            }).map(function (f) {
+                return f.substring(f.indexOf(':') + 1, f.length);
+            });
+        };
+    }).filter('joinBy', function () {
+        return function (input, delimiter, emptyValue) {
+            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
+        };
+    }).filter('defaultValue', function () {
+        return function (text, defVal) {
+            if (typeof text === 'undefined' || !text.length) return defVal;
+            return text;
+        };
+    }).filter('count', function () {
+        return function (input) {
+            if (typeof input !== 'undefined') {
+                if (typeof input.push === 'function') return input.length;
+                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
+                    if (typeof Object.keys !== 'undefined') {
+                        return Object.keys(input);
+                    }
+                }
+            }
+            return 0;
+        };
+    })
+    /**
+     *
+     */
+    .filter('gpObjTypeMapper', function () {
+        return function (str) {
+            if (!str || typeof str !== 'string' || str.length === 0) return str;
+            var name = str;
+            var idx = str.indexOf(":");
+            if (~idx) name = str.substring(idx + 1);
+            if ('VCard' === name) return 'Contact';
+            return name;
+        };
+    }).filter('gpReliabilityGrade', function () {
+        return function (arg) {
+            var o = arg;
+            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
+                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
+            }
+            if (!isNaN(o)) {
+                o = o * 1;
+                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
+                // if (value >= 97) letter = 'A+';
+                // else if (value >= 93) letter = 'A';
+                // else if (value >= 90) letter = 'A-';
+                // else if (value >= 87) letter = 'B+';
+                // else if (value >= 83) letter = 'B';
+                // else if (value >= 80) letter = 'B-';
+                // else if (value >= 77) letter = 'C+';
+                // else if (value >= 73) letter = 'C';
+                // else if (value >= 70) letter = 'C-';
+                // else if (value >= 67) letter = 'D+';
+                // else if (value >= 63) letter = 'D';
+                // else if (value >= 60) letter = 'D-';
+            }
+            return "X";
+        };
+    });
+})(jQuery, angular);
 
 (function (angular) {
     "use strict";
@@ -2068,104 +2167,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         template: "\n            <div class=\"a-heading\">{{$ctrl.label}}</div>\n            <p class=\"u-text--sm\" ng-bind-html=\"$ctrl.description\"></p>\n\n            <div class=\"list-group list-group-sm\">\n                <div ng-repeat=\"item in $ctrl.ngModel track by $index\" class=\"list-group-item\">\n                    <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.remove($index)\">\n                        <span class=\"gpicons times-circle t-fg--danger\"></span>\n                        <span class=\"sr-only\">Deselect this item</span>\n                    </button>\n                    <div class=\"flex-1 u-pd--xs\">\n                        <div class=\"t-text--strong\">\n                            <a ng-click=\"$ctrl.activate(item)\" ng-if=\"$ctrl.onActivate\"\n                                 class=\"u-break--all\">{{item.label}}</a>\n                            <span ng-if=\"!$ctrl.onActivate\">{{item.label}}</span>\n                        </div>\n                        <div class=\"u-text--sm t-text--italic\">\n                            <a href=\"{{$ctrl.getLinkTo(item)}}\" target=\"_blank\" class=\"u-break--all\"\n                                title=\"Open source info in new window\">{{$ctrl.getLinkTo(item)}}</a>\n                        </div>\n                        <div class=\"description\" ng-if=\"item.description\" ng-bind-html=\"item.description\"></div>\n                    </div>\n                </div>\n            </div>\n\n            <div class=\"t-fg--gray-md\" ng-if=\"!$ctrl.ngModel.length\"><em>No values specified</em></div>\n\n            <hr>\n\n            <div uib-dropdown is-open=\"$ctrl.displayOptions.showSuggested\"\n                auto-close=\"outsideClick\" on-toggle=\"$ctrl.onDropdownToggled(open)\">\n\n                <div class=\"l-flex-container flex-justify-between flex-align-center\">\n                    <div class=\"input-group-slick flex-1\">\n                        <span class=\"gpicons\"\n                            ng-class=\"{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}\"></span>\n                        <input type=\"text\" class=\"form-control\"\n                            ng-model=\"$ctrl.query\"\n                            ng-model-options=\"{ debounce: 250 }\"\n                            ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                            placeholder=\"Find values to add...\"\n                            aria-label=\"Find values to add\">\n                    </div>\n                </div>\n\n                <div class=\"dropdown-menu\" uib-dropdown-menu>\n\n                    <div ng-if=\"!$ctrl.displayOptions.showCustom\">\n\n                        <div class=\"form-group l-flex-container flex-justify-between flex-align-center\">\n                            <div class=\"input-group-slick flex-1\">\n                                <span class=\"gpicons\"\n                                    ng-class=\"{'search':!$ctrl.displayOptions.fetching, 'hourglass u-spin':$ctrl.displayOptions.fetching}\"></span>\n                                <input type=\"text\" class=\"form-control\"\n                                    ng-model=\"$ctrl.query\"\n                                    ng-model-options=\"{ debounce: 250 }\"\n                                    ng-change=\"$ctrl.fetchOptions($ctrl.query)\"\n                                    placeholder=\"Find values to add...\"\n                                    aria-label=\"Find values to add\">\n                                <span class=\"gpicons times\"\n                                    ng-if=\"$ctrl.query.length\"\n                                    ng-click=\"$event.stopPropagation();$ctrl.clearQuery()\"></span>\n                            </div>\n                            <button type=\"button\" class=\"btn btn-info u-mg-left--xlg animated-show\"\n                                ng-click=\"$ctrl.clearOptions();\">\n                                Done\n                            </button>\n                        </div>\n\n                        <gp-pagination service=\"$ctrl\" event-key=\"suggestions\" use-select=\"true\"></gp-pagination>\n\n                        <div class=\"list-group list-group-sm u-text--sm\">\n                            <div ng-repeat=\"item in $ctrl.suggested track by $index\" class=\"list-group-item\">\n                                <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.selectValue(item)\"\n                                    ng-class=\"{disabled:item._selected}\">\n                                    <span class=\"gpicons check t-fg--gray-md\" ng-show=\"item._selected\"></span>\n                                    <span class=\"gpicons plus-circle t-fg--success\" ng-show=\"!item._selected\"></span>\n                                    <span class=\"sr-only\">Select or deselect this item</span>\n                                </button>\n                                <div class=\"flex-1 u-pd--xs\">\n                                    <div class=\"u-break--all t-text--strong\">{{item.prefLabel}}</div>\n                                    <a href=\"{{item.uri}}\" target=\"_blank\"\n                                        class=\"u-break--all u-text--sm t-text--italic\"\n                                        title=\"Open source info in new window\">\n                                        {{item.uri}}\n                                    </a>\n                                    <div class=\"description\">{{item.description||\"No description provided\"}}</div>\n                                </div>\n                            </div>\n                            <div ng-if=\"!$ctrl.suggested.length\" class=\"list-group-item disabled u-pd--md\">\n                                No results match your query\n                            </div>\n\n                            <!-- create custom\n                            <div class=\"list-group-item\">\n                                <button type=\"button\" class=\"btn btn-link\" ng-click=\"$ctrl.toggleCreateCustom($event)\"\n                                    ng-class=\"{disabled:item._selected}\">\n                                    <span class=\"gpicons plus-circle t-fg--success\" ng-show=\"!item._selected\"></span>\n                                    <span class=\"sr-only\">Toggle custom creation fields</span>\n                                </button>\n                                <div class=\"flex-1 u-pd--xs\">\n                                    <div class=\"t-text--strong\">New custom classifier</div>\n                                    <div class=\"description\">create a custom classifier to enrich this item</div>\n                                </div>\n                            </div>\n                            -->\n\n                        </div>\n\n                    </div>\n\n                    <div ng-if=\"$ctrl.displayOptions.showCustom\">\n                        <div>\n                            Provide the name of the custom classifier and then a unique URI for it.\n                        </div>\n                        <div class=\"u-mg-top--sm>\n                            <label for=\"{{$ctrl.type}}CustomLabel\">Name</label>\n                            <input type=\"text\" class=\"form-control\" id=\"{{$ctrl.type}}CustomLabel\"\n                                ng-model=\"$ctrl.customLabel\" placeholder=\"Name the classifier\">\n                        </div>\n                        <div class=\"u-mg-top--sm\">\n                            <button type=\"button\" class=\"btn btn-sm btn-secondary\"\n                                ng-click=\"$ctrl.toggleCreateCustom($event)\">\n                                cancel\n                            </button>\n                            <button type=\"button\" class=\"btn btn-sm btn-success\"\n                                ng-click=\"$ctrl.createCustom($event)\"\n                                ng-disabled=\"!$ctrl.customLabel.length\">\n                                create\n                            </button>\n                        </div>\n                        <div ng-if=\"$ctrl.customError\">\n                            $ctrl.customError\n                        </div>\n                    </div>\n\n                </div>\n            </div>\n        "
     });
 })(angular, GeoPlatform);
-
-(function (jQuery, angular) {
-    "use strict";
-
-    angular.module("gp-common")
-    /**
-     * Custom filter to make label values visually helpful by
-     * replacing bad characters with spaces or meaningful equivalents
-     */
-    .filter('fixLabel', function () {
-        return function (value) {
-            if (!value || typeof value !== 'string' || !value.length) return 'Untitled';
-            var result = value.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/_/g, " ").trim();
-            return result.charAt(0).toUpperCase() + result.slice(1);
-        };
-    }).filter('pluralize', function () {
-        return function (text) {
-            if (!text || !text.length) return "";
-            if (text.endsWith('ss')) return text + 'es'; //classes, etc
-            if (text.endsWith('s')) return text; //already plural
-            return text + 's';
-            //TODO support irregular words like "foot" -> "feet"
-            // and words that need duplicate letters: "quiz" -> "quizzes"
-        };
-    }).filter('capitalize', function () {
-        return function (text) {
-            return text[0].toUpperCase() + text.substring(1);
-        };
-    }).filter('facets', function () {
-        return function (arr, facetName) {
-            if (!facetName) return arr;
-            if (!arr || !arr.length) return [];
-            return arr.filter(function (f) {
-                return f.toLowerCase().startsWith(facetName + ":");
-            }).map(function (f) {
-                return f.substring(f.indexOf(':') + 1, f.length);
-            });
-        };
-    }).filter('joinBy', function () {
-        return function (input, delimiter, emptyValue) {
-            if (input && typeof input.push !== 'undefined' && input.length) return input.join(delimiter || ', ');else return emptyValue || '';
-        };
-    }).filter('defaultValue', function () {
-        return function (text, defVal) {
-            if (typeof text === 'undefined' || !text.length) return defVal;
-            return text;
-        };
-    }).filter('count', function () {
-        return function (input) {
-            if (typeof input !== 'undefined') {
-                if (typeof input.push === 'function') return input.length;
-                if ((typeof input === "undefined" ? "undefined" : _typeof(input)) === 'object') {
-                    if (typeof Object.keys !== 'undefined') {
-                        return Object.keys(input);
-                    }
-                }
-            }
-            return 0;
-        };
-    })
-    /**
-     *
-     */
-    .filter('gpObjTypeMapper', function () {
-        return function (str) {
-            if (!str || typeof str !== 'string' || str.length === 0) return str;
-            var name = str;
-            var idx = str.indexOf(":");
-            if (~idx) name = str.substring(idx + 1);
-            if ('VCard' === name) return 'Contact';
-            return name;
-        };
-    }).filter('gpReliabilityGrade', function () {
-        return function (arg) {
-            var o = arg;
-            if ((typeof o === "undefined" ? "undefined" : _typeof(o)) === 'object') {
-                if (o.statistics) o = o.statistics.reliability || null;else if (o.reliability) o = o.reliability;else o = null;
-            }
-            if (!isNaN(o)) {
-                o = o * 1;
-                if (o === null || typeof o === 'undefined') return 'X';else if (o > 90) return 'A';else if (o > 80) return 'B';else if (o > 70) return 'C';else if (o > 60) return 'D';else return 'F';
-                // if (value >= 97) letter = 'A+';
-                // else if (value >= 93) letter = 'A';
-                // else if (value >= 90) letter = 'A-';
-                // else if (value >= 87) letter = 'B+';
-                // else if (value >= 83) letter = 'B';
-                // else if (value >= 80) letter = 'B-';
-                // else if (value >= 77) letter = 'C+';
-                // else if (value >= 73) letter = 'C';
-                // else if (value >= 70) letter = 'C-';
-                // else if (value >= 67) letter = 'D+';
-                // else if (value >= 63) letter = 'D';
-                // else if (value >= 60) letter = 'D-';
-            }
-            return "X";
-        };
-    });
-})(jQuery, angular);
 
 (function (angular, Constants) {
     'use strict';
@@ -3996,7 +3997,7 @@ var __extends = undefined && undefined.__extends || function () {
 (function (angular) {
     'use strict';
 
-    var REVOKE_RESPONSE = '<REVOKED>';
+    var ACCESS_TOKEN_COOKIE = 'gpoauth-a';
     /**
      * Get token from query string
      *
@@ -4014,6 +4015,17 @@ var __extends = undefined && undefined.__extends || function () {
     ;
     function RPMLoaded() {
         return typeof RPMService != 'undefined';
+    }
+    /**
+     * Get an associated array of cookies.
+     */
+    function getCookieObject() {
+        return document.cookie.split(';').map(function (c) {
+            return c.trim().split('=');
+        }).reduce(function (acc, pair) {
+            acc[pair[0]] = pair[1];
+            return acc;
+        }, {});
     }
     /**
      * GeoPlatform Common Module Authentication Support
@@ -4099,46 +4111,24 @@ var __extends = undefined && undefined.__extends || function () {
                         self.removeAuth();
                     }
                 });
-                var user = self.init();
-                if (!user && Config.AUTH_TYPE === 'grant') self.ssoCheck();
+                // const user =
+                self.init();
             }
             /**
-             * Security wrapper for obfuscating values passed into local storage
+             * Extract and decode from cookie
+             *
+             * @param key
              */
-            AuthService.prototype.saveToLocalStorage = function (key, value) {
-                localStorage.setItem(key, btoa(value));
-            };
-            ;
-            AuthService.prototype.getFromLocalStorage = function (key) {
-                var raw = localStorage.getItem(key);
+            AuthService.prototype.getFromCookie = function (key) {
+                var raw = getCookieObject()[key];
                 try {
-                    return raw ? atob(raw) : undefined;
+                    return raw ? atob(decodeURIComponent(raw)) : undefined;
                 } catch (e) {
                     // Catch bad encoding or formally not encoded
                     return undefined;
                 }
             };
             ;
-            AuthService.prototype.ssoCheck = function () {
-                var self = this;
-                var ssoURL = "/login?sso=true&cachebuster=" + new Date().getTime();
-                var ssoIframe = this.createIframe(ssoURL);
-                // Setup ssoIframe specific handlers
-                addEventListener('message', function (event) {
-                    // Handle SSO login failure
-                    if (event.data === 'iframe:ssoFailed') {
-                        if (ssoIframe && ssoIframe.remove) // IE 11 - gotcha
-                            ssoIframe.remove();
-                        // Force login only after SSO has failed
-                        if (Config.FORCE_LOGIN) self.forceLogin();
-                    }
-                    // Handle User Authenticated
-                    if (event.data === 'iframe:userAuthenticated') {
-                        if (ssoIframe && ssoIframe.remove) // IE 11 - gotcha
-                            ssoIframe.remove();
-                    }
-                });
-            };
             /**
              * We keep this outside the constructor so that other services call
              * call it to trigger the side-effects.
@@ -4159,7 +4149,6 @@ var __extends = undefined && undefined.__extends || function () {
                     return; // skip init() till RPM is loaded
                 }
                 var jwt = this.getJWT();
-                if (jwt) this.setAuth(jwt);
                 //clean hosturl on redirect from oauth
                 if (getJWTFromUrl()) {
                     if (window.history && window.history.replaceState) {
@@ -4168,7 +4157,27 @@ var __extends = undefined && undefined.__extends || function () {
                         $window.location.search.replace(/[\?\&]access_token=.*\&token_type=Bearer/, '');
                     }
                 }
-                return this.getUserFromJWT(jwt);
+                // Setup active session checher
+                this.preveiousTokenPresentCheck = !!jwt;
+                setInterval(function () {
+                    self.checkForLocalToken();
+                }, Config.tokenCheckInterval);
+                var user = this.getUserFromJWT(jwt);
+                if (user) $rootScope.$broadcast("userAuthenticated", user);
+                return user;
+            };
+            /**
+             * Checks for the presence of token in cookie. If there has been a
+             * change (cookie appears or disapears) the fire event handlers to
+             * notify the appliction of the event.
+             */
+            AuthService.prototype.checkForLocalToken = function () {
+                var jwt = this.getJWT();
+                var tokenPresent = !!jwt;
+                // compare with previous check
+                if (tokenPresent !== this.preveiousTokenPresentCheck) tokenPresent ? $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt)) : $rootScope.$broadcast("userSignOut");
+                // update previous state for next check
+                this.preveiousTokenPresentCheck = tokenPresent;
             };
             /**
              * Create an invisable iframe and appends it to the bottom of the page.
@@ -4257,7 +4266,7 @@ var __extends = undefined && undefined.__extends || function () {
              * Get User object from the JWT.
              *
              * If no JWT is provided it will be looked for at the normal JWT
-             * locations (localStorage or URL queryString).
+             * locations (cookie or URL queryString).
              *
              * @param {JWT} [jwt] - the JWT to extract user from.
              */
@@ -4390,16 +4399,9 @@ var __extends = undefined && undefined.__extends || function () {
              */
             AuthService.prototype.checkWithClient = function (originalJWT) {
                 var _this = this;
-                if (Config.AUTH_TYPE === 'token') {
-                    return $q.when(null);
-                } else {
-                    return $http.get('/checktoken').then(function (resp) {
-                        var header = resp.headers('Authorization');
-                        var newJWT = header && header.replace('Bearer ', '');
-                        if (newJWT) _this.setAuth(newJWT);
-                        return newJWT ? newJWT : originalJWT;
-                    });
-                }
+                return Config.AUTH_TYPE === 'token' ? $q.when(null) : $http.get('/checktoken').then(function () {
+                    return _this.getJWTfromLocalStorage();
+                });
             };
             //=====================================================
             /**
@@ -4416,20 +4418,20 @@ var __extends = undefined && undefined.__extends || function () {
             };
             ;
             /**
-             * Load the JWT stored in local storage.
+             * Load the JWT stored in cookie.
              *
-             * @method getJWTfromLocalStorage
+             * @method getJWTfromCookie
              *
              * @return {JWT | undefined} An object wih the following format:
              */
             AuthService.prototype.getJWTfromLocalStorage = function () {
-                return this.getFromLocalStorage('gpoauthJWT');
+                return this.getFromCookie(ACCESS_TOKEN_COOKIE);
             };
             ;
             /**
              * Attempt and pull JWT from the following locations (in order):
              *  - URL query parameter 'access_token' (returned from IDP)
-             *  - Browser local storage (saved from previous request)
+             *  - Browser cookie (saved from previous request)
              *
              * @method getJWT
              *
@@ -4443,17 +4445,6 @@ var __extends = undefined && undefined.__extends || function () {
                 } else {
                     return jwt;
                 }
-            };
-            ;
-            /**
-             * Remove the JWT saved in local storge.
-             *
-             * @method clearLocalStorageJWT
-             *
-             * @return  {undefined}
-             */
-            AuthService.prototype.clearLocalStorageJWT = function () {
-                localStorage.removeItem('gpoauthJWT');
             };
             ;
             /**
@@ -4515,29 +4506,10 @@ var __extends = undefined && undefined.__extends || function () {
             };
             ;
             /**
-             * Save JWT to localStorage and in the request headers for accessing
-             * protected resources.
-             *
-             * @param {JWT} jwt
-             */
-            AuthService.prototype.setAuth = function (jwt) {
-                if (jwt == REVOKE_RESPONSE) {
-                    this.logout();
-                } else {
-                    if (RPMLoaded() && jwt.length) {
-                        var parsedJWT = this.parseJwt(jwt);
-                        parsedJWT ? RPMService().setUserId(parsedJWT.sub) : null;
-                    }
-                    this.saveToLocalStorage('gpoauthJWT', jwt);
-                    $rootScope.$broadcast("userAuthenticated", this.getUserFromJWT(jwt));
-                }
-            };
-            ;
-            /**
-             * Purge the JWT from localStorage and authorization headers.
+             * Removal of data when logging out.
              */
             AuthService.prototype.removeAuth = function () {
-                localStorage.removeItem('gpoauthJWT');
+                // TODO: call to revoke endpoint
                 delete $http.defaults.headers.common.Authorization;
                 // Send null user as well (backwards compatability)
                 $rootScope.$broadcast("userAuthenticated", null);
@@ -4553,7 +4525,8 @@ var __extends = undefined && undefined.__extends || function () {
      * Interceptor that check for an updaed AccessToken coming from any request
      * and will take it and set it as the token to use in future outgoing
      * requests
-     */
+     *
+    */
     .factory('ng-common-AuthenticationInterceptor', ["$injector", "$window", function ($injector, $window) {
         // Interceptors
         // Request Handler
@@ -4564,33 +4537,10 @@ var __extends = undefined && undefined.__extends || function () {
             config.headers['Authorization'] = token ? "Bearer " + token : '';
             return config;
         }
-        // Generic Response Handler
-        function respHandler(resp) {
-            var AuthenticationService = $injector.get('AuthenticationService');
-            var jwt = getJWTFromUrl();
-            var authHeader = resp.headers('Authorization');
-            if (jwt) {
-                AuthenticationService.setAuth(jwt);
-            } else if (authHeader) {
-                var token = authHeader.replace('Bearer', '').trim();
-                AuthenticationService.setAuth(token);
-            }
-            return resp;
-        }
-        //in order for $http to resolve error responses, the responseErrorHandler
-        // needs to reject the response.  But it also should update the auth token
-        // before doing so in case the token was refreshed as a part of the bad request
-        function respErrorHandler(resp) {
-            respHandler(resp);
-            var $q = $injector.get('$q');
-            return $q.reject(resp);
-        }
         // Apply handler to all responses (regular and error as to not miss
         // tokens passed from node-gpoauth even on 4XX and 5XX responses)
         return {
-            request: requestHandler,
-            response: respHandler,
-            responseError: respErrorHandler
+            request: requestHandler
         };
     }]).config(["$httpProvider", function myAppConfig($httpProvider) {
         $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
