@@ -603,6 +603,7 @@
      * and will take it and set it as the token to use in future outgoing
      * requests
      *
+    */
     .factory('ng-common-AuthenticationInterceptor', function($injector: any, $window: ng.IWindowService){
       // Interceptors
 
@@ -626,7 +627,6 @@
     .config(function myAppConfig ($httpProvider:  ng.IHttpProvider) {
       $httpProvider.interceptors.push('ng-common-AuthenticationInterceptor');
     })
-    */
 
 
     .directive('gpLoginModal', ['$rootScope', 'AuthenticationService', 'GPConfig',
