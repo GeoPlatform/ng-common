@@ -42,8 +42,14 @@
 
             this.authState = { user: null, authorized: false };
             this.authService = AuthenticationService;
-            this.authListener = $rootScope.$on('userAuthenticated',
-                (event, user) => { this.onAuthEvent(event, user); });
+            this.authListeners = [
+                $rootScope.$on('userAuthenticated', (event, user) => {
+                    this.onAuthEvent(event, user);
+                }),
+                $rootScope.$on('userSignOut', (event) => {
+                    this.onAuthEvent(event, null);
+                })
+            ];
         }
 
         $onInit () {
@@ -53,8 +59,10 @@
         }
 
         $onDestroy () {
-            this.authListener();
-            this.authListener = null;
+            while(this.authListeners.length) {
+                this.authListeners.pop()();
+            }
+            this.authListeners = null;
             this.authService = null;
             this.authState = null;
         }
