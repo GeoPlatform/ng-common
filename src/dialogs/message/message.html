@@ -1,0 +1,10 @@
+<div class="a-heading" mat-dialog-title>
+    <span [attr.class]="getIconClass()"></span>
+    {{data.label || "Message"}}
+</div>
+<div mat-dialog-content>
+    {{data.message}}
+</div>
+<div mat-dialog-actions class="d-flex flex-justify-end flex-align-center">
+    <button type="button" mat-flat-button (click)="close()">Dismiss</button>
+</div>

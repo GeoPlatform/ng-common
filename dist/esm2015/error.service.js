@@ -1,0 +1,19 @@
+import * as tslib_1 from "tslib";
+import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
+import { GPError } from './error';
+let ErrorService = class ErrorService {
+    constructor() {
+        this.updateSubject = new BehaviorSubject(null);
+        this.error$ = this.updateSubject.asObservable();
+    }
+    setError(error) {
+        let gpe = GPError.from(error);
+        this.updateSubject.next(gpe);
+    }
+};
+ErrorService = tslib_1.__decorate([
+    Injectable()
+], ErrorService);
+export { ErrorService };
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiZXJyb3Iuc2VydmljZS5qcyIsInNvdXJjZVJvb3QiOiJuZzovL0BnZW9wbGF0Zm9ybS9jb21tb24vIiwic291cmNlcyI6WyJlcnJvci5zZXJ2aWNlLnRzIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7QUFBQSxPQUFPLEVBQUUsVUFBVSxFQUFFLE1BQU0sZUFBZSxDQUFDO0FBQzNDLE9BQU8sRUFBYyxlQUFlLEVBQUUsTUFBTSxNQUFNLENBQUM7QUFFbkQsT0FBTyxFQUFFLE9BQU8sRUFBRSxNQUFNLFNBQVMsQ0FBQztBQUdsQyxJQUFhLFlBQVksR0FBekIsTUFBYSxZQUFZO0lBRHpCO1FBR1ksa0JBQWEsR0FBNkIsSUFBSSxlQUFlLENBQVUsSUFBSSxDQUFDLENBQUM7UUFFckYsV0FBTSxHQUF3QixJQUFJLENBQUMsYUFBYSxDQUFDLFlBQVksRUFBRSxDQUFDO0lBTXBFLENBQUM7SUFKRyxRQUFRLENBQUMsS0FBWTtRQUNqQixJQUFJLEdBQUcsR0FBRyxPQUFPLENBQUMsSUFBSSxDQUFDLEtBQUssQ0FBQyxDQUFDO1FBQzlCLElBQUksQ0FBQyxhQUFhLENBQUMsSUFBSSxDQUFDLEdBQUcsQ0FBQyxDQUFDO0lBQ2pDLENBQUM7Q0FDSixDQUFBO0FBVlksWUFBWTtJQUR4QixVQUFVLEVBQUU7R0FDQSxZQUFZLENBVXhCO1NBVlksWUFBWSIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEluamVjdGFibGUgfSBmcm9tICdAYW5ndWxhci9jb3JlJztcbmltcG9ydCB7IE9ic2VydmFibGUsIEJlaGF2aW9yU3ViamVjdCB9IGZyb20gJ3J4anMnO1xuXG5pbXBvcnQgeyBHUEVycm9yIH0gZnJvbSAnLi9lcnJvcic7XG5cbkBJbmplY3RhYmxlKClcbmV4cG9ydCBjbGFzcyBFcnJvclNlcnZpY2Uge1xuXG4gICAgcHJpdmF0ZSB1cGRhdGVTdWJqZWN0OiBCZWhhdmlvclN1YmplY3Q8R1BFcnJvcj4gPSBuZXcgQmVoYXZpb3JTdWJqZWN0PEdQRXJyb3I+KG51bGwpO1xuXG4gICAgZXJyb3IkOiBPYnNlcnZhYmxlPEdQRXJyb3I+ID0gdGhpcy51cGRhdGVTdWJqZWN0LmFzT2JzZXJ2YWJsZSgpO1xuXG4gICAgc2V0RXJyb3IoZXJyb3I6IEVycm9yKSB7XG4gICAgICAgIGxldCBncGUgPSBHUEVycm9yLmZyb20oZXJyb3IpO1xuICAgICAgICB0aGlzLnVwZGF0ZVN1YmplY3QubmV4dChncGUpO1xuICAgIH1cbn1cbiJdfQ==

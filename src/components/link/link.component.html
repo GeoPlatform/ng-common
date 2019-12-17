@@ -1,0 +1,4 @@
+<a routerLink="/view/{{item?.id}}">
+    <span *ngIf="hasIcon()" class="a-icon {{getIconClass()}}"></span>
+    {{getLabel()}}
+</a>

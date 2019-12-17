@@ -1,51 +1,91 @@
 {
+    "$schema": "./node_modules/ng-packagr/package.schema.json",
     "name": "@geoplatform/common",
-    "version": "1.8.3",
-    "private": true,
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/GeoPlatform/ng-common.git"
+    "main": "dist/bundles/geoplatform-common.umd.js",
+    "module": "dist/esm2015/index.js",
+    "typings": "dist/index.d.ts",
+    "version": "1.0.0",
+    "license": "MIT",
+    "ngPackage": {
+        "dest": "dist",
+        "lib": {
+            "entryFile": "src/public_api.ts",
+            "umdModuleIds": {
+                "axios": "axios",
+                "@geoplatform/client": "geoplatform.client",
+                "@geoplatform/rpm/src/iRPMService" : "RPMService",
+                "@geoplatform/oauth-ng/angular" : "geoplatform.oauth-ng",
+                "@ng-bootstrap/ng-bootstrap" : "ngBootstrap",
+                "@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js": "geoplatform.rpm"
+            }
+        }
     },
-    "peerDependencies": {
-        "@geoplatform/style": "2.1.0"
-    },
-    "devDependencies": {
-        "@types/angular": "^1.5.23",
-        "@types/angular-resource": "^1.5.12",
-        "@types/angular-route": "^1.3.4",
-        "@types/angular-ui-bootstrap": "^0.13.44",
-        "babel": "^6.5.2",
-        "babel-plugin-transform-object-assign": "^6.22.0",
-        "babel-preset-es2015": "^6.16.0",
-        "del": "^3.0.0",
-        "@geoplatform/style": "git+https://github.com/GeoPlatform/style.git#develop",
-        "gulp": "^4.0.2",
-        "gulp-babel": "^6.1.3",
-        "gulp-concat": "^2.6.0",
-        "gulp-help": "^1.6.1",
-        "gulp-jshint": "^2.0.1",
-        "gulp-less": "^4.0.1",
-        "gulp-livereload": "^4.0.1",
-        "gulp-ng-annotate": "^2.0.0",
-        "gulp-ng-templates": "1.0.2",
-        "gulp-notify": "^2.2.0",
-        "gulp-rename": "^1.2.2",
-        "gulp-sourcemaps": "^1.6.0",
-        "gulp-typescript": "^5.0.1",
-        "gulp-uglify": "^2.0.0",
-        "gulp-util": "^3.0.8",
-        "jshint": "^2.9.3",
-        "jshint-stylish": "^2.2.1",
-        "less": "^3.9.0",
-        "less-plugin-autoprefix": "^1.5.1",
-        "matchdep": "^2.0.0",
-        "pre-commit": "^1.1.3",
-        "typescript": "^2.7.2"
-    },
-    "pre-commit": [
-        "distro"
+    "whitelistedNonPeerDependencies": [
+        "."
     ],
     "scripts": {
-        "distro": "gulp"
+        "ng": "ng",
+        "start": "ng serve",
+        "build": "ng-packagr -p package.json",
+        "2postbuild": "gulp license",
+        "test": "mocha",
+        "test-node": "mocha node/test",
+        "lint": "ng lint",
+        "e2e": "ng e2e",
+        "install-all": "npm install && cd node && npm install && cd ../angular && npm install && cd ../angularjs && npm install && cd .."
+    },
+    "pre-commit": [
+        "build"
+    ],
+    "private": true,
+    "peerDependencies": {},
+    "devDependencies": {
+        "@angular/animations": "^8.1.2",
+        "@angular/cdk": "^8.1.2",
+        "@angular/common": "^8.1.2",
+        "@angular/compiler": "^8.1.2",
+        "@angular/compiler-cli": "^8.1.2",
+        "@angular/core": "^8.1.2",
+        "@angular/forms": "^8.1.2",
+        "@angular/material": "^8.1.2",
+        "@angular/platform-browser": "^8.1.2",
+        "@angular/platform-browser-dynamic": "^8.1.2",
+        "@angular/platform-server": "^8.1.2",
+        "@angular/router": "^8.1.2",
+        "@geoplatform/client": "git+http://github.com/GeoPlatform/client-api.git#develop",
+        "@geoplatform/oauth-ng": "git+https://github.com/GeoPlatform/ng-gpoauth.git#develop",
+        "@geoplatform/rpm": "git+https://github.com/GeoPlatform/rpm-js#develop",
+        "@geoplatform/style": "git+http://github.com/GeoPlatform/style.git#develop",
+        "@ng-bootstrap/ng-bootstrap": "^5.1.0",
+        "@types/jasmine": "~2.8.3",
+        "@types/jasminewd2": "~2.0.2",
+        "@types/jquery": "^3.3.29",
+        "@types/node": "~6.0.60",
+        "@types/q": "^1.5.1",
+        "axios": "^0.18.0",
+        "chai": "^3.4.1",
+        "core-js": "^2.4.1",
+        "gulp": "^4.0.2",
+        "gulp-append-prepend": "^1.0.8",
+        "jasmine-core": "~2.8.0",
+        "jasmine-spec-reporter": "~4.2.1",
+        "karma": "~4.2.0",
+        "karma-chrome-launcher": "~2.2.0",
+        "karma-coverage-istanbul-reporter": "^1.2.1",
+        "karma-jasmine": "~1.1.0",
+        "karma-jasmine-html-reporter": "^0.2.2",
+        "md5": "2.2.1",
+        "mocha": "6.2.0",
+        "mock-require": "^3.0.3",
+        "ng-packagr": "^5.5.0",
+        "pre-commit": "^1.2.2",
+        "protractor": "~6.0.0",
+        "request": "^2.76.0",
+        "request-debug": "^0.2.0",
+        "supertest": "4.0.2",
+        "ts-node": "~8.0.2",
+        "tslint": "~5.9.1",
+        "typescript": "^3.4.5",
+        "zone.js": "^0.8.19"
     }
 }

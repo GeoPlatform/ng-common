@@ -1,0 +1,8 @@
+<div class="gpLoginCover" *ngIf="showLoginModal">
+    <button class="btn btn-danger gpLoginCancelIframe pull-right" *ngIf="!forceLogin" (click)="cancel()">
+        <span class="fas fa-times-circle"></span> Cancel
+    </button>
+    <div class="gpLoginWindow" *ngIf="showLoginModal">
+        <iframe id="gpLoginIFrame" src="/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}"></iframe>
+    </div>
+</div>
