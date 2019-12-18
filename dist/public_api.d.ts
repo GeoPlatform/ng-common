@@ -1,4 +1,8 @@
 export declare const GeoPlatformCommonVersion = "1.0.0";
+export declare const DefaultSortOptions: {
+    value: string;
+    label: string;
+}[];
 export * from './auth';
 export * from './dialogs';
 export * from './directives';

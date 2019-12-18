@@ -1433,10 +1433,20 @@ var GeoPlatformCommonModule = /** @class */ (function () {
     Long-term this value should be auto-set to be whatever is set in package.json
  */
 var GeoPlatformCommonVersion = "1.0.0";
+// import Polyfills from "./shared/polyfills";
+// Polyfills();
+var DefaultSortOptions = [
+    { value: "_score,desc", label: "Relevance" },
+    { value: "modified,desc", label: "Most Recently Modified" },
+    { value: "modified,asc", label: "Least Recently Modified" },
+    { value: "label,asc", label: "Title [A-Z]" },
+    { value: "label,desc", label: "Title [Z-A]" },
+    { value: "reliability,asc", label: "Reliability" }
+];
 
 /**
  * Generated bundle index. Do not edit.
  */
 
-export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi, AppAuthService as ɵj };
+export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, DefaultSortOptions, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi, AppAuthService as ɵj };
 //# sourceMappingURL=geoplatform-common.js.map

@@ -1620,10 +1620,21 @@
         Long-term this value should be auto-set to be whatever is set in package.json
      */
     var GeoPlatformCommonVersion = "1.0.0";
+    // import Polyfills from "./shared/polyfills";
+    // Polyfills();
+    var DefaultSortOptions = [
+        { value: "_score,desc", label: "Relevance" },
+        { value: "modified,desc", label: "Most Recently Modified" },
+        { value: "modified,asc", label: "Least Recently Modified" },
+        { value: "label,asc", label: "Title [A-Z]" },
+        { value: "label,desc", label: "Title [Z-A]" },
+        { value: "reliability,asc", label: "Reliability" }
+    ];
 
     exports.AppAuthService = AppAuthService;
     exports.ArrayedItemsPipe = ArrayedItemsPipe;
     exports.AuthenticatedComponent = AuthenticatedComponent;
+    exports.DefaultSortOptions = DefaultSortOptions;
     exports.ErrorResolver = ErrorResolver;
     exports.EventTypes = EventTypes;
     exports.FixLabelPipe = FixLabelPipe;
