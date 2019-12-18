@@ -1427,11 +1427,40 @@
         }
         return trackingServiceInst;
     }
-    var ɵ0 = geoplatform_rpm_browser_js.RPMServiceFactory();
     var GeoPlatformCommonModule = /** @class */ (function () {
         function GeoPlatformCommonModule() {
         }
-        GeoPlatformCommonModule = __decorate([
+        GeoPlatformCommonModule_1 = GeoPlatformCommonModule;
+        GeoPlatformCommonModule.forRoot = function () {
+            return {
+                ngModule: GeoPlatformCommonModule_1,
+                providers: [
+                    AppAuthService,
+                    ErrorResolver,
+                    ItemResolver,
+                    NewItemResolver,
+                    VersionResolver,
+                    GeoPlatformErrorService,
+                    ItemHelper,
+                    // {
+                    //     provide: RPMStatsService,
+                    //     useFactory: RPMStatsServiceFactory,
+                    //     deps: [ HttpClient ]
+                    // },
+                    {
+                        provide: iRPMService.RPMService,
+                        useValue: geoplatform_rpm_browser_js.RPMServiceFactory()
+                    },
+                    {
+                        provide: client.TrackingService,
+                        useFactory: TrackingServiceFactory,
+                        deps: [iRPMService.RPMService]
+                    }
+                ]
+            };
+        };
+        var GeoPlatformCommonModule_1;
+        GeoPlatformCommonModule = GeoPlatformCommonModule_1 = __decorate([
             core.NgModule({
                 imports: [
                     router.RouterModule,
@@ -1468,29 +1497,7 @@
                     FixLabelPipe,
                     GeoPlatformIconDirective
                 ],
-                providers: [
-                    AppAuthService,
-                    ErrorResolver,
-                    ItemResolver,
-                    NewItemResolver,
-                    VersionResolver,
-                    GeoPlatformErrorService,
-                    ItemHelper,
-                    // {
-                    //     provide: RPMStatsService,
-                    //     useFactory: RPMStatsServiceFactory,
-                    //     deps: [ HttpClient ]
-                    // },
-                    {
-                        provide: iRPMService.RPMService,
-                        useValue: ɵ0
-                    },
-                    {
-                        provide: client.TrackingService,
-                        useFactory: TrackingServiceFactory,
-                        deps: [iRPMService.RPMService]
-                    }
-                ],
+                providers: [],
                 entryComponents: [
                     ListSelectDialog,
                     MessageDialog
@@ -1535,7 +1542,6 @@
     exports.TrackingServiceFactory = TrackingServiceFactory;
     exports.VersionResolver = VersionResolver;
     exports.authServiceFactory = authServiceFactory;
-    exports.ɵ0 = ɵ0;
     exports.ɵa = ListSelectDialog;
     exports.ɵb = MessageDialog;
     exports.ɵc = ImageFallbackDirective;

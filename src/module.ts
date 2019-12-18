@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, ModuleWithProviders } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -96,32 +96,42 @@ import { ItemHelper               } from './item-helper';
         GeoPlatformIconDirective
     ],
     providers: [
-        AppAuthService,
-        ErrorResolver,
-        ItemResolver,
-        NewItemResolver,
-        VersionResolver,
-        GeoPlatformErrorService,
-        ItemHelper,
 
-        // {
-        //     provide: RPMStatsService,
-        //     useFactory: RPMStatsServiceFactory,
-        //     deps: [ HttpClient ]
-        // },
-        {
-            provide: RPMService,
-            useValue: RPMServiceFactory()
-        },
-        {
-            provide: TrackingService,
-            useFactory: TrackingServiceFactory,
-            deps: [ RPMService]
-        }
     ],
     entryComponents: [
         ListSelectDialog,
         MessageDialog
     ]
 })
-export class GeoPlatformCommonModule { }
+export class GeoPlatformCommonModule {
+
+    static forRoot(): ModuleWithProviders {
+        return {
+            ngModule: GeoPlatformCommonModule,
+            providers: [
+                AppAuthService,
+                ErrorResolver,
+                ItemResolver,
+                NewItemResolver,
+                VersionResolver,
+                GeoPlatformErrorService,
+                ItemHelper,
+                // {
+                //     provide: RPMStatsService,
+                //     useFactory: RPMStatsServiceFactory,
+                //     deps: [ HttpClient ]
+                // },
+                {
+                    provide: RPMService,
+                    useValue: RPMServiceFactory()
+                },
+                {
+                    provide: TrackingService,
+                    useFactory: TrackingServiceFactory,
+                    deps: [ RPMService]
+                }
+            ]
+        };
+    }
+
+}
