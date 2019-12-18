@@ -18,7 +18,7 @@ export interface ListSelectDialogData {
 
 
 @Component({
-  selector: 'gpoe-list-select-dialog',
+  selector: 'gp-list-select-dialog',
   templateUrl: 'list-select.html',
   styleUrls: ['./list-select.less']
 })

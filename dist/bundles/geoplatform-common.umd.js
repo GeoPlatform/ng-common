@@ -608,7 +608,7 @@
         ]; };
         ListSelectDialog = __decorate([
             core.Component({
-                selector: 'gpoe-list-select-dialog',
+                selector: 'gp-list-select-dialog',
                 template: "<h5 mat-dialog-title>Find Items to Select</h5>\n<div mat-dialog-content>\n    <mat-form-field appearance=\"outline\">\n        <mat-label>\n            <mat-icon><span class=\"fas fa-search\"></span></mat-icon>\n            Search\n        </mat-label>\n        <input matInput\n            [(ngModel)]=\"termQuery\" (ngModelChange)=\"onTermChange($event)\"\n            placeholder=\"Enter keywords to find recommended values\">\n        <span matSuffix *ngIf=\"termQuery?.length\" (click)=\"onTermChange(null, true)\"\n            class=\"fas fa-times t-fg--gray-md\">\n        </span>\n    </mat-form-field>\n\n    <div class=\"d-flex flex-justify-between flex-align-stretch\">\n\n        <div style=\"flex: 1 0 49%; margin-right: 1%;\">\n            <div class=\"a-heading\">\n                Recommendations ({{totalSuggested||0}})\n                <span *ngIf=\"isLoading\" class=\"fas fa-spinner fa-spin\"></span>\n            </div>\n            <div class=\"m-list-section\">\n                <div class=\"list-group\">\n                    <em *ngIf=\"!suggested?.length\">Enter keywords above to receive suggested values to use.</em>\n                    <div *ngFor=\"let item of suggested\" class=\"list-group-item\"\n                        (click)=\"addValue(item)\" [ngClass]=\"{'active':isSelected(item)}\">\n                        <a>\n                            <span gpIcon [item]=\"item\"></span>\n                            {{item.label||item.title||item.prefLabel}}\n                        </a>\n                        <div *ngIf=\"data.subHeading\" class=\"u-text--sm t-fg--gray-md\">\n                            {{getSubHeading(item)}}\n                        </div>\n                    </div>\n                </div>\n            </div>\n            <div class=\"u-text--sm  u-mg-top--md\" *ngIf=\"totalSuggested>0\">\n                <ngb-pagination [collectionSize]=\"totalSuggested\"\n                    [pageSize]=\"12\" [maxSize]=\"2\" [size]=\"'sm'\"\n                    [rotate]=\"true\" [(page)]=\"currentPage\"\n                    (pageChange)=\"onPageChange($event)\">\n                </ngb-pagination>\n            </div>\n        </div>\n        <div style=\"flex: 1 0 50%\">\n            <div class=\"a-heading\">Selected ({{data?.selected?.length||0}})</div>\n            <div class=\"m-list-section\">\n                <div class=\"list-group\">\n                    <em *ngIf=\"!data.selected?.length\">No values selected.</em>\n                    <div *ngFor=\"let item of data?.selected\" class=\"list-group-item\">\n                        <span class=\"fas fa-times t-fg--danger\" (click)=\"removeValue(item)\"></span>&nbsp;\n                        <a>\n                            <span gpIcon [item]=\"item\"></span>\n                            {{item.label||item.title||item.prefLabel||\"Untitled Item\"}}\n                        </a>\n                        <div *ngIf=\"data.subHeading\" class=\"u-text--sm t-fg--gray-md\">\n                            {{getSubHeading(item)}}\n                        </div>\n                    </div>\n                </div>\n            </div>\n        </div>\n    </div>\n\n</div>\n<div mat-dialog-actions class=\"d-flex flex-justify-end flex-align-center\">\n    <button type=\"button\" mat-flat-button (click)=\"onNoClick()\">Cancel</button>\n    <button type=\"button\" mat-flat-button color=\"primary\" [mat-dialog-close]=\"data.selected\">Ok</button>\n</div>\n",
                 styles: [":host .mat-form-field{width:100%}"]
             }),
@@ -653,7 +653,7 @@
         ], MessageDialog.prototype, "className", void 0);
         MessageDialog = __decorate([
             core.Component({
-                selector: 'gpoe-message-dialog',
+                selector: 'gp-message-dialog',
                 template: "<div class=\"a-heading\" mat-dialog-title>\n    <span [attr.class]=\"getIconClass()\"></span>\n    {{data.label || \"Message\"}}\n</div>\n<div mat-dialog-content>\n    {{data.message}}\n</div>\n<div mat-dialog-actions class=\"d-flex flex-justify-end flex-align-center\">\n    <button type=\"button\" mat-flat-button (click)=\"close()\">Dismiss</button>\n</div>\n",
                 styles: [":host.danger .mat-dialog-title{color:#d53c37}:host.warning .mat-dialog-title{color:#b35d29}:host.info .mat-dialog-title{color:#007fa4}"]
             }),
@@ -894,7 +894,7 @@
         ], SelectedItemsComponent.prototype, "onEvent", void 0);
         SelectedItemsComponent = __decorate([
             core.Component({
-                selector: 'gpmm-selected-items',
+                selector: 'gp-selected-items',
                 template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <!-- <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!isAuthenticated()||!selected?.length}\">\n\n            <div class=\"flex-1\">\n                <span class=\"icon-gallery\"></span>\n                Add Selected to a Gallery\n            </div>\n            <button type=\"button\" class=\"btn btn-link\"\n                (click))=\"openDialog()\"\n                [disabled]=\"!isAuthenticated()\">\n                <span class=\"gpicons plus-circle t-fg--success\"></span>\n            </button>\n        </div> -->\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
                 styles: [""]
             })
@@ -987,57 +987,57 @@
     /**
      *
      */
-    var GPError = /** @class */ (function (_super) {
-        __extends(GPError, _super);
-        function GPError(message, label, code, item) {
+    var GeoPlatformError = /** @class */ (function (_super) {
+        __extends(GeoPlatformError, _super);
+        function GeoPlatformError(message, label, code, item) {
             var _this = _super.call(this, message) || this;
             _this.label = label;
             _this.code = code;
             _this.item = item;
             return _this;
         }
-        Object.defineProperty(GPError.prototype, "label", {
+        Object.defineProperty(GeoPlatformError.prototype, "label", {
             get: function () { return this._label; },
             set: function (value) { this._label = value; },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(GPError.prototype, "code", {
+        Object.defineProperty(GeoPlatformError.prototype, "code", {
             get: function () { return this._code; },
             set: function (value) { this._code = value; },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(GPError.prototype, "item", {
+        Object.defineProperty(GeoPlatformError.prototype, "item", {
             get: function () { return this._item; },
             set: function (value) { this._item = value; },
             enumerable: true,
             configurable: true
         });
-        GPError.from = function (error) {
-            if (error instanceof GPError)
+        GeoPlatformError.from = function (error) {
+            if (error instanceof GeoPlatformError)
                 return error;
-            var gpe = new GPError(error.message);
+            var gpe = new GeoPlatformError(error.message);
             gpe.label = "An error occurred";
             gpe.code = 500;
             return gpe;
         };
-        return GPError;
+        return GeoPlatformError;
     }(Error));
 
-    var ErrorService = /** @class */ (function () {
-        function ErrorService() {
+    var GeoPlatformErrorService = /** @class */ (function () {
+        function GeoPlatformErrorService() {
             this.updateSubject = new rxjs.BehaviorSubject(null);
             this.error$ = this.updateSubject.asObservable();
         }
-        ErrorService.prototype.setError = function (error) {
-            var gpe = GPError.from(error);
+        GeoPlatformErrorService.prototype.setError = function (error) {
+            var gpe = GeoPlatformError.from(error);
             this.updateSubject.next(gpe);
         };
-        ErrorService = __decorate([
+        GeoPlatformErrorService = __decorate([
             core.Injectable()
-        ], ErrorService);
-        return ErrorService;
+        ], GeoPlatformErrorService);
+        return GeoPlatformErrorService;
     }());
 
     var Visibilities = {
@@ -1385,7 +1385,7 @@
             var type = route.params.type;
             var item = ItemFactory.create(type);
             if (!item) {
-                var gpe = new GPError("Type " + type + " is unsupported", "Unsupported Type", 400);
+                var gpe = new GeoPlatformError("Type " + type + " is unsupported", "Unsupported Type", 400);
                 // this.errorService.setError(gpe);
                 this.router.navigateByUrl('error', { skipLocationChange: false });
                 return rxjs.empty();
@@ -1480,7 +1480,7 @@
                     ItemResolver,
                     NewItemResolver,
                     VersionResolver,
-                    ErrorService,
+                    GeoPlatformErrorService,
                     ItemHelper,
                     // {
                     //     provide: RPMStatsService,
@@ -1516,12 +1516,12 @@
     exports.ArrayedItemsPipe = ArrayedItemsPipe;
     exports.AuthenticatedComponent = AuthenticatedComponent;
     exports.ErrorResolver = ErrorResolver;
-    exports.ErrorService = ErrorService;
     exports.FixLabelPipe = FixLabelPipe;
     exports.FriendlyTypePipe = FriendlyTypePipe;
-    exports.GPError = GPError;
     exports.GeoPlatformCommonModule = GeoPlatformCommonModule;
     exports.GeoPlatformCommonVersion = GeoPlatformCommonVersion;
+    exports.GeoPlatformError = GeoPlatformError;
+    exports.GeoPlatformErrorService = GeoPlatformErrorService;
     exports.GeoPlatformIconDirective = GeoPlatformIconDirective;
     exports.ImageFallbackDirective = ImageFallbackDirective;
     exports.ItemFactory = ItemFactory;

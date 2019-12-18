@@ -4,7 +4,7 @@ import { Item } from "@geoplatform/client";
 /**
  *
  */
-export class GPError extends Error {
+export class GeoPlatformError extends Error {
 
     private _label: string;
     private _code: number;
@@ -32,11 +32,11 @@ export class GPError extends Error {
         this.item  = item;
     }
 
-    static from(error : Error) : GPError {
-        if(error instanceof GPError)
-            return error as GPError;
+    static from(error : Error) : GeoPlatformError {
+        if(error instanceof GeoPlatformError)
+            return error as GeoPlatformError;
 
-        let gpe = new GPError(error.message);
+        let gpe = new GeoPlatformError(error.message);
         gpe.label = "An error occurred";
         gpe.code = 500;
         return gpe;

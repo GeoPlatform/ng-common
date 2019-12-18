@@ -5,7 +5,7 @@ import {
 import { Item } from "@geoplatform/client";
 
 @Component({
-  selector: 'gpmm-selected-items',
+  selector: 'gp-selected-items',
   templateUrl: './selected.component.html',
   styleUrls: ['./selected.component.less']
 })
@@ -28,6 +28,6 @@ export class SelectedItemsComponent implements OnInit {
     }
 
     remove( item : Item ) {
-        
+
     }
 }

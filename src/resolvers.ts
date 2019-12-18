@@ -8,7 +8,7 @@ import {
     TrackingService, TrackingTypes, TrackingEventFactory
 } from '@geoplatform/client';
 import { ItemFactory }       from './item-factory';
-import { GPError }           from './error';
+import { GeoPlatformError }           from './error';
 
 @Injectable(/*{ providedIn: 'root' }*/)
 export class ItemResolver implements Resolve<Item> {
@@ -71,7 +71,7 @@ export class NewItemResolver implements Resolve<Item> {
         let type = route.params.type;
         let item = ItemFactory.create(type);
         if(!item) {
-            let gpe = new GPError(`Type ${type} is unsupported`, "Unsupported Type", 400);
+            let gpe = new GeoPlatformError(`Type ${type} is unsupported`, "Unsupported Type", 400);
             // this.errorService.setError(gpe);
             this.router.navigateByUrl('error', {skipLocationChange:false});
             return empty();

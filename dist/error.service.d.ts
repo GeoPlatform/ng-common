@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
-import { GPError } from './error';
-export declare class ErrorService {
+import { GeoPlatformError } from './error';
+export declare class GeoPlatformErrorService {
     private updateSubject;
-    error$: Observable<GPError>;
+    error$: Observable<GeoPlatformError>;
     setError(error: Error): void;
 }

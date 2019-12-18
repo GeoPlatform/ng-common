@@ -2,7 +2,7 @@ import { Item } from "@geoplatform/client";
 /**
  *
  */
-export declare class GPError extends Error {
+export declare class GeoPlatformError extends Error {
     private _label;
     private _code;
     private _item;
@@ -10,5 +10,5 @@ export declare class GPError extends Error {
     code: number;
     item: Item;
     constructor(message: string, label?: string, code?: number, item?: Item);
-    static from(error: Error): GPError;
+    static from(error: Error): GeoPlatformError;
 }

@@ -52,7 +52,7 @@ import { GeoPlatformIconDirective } from './directives/icon';
 import {
     ItemResolver, NewItemResolver, ErrorResolver, VersionResolver
 } from './resolvers';
-import { ErrorService             } from './error.service';
+import { GeoPlatformErrorService  } from './error.service';
 import { ItemHelper               } from './item-helper';
 
 @NgModule({
@@ -101,7 +101,7 @@ import { ItemHelper               } from './item-helper';
         ItemResolver,
         NewItemResolver,
         VersionResolver,
-        ErrorService,
+        GeoPlatformErrorService,
         ItemHelper,
 
         // {

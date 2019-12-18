@@ -13,9 +13,9 @@
             "umdModuleIds": {
                 "axios": "axios",
                 "@geoplatform/client": "geoplatform.client",
-                "@geoplatform/rpm/src/iRPMService" : "RPMService",
-                "@geoplatform/oauth-ng/angular" : "geoplatform.oauth-ng",
-                "@ng-bootstrap/ng-bootstrap" : "ngBootstrap",
+                "@geoplatform/rpm/src/iRPMService": "RPMService",
+                "@geoplatform/oauth-ng/angular": "geoplatform.oauth-ng",
+                "@ng-bootstrap/ng-bootstrap": "ngBootstrap",
                 "@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js": "geoplatform.rpm"
             }
         }

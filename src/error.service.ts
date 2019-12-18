@@ -1,17 +1,17 @@
 import { Injectable } from '@angular/core';
 import { Observable, BehaviorSubject } from 'rxjs';
 
-import { GPError } from './error';
+import { GeoPlatformError } from './error';
 
 @Injectable()
-export class ErrorService {
+export class GeoPlatformErrorService {
 
-    private updateSubject: BehaviorSubject<GPError> = new BehaviorSubject<GPError>(null);
+    private updateSubject: BehaviorSubject<GeoPlatformError> = new BehaviorSubject<GeoPlatformError>(null);
 
-    error$: Observable<GPError> = this.updateSubject.asObservable();
+    error$: Observable<GeoPlatformError> = this.updateSubject.asObservable();
 
     setError(error: Error) {
-        let gpe = GPError.from(error);
+        let gpe = GeoPlatformError.from(error);
         this.updateSubject.next(gpe);
     }
 }

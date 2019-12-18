@@ -16,7 +16,7 @@ export interface MessageDialogData {
 
 
 @Component({
-  selector: 'gpoe-message-dialog',
+  selector: 'gp-message-dialog',
   templateUrl: 'message.html',
   styleUrls: ['./message.less'],
 
