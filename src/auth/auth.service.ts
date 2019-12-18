@@ -8,6 +8,8 @@ import {
 } from '@geoplatform/oauth-ng/angular';
 
 import { authServiceFactory } from './auth.factory';
+import { logger } from "../logger";
+
 
 
 @Injectable({providedIn: 'root'})
@@ -38,7 +40,7 @@ export class AppAuthService {
 
         const sub = this.authService.getMessenger().raw();
         this.gpAuthSubscription = sub.subscribe(msg => {
-            // console.log("Received Auth Message: " + msg.name);
+            logger.debug("Received Auth Message: " + msg.name);
             switch(msg.name){
                 case 'userAuthenticated': this.onUserChange(msg.user); break;
                 case 'userSignOut': this.onUserChange(null); break;
@@ -50,7 +52,7 @@ export class AppAuthService {
     }
 
     onUserChange(user : GeoPlatformUser) {
-        console.log("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
+        logger.debug("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
         this.user = user;
         // this.rpm.setUserId( user ? user.id : null);
         this.user$.next(user);

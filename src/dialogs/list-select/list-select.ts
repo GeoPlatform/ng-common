@@ -40,7 +40,7 @@ export class ListSelectDialog {
         public dialogRef: MatDialogRef<ListSelectDialog>,
         @Inject(MAT_DIALOG_DATA) public data: ListSelectDialogData
     ) {
-        this.query = data.query.clone().page(this.currentPage).pageSize(12);
+        this.query = data.query.clone().page(this.currentPage);
 
         this.subject.pipe(
             debounceTime(300),

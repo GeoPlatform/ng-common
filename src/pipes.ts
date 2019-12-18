@@ -26,7 +26,6 @@ export class LimitToPipe implements PipeTransform {
         if(value && value.length > num) {
             let st = isNaN(start) ? 0 : start;
             if(st > 0) num += st;
-            console.log("Slicing from " + st + " to " + num);
             return value.slice( st, num);
         }
         return value;

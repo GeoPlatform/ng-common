@@ -1,5 +1,8 @@
 import { ngGpoauthFactory, AuthService } from '@geoplatform/oauth-ng/angular';
 
+import { logger } from "../logger";
+
+
 //should be exported by gp-ngoauth but isn't so we are declaring it here...
 interface AuthConfig {
     AUTH_TYPE?: 'grant' | 'token'
@@ -53,8 +56,8 @@ export function authServiceFactory( environment : any ) {
         });
     }
 
-    // console.log("Configuring OAuth using: ");
-    // console.log(authSettings);
+    logger.info("Configuring OAuth using: ");
+    logger.info(authSettings);
 
     authService = ngGpoauthFactory(authSettings);
     return authService;

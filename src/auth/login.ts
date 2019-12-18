@@ -5,7 +5,7 @@ import { AuthService, GeoPlatformUser } from '@geoplatform/oauth-ng/angular';
 
 import { AuthenticatedComponent } from './authenticated.component';
 import { AppAuthService } from './auth.service';
-
+import { logger } from '../logger';
 
 
 @Component({
@@ -126,7 +126,7 @@ export class LoginButtonComponent extends AuthenticatedComponent implements OnIn
 
     onUserChange(user : GeoPlatformUser) {
         super.onUserChange(user);
-        console.log("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
+        logger.debug("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
         this.user = user;
     }
 
@@ -230,7 +230,7 @@ export class LoginModalComponent implements OnInit, OnDestroy {
         if(!this.authService) return;
 
         this.authService.getMessenger().subscribe(msg => {
-            // console.log("Received Auth Message: " + msg.name);
+            logger.debug("LoginModal received auth message: " + msg.name);
             switch(msg.name){
                 case 'auth:requireLogin':
                     this.showLoginModal = true;   //show the modal

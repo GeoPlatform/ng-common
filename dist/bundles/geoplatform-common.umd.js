@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('rxjs'), require('@geoplatform/client'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/common'), require('@angular/forms'), require('@angular/material'), require('@ng-bootstrap/ng-bootstrap')) :
-    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@angular/core', 'rxjs', '@geoplatform/client', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/common', '@angular/forms', '@angular/material', '@ng-bootstrap/ng-bootstrap'], factory) :
-    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.ng.core, global.rxjs, global.geoplatform.client, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.common, global.ng.forms, global.ng.material, global.ngBootstrap));
-}(this, (function (exports, core, rxjs, client, iRPMService, angular, dialog, operators, platformBrowser, router, common, forms, material, ngBootstrap) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@geoplatform/client'), require('@angular/core'), require('rxjs'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/common'), require('@angular/forms'), require('@angular/material'), require('@ng-bootstrap/ng-bootstrap'), require('@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js')) :
+    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@geoplatform/client', '@angular/core', 'rxjs', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/common', '@angular/forms', '@angular/material', '@ng-bootstrap/ng-bootstrap', '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js'], factory) :
+    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.geoplatform.client, global.ng.core, global.rxjs, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.common, global.ng.forms, global.ng.material, global.ngBootstrap, global.geoplatform.rpm));
+}(this, (function (exports, client, core, rxjs, iRPMService, angular, dialog, operators, platformBrowser, router, common, forms, material, ngBootstrap, geoplatform_rpm_browser_js) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -201,6 +201,85 @@
         return (mod && mod.__esModule) ? mod : { default: mod };
     }
 
+    var LEVELS = [
+        "error",
+        "warn",
+        "info",
+        "debug"
+    ];
+    var Logger = /** @class */ (function () {
+        function Logger() {
+            this.level = 'error';
+            this.setLevel(client.Config.logLevel || client.Config.LOG_LEVEL);
+        }
+        Logger.prototype.setLevel = function (level) {
+            if (level && LEVELS.indexOf(level) >= 0) {
+                this.level = level;
+            }
+            this.info("Log Level : " + this.level);
+        };
+        Logger.prototype.isVisible = function (level) {
+            return LEVELS.indexOf(this.level) >= LEVELS.indexOf(level);
+        };
+        Logger.prototype.log = function (arg) {
+            var _this = this;
+            var addl = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                addl[_i - 1] = arguments[_i];
+            }
+            var msg = this.toStr(arg);
+            msg += addl.map(function (a) { return _this.toStr(a); }).join('');
+            console.log(msg);
+        };
+        Logger.prototype.debug = function (arg) {
+            var addl = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                addl[_i - 1] = arguments[_i];
+            }
+            if (!this.isVisible('debug'))
+                return;
+            var msg = "[DEBUG] " + this.toStr(arg);
+            this.log.apply(this, __spread([msg], addl));
+        };
+        Logger.prototype.info = function (arg) {
+            var addl = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                addl[_i - 1] = arguments[_i];
+            }
+            if (!this.isVisible('info'))
+                return;
+            var msg = "[INFO] " + this.toStr(arg);
+            this.log.apply(this, __spread([msg], addl));
+        };
+        Logger.prototype.warn = function (arg) {
+            var addl = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                addl[_i - 1] = arguments[_i];
+            }
+            if (!this.isVisible('warn'))
+                return;
+            var msg = "[WARN] " + this.toStr(arg);
+            this.log.apply(this, __spread([msg], addl));
+        };
+        Logger.prototype.error = function (arg) {
+            var addl = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                addl[_i - 1] = arguments[_i];
+            }
+            var msg = "[ERROR] " + this.toStr(arg);
+            this.log.apply(this, __spread([msg], addl));
+        };
+        Logger.prototype.toStr = function (arg) {
+            if (null === arg || typeof (arg) === 'undefined')
+                return '';
+            if (typeof (arg) === 'string')
+                return arg;
+            return JSON.stringify(arg);
+        };
+        return Logger;
+    }());
+    var logger = new Logger();
+
     var EDIT_ROLE = 'gp_editor';
     /**
      * Base class that can be used to hook authentication notifications into
@@ -222,17 +301,21 @@
             var _this = this;
             var obs = {
                 next: function (value) {
-                    console.log("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
+                    logger.debug("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
                     _this.user = value;
                     _this.onUserChange(_this.user);
                 },
                 error: function (err) {
-                    console.log("Unable to get authenticated user info: " +
+                    logger.error("Unable to get authenticated user info: " +
                         err.message);
                 },
                 complete: function () { }
             };
             this.gpAuthSubscription = this.authService.subscribe(obs);
+            //for components that initialize AFTER a user has changed auth state,
+            // we need to fetch the current user details
+            this.user = this.authService.getUser();
+            this.onUserChange(this.user);
         };
         /**
          * Sub-classes must invoke this method in order to de-register listeners
@@ -313,8 +396,8 @@
                 }
             });
         }
-        // console.log("Configuring OAuth using: ");
-        // console.log(authSettings);
+        logger.info("Configuring OAuth using: ");
+        logger.info(authSettings);
         authService = angular.ngGpoauthFactory(authSettings);
         return authService;
     }
@@ -334,7 +417,7 @@
                 return;
             var sub = this.authService.getMessenger().raw();
             this.gpAuthSubscription = sub.subscribe(function (msg) {
-                // console.log("Received Auth Message: " + msg.name);
+                logger.debug("Received Auth Message: " + msg.name);
                 switch (msg.name) {
                     case 'userAuthenticated':
                         _this.onUserChange(msg.user);
@@ -347,7 +430,7 @@
             this.authService.getUser().then(function (user) { _this.onUserChange(user); });
         };
         AppAuthService.prototype.onUserChange = function (user) {
-            console.log("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
+            logger.debug("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
             this.user = user;
             // this.rpm.setUserId( user ? user.id : null);
             this.user$.next(user);
@@ -433,7 +516,7 @@
         };
         LoginButtonComponent.prototype.onUserChange = function (user) {
             _super.prototype.onUserChange.call(this, user);
-            console.log("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
+            logger.debug("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
             this.user = user;
         };
         LoginButtonComponent.prototype.login = function () {
@@ -465,7 +548,7 @@
             if (!this.authService)
                 return;
             this.authService.getMessenger().subscribe(function (msg) {
-                // console.log("Received Auth Message: " + msg.name);
+                logger.debug("LoginModal received auth message: " + msg.name);
                 switch (msg.name) {
                     case 'auth:requireLogin':
                         _this.showLoginModal = true; //show the modal
@@ -507,7 +590,7 @@
             this.currentPage = 0;
             this.totalSuggested = 0;
             this.subject = new rxjs.Subject();
-            this.query = data.query.clone().page(this.currentPage).pageSize(12);
+            this.query = data.query.clone().page(this.currentPage);
             this.subject.pipe(operators.debounceTime(300), operators.distinctUntilChanged())
                 .subscribe(function (term) {
                 _this.filterValues(term);
@@ -889,7 +972,7 @@
         SelectedItemsComponent = __decorate([
             core.Component({
                 selector: 'gp-selected-items',
-                template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <!-- <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!isAuthenticated()||!selected?.length}\">\n\n            <div class=\"flex-1\">\n                <span class=\"icon-gallery\"></span>\n                Add Selected to a Gallery\n            </div>\n            <button type=\"button\" class=\"btn btn-link\"\n                (click))=\"openDialog()\"\n                [disabled]=\"!isAuthenticated()\">\n                <span class=\"gpicons plus-circle t-fg--success\"></span>\n            </button>\n        </div> -->\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
+                template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <ng-content select=\"[actions]\"></ng-content>\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
                 styles: [""]
             })
         ], SelectedItemsComponent);
@@ -1032,6 +1115,38 @@
             core.Injectable()
         ], GeoPlatformErrorService);
         return GeoPlatformErrorService;
+    }());
+
+    /**
+     *
+     */
+    var EventTypes = {
+        CLOSE: Symbol("Close"),
+        OPEN: Symbol("Open"),
+        RESET: Symbol("Reset"),
+        SELECT: Symbol("Select"),
+        SELECT_NONE: Symbol("SelectNone"),
+        QUERY: Symbol("Query"),
+        ADDED: Symbol("Added"),
+        REMOVED: Symbol("Removed"),
+        CHANGED: Symbol("Changed"),
+        ERROR: Symbol("Error") //
+    };
+    /**
+     * Search Event
+     *
+     */
+    var SearchEvent = /** @class */ (function () {
+        function SearchEvent(type, options) {
+            this.options = {};
+            this.type = type;
+            if (options) {
+                Object.assign(this.options, options);
+            }
+        }
+        SearchEvent.prototype.getType = function () { return this.type; };
+        SearchEvent.prototype.getOptions = function () { return this.options; };
+        return SearchEvent;
     }());
 
     var Visibilities = {
@@ -1246,7 +1361,6 @@
                 var st = isNaN(start) ? 0 : start;
                 if (st > 0)
                     num += st;
-                console.log("Slicing from " + st + " to " + num);
                 return value.slice(st, num);
             }
             return value;
@@ -1420,6 +1534,15 @@
         return ErrorResolver;
     }());
 
+    var trackingServiceInst;
+    function TrackingServiceFactory(rpm) {
+        if (!trackingServiceInst) {
+            trackingServiceInst = new client.TrackingService({ provider: rpm });
+        }
+        return trackingServiceInst;
+    }
+
+    var ɵ0 = geoplatform_rpm_browser_js.RPMServiceFactory(), ɵ1 = TrackingServiceFactory;
     var GeoPlatformCommonModule = /** @class */ (function () {
         function GeoPlatformCommonModule() {
         }
@@ -1461,27 +1584,27 @@
                     GeoPlatformIconDirective
                 ],
                 providers: [
-                // AppAuthService,
-                // ErrorResolver,
-                // ItemResolver,
-                // NewItemResolver,
-                // VersionResolver,
-                // GeoPlatformErrorService,
-                // ItemHelper,
-                // // {
-                // //     provide: RPMStatsService,
-                // //     useFactory: RPMStatsServiceFactory,
-                // //     deps: [ HttpClient ]
-                // // },
-                // {
-                //     provide: RPMService,
-                //     useValue: RPMServiceFactory()
-                // },
-                // {
-                //     provide: TrackingService,
-                //     useFactory: TrackingServiceFactory,
-                //     deps: [ RPMService]
-                // }
+                    AppAuthService,
+                    ErrorResolver,
+                    ItemResolver,
+                    NewItemResolver,
+                    VersionResolver,
+                    GeoPlatformErrorService,
+                    ItemHelper,
+                    // {
+                    //     provide: RPMStatsService,
+                    //     useFactory: RPMStatsServiceFactory,
+                    //     deps: [ HttpClient ]
+                    // },
+                    {
+                        provide: iRPMService.RPMService,
+                        useValue: ɵ0
+                    },
+                    {
+                        provide: client.TrackingService,
+                        useFactory: ɵ1,
+                        deps: [iRPMService.RPMService]
+                    }
                 ],
                 entryComponents: [
                     ListSelectDialog,
@@ -1491,14 +1614,6 @@
         ], GeoPlatformCommonModule);
         return GeoPlatformCommonModule;
     }());
-
-    var trackingServiceInst;
-    function TrackingServiceFactory(rpm) {
-        if (!trackingServiceInst) {
-            trackingServiceInst = new client.TrackingService({ provider: rpm });
-        }
-        return trackingServiceInst;
-    }
 
     /*
         Version of the library exposed to consumers.
@@ -1510,6 +1625,7 @@
     exports.ArrayedItemsPipe = ArrayedItemsPipe;
     exports.AuthenticatedComponent = AuthenticatedComponent;
     exports.ErrorResolver = ErrorResolver;
+    exports.EventTypes = EventTypes;
     exports.FixLabelPipe = FixLabelPipe;
     exports.FriendlyTypePipe = FriendlyTypePipe;
     exports.GeoPlatformCommonModule = GeoPlatformCommonModule;
@@ -1529,12 +1645,16 @@
     exports.MessageDialog = MessageDialog;
     exports.NewItemResolver = NewItemResolver;
     exports.ResourceLinkComponent = ResourceLinkComponent;
+    exports.SearchEvent = SearchEvent;
     exports.SelectedItemsComponent = SelectedItemsComponent;
     exports.SortByPipe = SortByPipe;
     exports.ThumbnailComponent = ThumbnailComponent;
     exports.TrackingServiceFactory = TrackingServiceFactory;
     exports.VersionResolver = VersionResolver;
     exports.authServiceFactory = authServiceFactory;
+    exports.logger = logger;
+    exports.ɵ0 = ɵ0;
+    exports.ɵ1 = ɵ1;
     exports.ɵa = ListSelectDialog;
     exports.ɵb = MessageDialog;
     exports.ɵc = ImageFallbackDirective;
@@ -1544,6 +1664,7 @@
     exports.ɵg = LoginButtonComponent;
     exports.ɵh = LoginModalComponent;
     exports.ɵi = GeoPlatformIconDirective;
+    exports.ɵj = AppAuthService;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

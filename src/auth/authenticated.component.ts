@@ -2,7 +2,7 @@ import { Observable, Observer, Subject, Subscription } from 'rxjs';
 import { AuthService, GeoPlatformUser } from '@geoplatform/oauth-ng/angular';
 
 import { AppAuthService } from './auth.service';
-
+import { logger } from '../logger';
 
 const EDIT_ROLE = 'gp_editor';
 
@@ -32,18 +32,23 @@ export abstract class AuthenticatedComponent {
 
         let obs : Observer<GeoPlatformUser> = {
             next : (value: GeoPlatformUser) => {
-                console.log("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
+                logger.debug("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
                 this.user = value;
                 this.onUserChange(this.user);
             },
             error : (err: any) => {
-                console.log("Unable to get authenticated user info: " +
+                logger.error("Unable to get authenticated user info: " +
                     (err as Error).message);
             },
             complete : () => { }
         };
 
         this.gpAuthSubscription = this.authService.subscribe( obs );
+
+        //for components that initialize AFTER a user has changed auth state,
+        // we need to fetch the current user details
+        this.user = this.authService.getUser();
+        this.onUserChange(this.user);
     }
 
     /**
@@ -75,7 +80,7 @@ export abstract class AuthenticatedComponent {
      * @param item - optional object the user may be able to edit
      * @return boolean indicating whether user can edit the requested item or is an editor if no item was specified
      */
-    canUserEdit(item ?: any) {
+    canUserEdit(item ?: any) : boolean {
         if(!this.user) return false;
         if(this.user.isAuthorized(EDIT_ROLE)) return true;
         return this.isAuthorOf(item);
@@ -85,7 +90,7 @@ export abstract class AuthenticatedComponent {
      * @param item - object the user may be the owner of
      * @return boolean indicating if the user is the associated creator/owner of the item
      */
-    isAuthorOf(item ?: any) {
+    isAuthorOf(item ?: any) : boolean {
         if(!this.user || !item) return false;
         return item.createdBy && item.createdBy === this.user.username;
     }

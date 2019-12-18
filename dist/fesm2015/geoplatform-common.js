@@ -1,7 +1,7 @@
+import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService } from '@geoplatform/client';
 import { __decorate, __param } from 'tslib';
 import { Inject, ɵɵdefineInjectable, ɵɵinject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, NgModule } from '@angular/core';
 import { Subject, BehaviorSubject, of, empty } from 'rxjs';
-import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService } from '@geoplatform/client';
 import { RPMService } from '@geoplatform/rpm/src/iRPMService';
 import { ngGpoauthFactory } from '@geoplatform/oauth-ng/angular';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -12,6 +12,64 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule, MatButtonModule, MatIconModule, MatDialogModule } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { RPMServiceFactory } from '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js';
+
+const LEVELS = [
+    "error",
+    "warn",
+    "info",
+    "debug"
+];
+class Logger {
+    constructor() {
+        this.level = 'error';
+        this.setLevel(Config.logLevel || Config.LOG_LEVEL);
+    }
+    setLevel(level) {
+        if (level && LEVELS.indexOf(level) >= 0) {
+            this.level = level;
+        }
+        this.info("Log Level : " + this.level);
+    }
+    isVisible(level) {
+        return LEVELS.indexOf(this.level) >= LEVELS.indexOf(level);
+    }
+    log(arg, ...addl) {
+        let msg = this.toStr(arg);
+        msg += addl.map(a => this.toStr(a)).join('');
+        console.log(msg);
+    }
+    debug(arg, ...addl) {
+        if (!this.isVisible('debug'))
+            return;
+        let msg = "[DEBUG] " + this.toStr(arg);
+        this.log(msg, ...addl);
+    }
+    info(arg, ...addl) {
+        if (!this.isVisible('info'))
+            return;
+        let msg = "[INFO] " + this.toStr(arg);
+        this.log(msg, ...addl);
+    }
+    warn(arg, ...addl) {
+        if (!this.isVisible('warn'))
+            return;
+        let msg = "[WARN] " + this.toStr(arg);
+        this.log(msg, ...addl);
+    }
+    error(arg, ...addl) {
+        let msg = "[ERROR] " + this.toStr(arg);
+        this.log(msg, ...addl);
+    }
+    toStr(arg) {
+        if (null === arg || typeof (arg) === 'undefined')
+            return '';
+        if (typeof (arg) === 'string')
+            return arg;
+        return JSON.stringify(arg);
+    }
+}
+const logger = new Logger();
 
 const EDIT_ROLE = 'gp_editor';
 /**
@@ -33,17 +91,21 @@ class AuthenticatedComponent {
     init() {
         let obs = {
             next: (value) => {
-                console.log("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
+                logger.debug("AuthenticatedComponent : User changed to " + (value ? value.username : 'null'));
                 this.user = value;
                 this.onUserChange(this.user);
             },
             error: (err) => {
-                console.log("Unable to get authenticated user info: " +
+                logger.error("Unable to get authenticated user info: " +
                     err.message);
             },
             complete: () => { }
         };
         this.gpAuthSubscription = this.authService.subscribe(obs);
+        //for components that initialize AFTER a user has changed auth state,
+        // we need to fetch the current user details
+        this.user = this.authService.getUser();
+        this.onUserChange(this.user);
     }
     /**
      * Sub-classes must invoke this method in order to de-register listeners
@@ -123,8 +185,8 @@ function authServiceFactory(environment) {
             }
         });
     }
-    // console.log("Configuring OAuth using: ");
-    // console.log(authSettings);
+    logger.info("Configuring OAuth using: ");
+    logger.info(authSettings);
     authService = ngGpoauthFactory(authSettings);
     return authService;
 }
@@ -143,7 +205,7 @@ let AppAuthService = class AppAuthService {
             return;
         const sub = this.authService.getMessenger().raw();
         this.gpAuthSubscription = sub.subscribe(msg => {
-            // console.log("Received Auth Message: " + msg.name);
+            logger.debug("Received Auth Message: " + msg.name);
             switch (msg.name) {
                 case 'userAuthenticated':
                     this.onUserChange(msg.user);
@@ -156,7 +218,7 @@ let AppAuthService = class AppAuthService {
         this.authService.getUser().then(user => { this.onUserChange(user); });
     }
     onUserChange(user) {
-        console.log("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
+        logger.debug("AuthService.onUserChange() : User is " + (user ? user.username : 'N/A'));
         this.user = user;
         // this.rpm.setUserId( user ? user.id : null);
         this.user$.next(user);
@@ -238,7 +300,7 @@ let LoginButtonComponent = class LoginButtonComponent extends AuthenticatedCompo
     }
     onUserChange(user) {
         super.onUserChange(user);
-        console.log("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
+        logger.debug("LoginButton.onUserChange() : User is " + (user ? user.username : 'null'));
         this.user = user;
     }
     login() {
@@ -356,7 +418,7 @@ let LoginModalComponent = class LoginModalComponent {
         if (!this.authService)
             return;
         this.authService.getMessenger().subscribe(msg => {
-            // console.log("Received Auth Message: " + msg.name);
+            logger.debug("LoginModal received auth message: " + msg.name);
             switch (msg.name) {
                 case 'auth:requireLogin':
                     this.showLoginModal = true; //show the modal
@@ -457,7 +519,7 @@ let ListSelectDialog = class ListSelectDialog {
         this.currentPage = 0;
         this.totalSuggested = 0;
         this.subject = new Subject();
-        this.query = data.query.clone().page(this.currentPage).pageSize(12);
+        this.query = data.query.clone().page(this.currentPage);
         this.subject.pipe(debounceTime(300), distinctUntilChanged())
             .subscribe(term => {
             this.filterValues(term);
@@ -832,7 +894,7 @@ __decorate([
 SelectedItemsComponent = __decorate([
     Component({
         selector: 'gp-selected-items',
-        template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <!-- <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!isAuthenticated()||!selected?.length}\">\n\n            <div class=\"flex-1\">\n                <span class=\"icon-gallery\"></span>\n                Add Selected to a Gallery\n            </div>\n            <button type=\"button\" class=\"btn btn-link\"\n                (click))=\"openDialog()\"\n                [disabled]=\"!isAuthenticated()\">\n                <span class=\"gpicons plus-circle t-fg--success\"></span>\n            </button>\n        </div> -->\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
+        template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <ng-content select=\"[actions]\"></ng-content>\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
         styles: [""]
     })
 ], SelectedItemsComponent);
@@ -956,6 +1018,37 @@ let GeoPlatformErrorService = class GeoPlatformErrorService {
 GeoPlatformErrorService = __decorate([
     Injectable()
 ], GeoPlatformErrorService);
+
+/**
+ *
+ */
+const EventTypes = {
+    CLOSE: Symbol("Close"),
+    OPEN: Symbol("Open"),
+    RESET: Symbol("Reset"),
+    SELECT: Symbol("Select"),
+    SELECT_NONE: Symbol("SelectNone"),
+    QUERY: Symbol("Query"),
+    ADDED: Symbol("Added"),
+    REMOVED: Symbol("Removed"),
+    CHANGED: Symbol("Changed"),
+    ERROR: Symbol("Error") //
+};
+/**
+ * Search Event
+ *
+ */
+class SearchEvent {
+    constructor(type, options) {
+        this.options = {};
+        this.type = type;
+        if (options) {
+            Object.assign(this.options, options);
+        }
+    }
+    getType() { return this.type; }
+    getOptions() { return this.options; }
+}
 
 const Visibilities = {
     PUBLIC: 'public',
@@ -1161,7 +1254,6 @@ let LimitToPipe = class LimitToPipe {
             let st = isNaN(start) ? 0 : start;
             if (st > 0)
                 num += st;
-            console.log("Slicing from " + st + " to " + num);
             return value.slice(st, num);
         }
         return value;
@@ -1319,6 +1411,15 @@ ErrorResolver = __decorate([
     Injectable()
 ], ErrorResolver);
 
+let trackingServiceInst;
+function TrackingServiceFactory(rpm) {
+    if (!trackingServiceInst) {
+        trackingServiceInst = new TrackingService({ provider: rpm });
+    }
+    return trackingServiceInst;
+}
+
+const ɵ0 = RPMServiceFactory(), ɵ1 = TrackingServiceFactory;
 let GeoPlatformCommonModule = class GeoPlatformCommonModule {
 };
 GeoPlatformCommonModule = __decorate([
@@ -1359,27 +1460,27 @@ GeoPlatformCommonModule = __decorate([
             GeoPlatformIconDirective
         ],
         providers: [
-        // AppAuthService,
-        // ErrorResolver,
-        // ItemResolver,
-        // NewItemResolver,
-        // VersionResolver,
-        // GeoPlatformErrorService,
-        // ItemHelper,
-        // // {
-        // //     provide: RPMStatsService,
-        // //     useFactory: RPMStatsServiceFactory,
-        // //     deps: [ HttpClient ]
-        // // },
-        // {
-        //     provide: RPMService,
-        //     useValue: RPMServiceFactory()
-        // },
-        // {
-        //     provide: TrackingService,
-        //     useFactory: TrackingServiceFactory,
-        //     deps: [ RPMService]
-        // }
+            AppAuthService,
+            ErrorResolver,
+            ItemResolver,
+            NewItemResolver,
+            VersionResolver,
+            GeoPlatformErrorService,
+            ItemHelper,
+            // {
+            //     provide: RPMStatsService,
+            //     useFactory: RPMStatsServiceFactory,
+            //     deps: [ HttpClient ]
+            // },
+            {
+                provide: RPMService,
+                useValue: ɵ0
+            },
+            {
+                provide: TrackingService,
+                useFactory: ɵ1,
+                deps: [RPMService]
+            }
         ],
         entryComponents: [
             ListSelectDialog,
@@ -1387,14 +1488,6 @@ GeoPlatformCommonModule = __decorate([
         ]
     })
 ], GeoPlatformCommonModule);
-
-let trackingServiceInst;
-function TrackingServiceFactory(rpm) {
-    if (!trackingServiceInst) {
-        trackingServiceInst = new TrackingService({ provider: rpm });
-    }
-    return trackingServiceInst;
-}
 
 /*
     Version of the library exposed to consumers.
@@ -1406,5 +1499,5 @@ const GeoPlatformCommonVersion = "1.0.0";
  * Generated bundle index. Do not edit.
  */
 
-export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, ErrorResolver, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi };
+export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi, AppAuthService as ɵj };
 //# sourceMappingURL=geoplatform-common.js.map
