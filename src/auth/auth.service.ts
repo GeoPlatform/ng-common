@@ -10,7 +10,7 @@ import {
 import { authServiceFactory } from './auth.factory';
 
 
-@Injectable()
+@Injectable({providedIn: 'root'})
 export class AppAuthService {
 
     private user : GeoPlatformUser;

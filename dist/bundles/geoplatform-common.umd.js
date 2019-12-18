@@ -408,8 +408,9 @@
         AppAuthService.ctorParameters = function () { return [
             { type: undefined, decorators: [{ type: core.Inject, args: [iRPMService.RPMService,] }] }
         ]; };
+        AppAuthService.ngInjectableDef = core.ɵɵdefineInjectable({ factory: function AppAuthService_Factory() { return new AppAuthService(core.ɵɵinject(iRPMService.RPMService)); }, token: AppAuthService, providedIn: "root" });
         AppAuthService = __decorate([
-            core.Injectable(),
+            core.Injectable({ providedIn: 'root' }),
             __param(0, core.Inject(iRPMService.RPMService))
         ], AppAuthService);
         return AppAuthService;

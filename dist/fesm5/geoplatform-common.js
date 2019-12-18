@@ -1,5 +1,5 @@
 import { __decorate, __param, __extends } from 'tslib';
-import { Inject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, NgModule } from '@angular/core';
+import { Inject, ɵɵdefineInjectable, ɵɵinject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, NgModule } from '@angular/core';
 import { Subject, BehaviorSubject, of, empty } from 'rxjs';
 import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService } from '@geoplatform/client';
 import { RPMService } from '@geoplatform/rpm/src/iRPMService';
@@ -221,8 +221,9 @@ var AppAuthService = /** @class */ (function () {
     AppAuthService.ctorParameters = function () { return [
         { type: undefined, decorators: [{ type: Inject, args: [RPMService,] }] }
     ]; };
+    AppAuthService.ngInjectableDef = ɵɵdefineInjectable({ factory: function AppAuthService_Factory() { return new AppAuthService(ɵɵinject(RPMService)); }, token: AppAuthService, providedIn: "root" });
     AppAuthService = __decorate([
-        Injectable(),
+        Injectable({ providedIn: 'root' }),
         __param(0, Inject(RPMService))
     ], AppAuthService);
     return AppAuthService;
