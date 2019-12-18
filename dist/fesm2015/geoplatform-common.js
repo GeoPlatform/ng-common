@@ -12,7 +12,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatInputModule, MatButtonModule, MatIconModule, MatDialogModule } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
-import { RPMServiceFactory } from '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js';
 
 const EDIT_ROLE = 'gp_editor';
 /**
@@ -1320,45 +1319,9 @@ ErrorResolver = __decorate([
     Injectable()
 ], ErrorResolver);
 
-var GeoPlatformCommonModule_1;
-let trackingServiceInst;
-function TrackingServiceFactory(rpm) {
-    if (!trackingServiceInst) {
-        trackingServiceInst = new TrackingService({ provider: rpm });
-    }
-    return trackingServiceInst;
-}
-let GeoPlatformCommonModule = GeoPlatformCommonModule_1 = class GeoPlatformCommonModule {
-    static forRoot() {
-        return {
-            ngModule: GeoPlatformCommonModule_1,
-            providers: [
-                AppAuthService,
-                ErrorResolver,
-                ItemResolver,
-                NewItemResolver,
-                VersionResolver,
-                GeoPlatformErrorService,
-                ItemHelper,
-                // {
-                //     provide: RPMStatsService,
-                //     useFactory: RPMStatsServiceFactory,
-                //     deps: [ HttpClient ]
-                // },
-                {
-                    provide: RPMService,
-                    useValue: RPMServiceFactory()
-                },
-                {
-                    provide: TrackingService,
-                    useFactory: TrackingServiceFactory,
-                    deps: [RPMService]
-                }
-            ]
-        };
-    }
+let GeoPlatformCommonModule = class GeoPlatformCommonModule {
 };
-GeoPlatformCommonModule = GeoPlatformCommonModule_1 = __decorate([
+GeoPlatformCommonModule = __decorate([
     NgModule({
         imports: [
             RouterModule,
@@ -1395,13 +1358,43 @@ GeoPlatformCommonModule = GeoPlatformCommonModule_1 = __decorate([
             FixLabelPipe,
             GeoPlatformIconDirective
         ],
-        providers: [],
+        providers: [
+        // AppAuthService,
+        // ErrorResolver,
+        // ItemResolver,
+        // NewItemResolver,
+        // VersionResolver,
+        // GeoPlatformErrorService,
+        // ItemHelper,
+        // // {
+        // //     provide: RPMStatsService,
+        // //     useFactory: RPMStatsServiceFactory,
+        // //     deps: [ HttpClient ]
+        // // },
+        // {
+        //     provide: RPMService,
+        //     useValue: RPMServiceFactory()
+        // },
+        // {
+        //     provide: TrackingService,
+        //     useFactory: TrackingServiceFactory,
+        //     deps: [ RPMService]
+        // }
+        ],
         entryComponents: [
             ListSelectDialog,
             MessageDialog
         ]
     })
 ], GeoPlatformCommonModule);
+
+let trackingServiceInst;
+function TrackingServiceFactory(rpm) {
+    if (!trackingServiceInst) {
+        trackingServiceInst = new TrackingService({ provider: rpm });
+    }
+    return trackingServiceInst;
+}
 
 /*
     Version of the library exposed to consumers.
@@ -1413,5 +1406,5 @@ const GeoPlatformCommonVersion = "1.0.0";
  * Generated bundle index. Do not edit.
  */
 
-export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, ErrorResolver, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi, AppAuthService as ɵj };
+export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, ErrorResolver, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi };
 //# sourceMappingURL=geoplatform-common.js.map

@@ -1,4 +1,4 @@
-import { NgModule, ModuleWithProviders } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -7,28 +7,18 @@ import {
 } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
-import { TrackingService } from '@geoplatform/client';
-
-let trackingServiceInst : TrackingService;
-export function TrackingServiceFactory ( rpm : RPMService ) {
-    if(!trackingServiceInst) {
-        trackingServiceInst = new TrackingService({ provider: rpm });
-    }
-    return trackingServiceInst;
-}
-
 
 // Adds window.RPMService to global namespace
-import { RPMServiceFactory } from '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js';
-import { RPMService }        from '@geoplatform/rpm/src/iRPMService'
+// import { RPMServiceFactory } from '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js';
+// import { RPMService }        from '@geoplatform/rpm/src/iRPMService'
 // import { RPMStatsService }   from './rpm/rpmstats.service';
 // let RPMStatsServiceFactory = (http: HttpClient) => {
 //     return new RPMStatsService(environment.rpmUrl, environment.rpmToken, http)
 // }
 
 
-
-
+import { TrackingService } from '@geoplatform/client';
+// import { TrackingServiceFactory } from './tracking.factory';
 
 
 import { AppAuthService, LoginButtonComponent, LoginModalComponent } from './auth';
@@ -96,42 +86,31 @@ import { ItemHelper               } from './item-helper';
         GeoPlatformIconDirective
     ],
     providers: [
-
+        // AppAuthService,
+        // ErrorResolver,
+        // ItemResolver,
+        // NewItemResolver,
+        // VersionResolver,
+        // GeoPlatformErrorService,
+        // ItemHelper,
+        // // {
+        // //     provide: RPMStatsService,
+        // //     useFactory: RPMStatsServiceFactory,
+        // //     deps: [ HttpClient ]
+        // // },
+        // {
+        //     provide: RPMService,
+        //     useValue: RPMServiceFactory()
+        // },
+        // {
+        //     provide: TrackingService,
+        //     useFactory: TrackingServiceFactory,
+        //     deps: [ RPMService]
+        // }
     ],
     entryComponents: [
         ListSelectDialog,
         MessageDialog
     ]
 })
-export class GeoPlatformCommonModule {
-
-    static forRoot(): ModuleWithProviders {
-        return {
-            ngModule: GeoPlatformCommonModule,
-            providers: [
-                AppAuthService,
-                ErrorResolver,
-                ItemResolver,
-                NewItemResolver,
-                VersionResolver,
-                GeoPlatformErrorService,
-                ItemHelper,
-                // {
-                //     provide: RPMStatsService,
-                //     useFactory: RPMStatsServiceFactory,
-                //     deps: [ HttpClient ]
-                // },
-                {
-                    provide: RPMService,
-                    useValue: RPMServiceFactory()
-                },
-                {
-                    provide: TrackingService,
-                    useFactory: TrackingServiceFactory,
-                    deps: [ RPMService]
-                }
-            ]
-        };
-    }
-
-}
+export class GeoPlatformCommonModule { }

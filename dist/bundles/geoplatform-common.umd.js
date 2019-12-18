@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('rxjs'), require('@geoplatform/client'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/common'), require('@angular/forms'), require('@angular/material'), require('@ng-bootstrap/ng-bootstrap'), require('@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js')) :
-    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@angular/core', 'rxjs', '@geoplatform/client', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/common', '@angular/forms', '@angular/material', '@ng-bootstrap/ng-bootstrap', '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js'], factory) :
-    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.ng.core, global.rxjs, global.geoplatform.client, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.common, global.ng.forms, global.ng.material, global.ngBootstrap, global.geoplatform.rpm));
-}(this, (function (exports, core, rxjs, client, iRPMService, angular, dialog, operators, platformBrowser, router, common, forms, material, ngBootstrap, geoplatform_rpm_browser_js) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@angular/core'), require('rxjs'), require('@geoplatform/client'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/common'), require('@angular/forms'), require('@angular/material'), require('@ng-bootstrap/ng-bootstrap')) :
+    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@angular/core', 'rxjs', '@geoplatform/client', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/common', '@angular/forms', '@angular/material', '@ng-bootstrap/ng-bootstrap'], factory) :
+    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.ng.core, global.rxjs, global.geoplatform.client, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.common, global.ng.forms, global.ng.material, global.ngBootstrap));
+}(this, (function (exports, core, rxjs, client, iRPMService, angular, dialog, operators, platformBrowser, router, common, forms, material, ngBootstrap) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -1420,47 +1420,10 @@
         return ErrorResolver;
     }());
 
-    var trackingServiceInst;
-    function TrackingServiceFactory(rpm) {
-        if (!trackingServiceInst) {
-            trackingServiceInst = new client.TrackingService({ provider: rpm });
-        }
-        return trackingServiceInst;
-    }
     var GeoPlatformCommonModule = /** @class */ (function () {
         function GeoPlatformCommonModule() {
         }
-        GeoPlatformCommonModule_1 = GeoPlatformCommonModule;
-        GeoPlatformCommonModule.forRoot = function () {
-            return {
-                ngModule: GeoPlatformCommonModule_1,
-                providers: [
-                    AppAuthService,
-                    ErrorResolver,
-                    ItemResolver,
-                    NewItemResolver,
-                    VersionResolver,
-                    GeoPlatformErrorService,
-                    ItemHelper,
-                    // {
-                    //     provide: RPMStatsService,
-                    //     useFactory: RPMStatsServiceFactory,
-                    //     deps: [ HttpClient ]
-                    // },
-                    {
-                        provide: iRPMService.RPMService,
-                        useValue: geoplatform_rpm_browser_js.RPMServiceFactory()
-                    },
-                    {
-                        provide: client.TrackingService,
-                        useFactory: TrackingServiceFactory,
-                        deps: [iRPMService.RPMService]
-                    }
-                ]
-            };
-        };
-        var GeoPlatformCommonModule_1;
-        GeoPlatformCommonModule = GeoPlatformCommonModule_1 = __decorate([
+        GeoPlatformCommonModule = __decorate([
             core.NgModule({
                 imports: [
                     router.RouterModule,
@@ -1497,7 +1460,29 @@
                     FixLabelPipe,
                     GeoPlatformIconDirective
                 ],
-                providers: [],
+                providers: [
+                // AppAuthService,
+                // ErrorResolver,
+                // ItemResolver,
+                // NewItemResolver,
+                // VersionResolver,
+                // GeoPlatformErrorService,
+                // ItemHelper,
+                // // {
+                // //     provide: RPMStatsService,
+                // //     useFactory: RPMStatsServiceFactory,
+                // //     deps: [ HttpClient ]
+                // // },
+                // {
+                //     provide: RPMService,
+                //     useValue: RPMServiceFactory()
+                // },
+                // {
+                //     provide: TrackingService,
+                //     useFactory: TrackingServiceFactory,
+                //     deps: [ RPMService]
+                // }
+                ],
                 entryComponents: [
                     ListSelectDialog,
                     MessageDialog
@@ -1506,6 +1491,14 @@
         ], GeoPlatformCommonModule);
         return GeoPlatformCommonModule;
     }());
+
+    var trackingServiceInst;
+    function TrackingServiceFactory(rpm) {
+        if (!trackingServiceInst) {
+            trackingServiceInst = new client.TrackingService({ provider: rpm });
+        }
+        return trackingServiceInst;
+    }
 
     /*
         Version of the library exposed to consumers.
@@ -1551,7 +1544,6 @@
     exports.ɵg = LoginButtonComponent;
     exports.ɵh = LoginModalComponent;
     exports.ɵi = GeoPlatformIconDirective;
-    exports.ɵj = AppAuthService;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

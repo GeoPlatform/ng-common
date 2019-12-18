@@ -20,3 +20,4 @@ export * from './map-types';
 export * from './pipes';
 export * from './resolvers';
 export * from './module';
+export * from './tracking.factory';
