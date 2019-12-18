@@ -100,13 +100,6 @@ const AUTH_KEYS = [
 ];
 var authService = null;
 function authServiceFactory(environment) {
-    // if(!environment.production) {
-    //     //while in development mode, don't create an
-    //     //instance of the gpoauth.AuthService because
-    //     //it will endlessly keep reloading the page
-    //     //trying to validate tokens
-    //     return null;
-    // }
     //once service has been built, keep using it
     if (authService)
         return authService;
@@ -260,7 +253,7 @@ LoginButtonComponent.ctorParameters = () => [
 ];
 LoginButtonComponent = __decorate([
     Component({
-        selector: 'gpmv-login-button',
+        selector: 'gp-login-button',
         template: `
     <div class="btn-account btn-group">
         <!-- not logged in yet -->
@@ -389,7 +382,7 @@ LoginModalComponent.ctorParameters = () => [
 ];
 LoginModalComponent = __decorate([
     Component({
-        selector: 'gpmv-login-modal',
+        selector: 'gp-login-modal',
         template: "<div class=\"gpLoginCover\" *ngIf=\"showLoginModal\">\n    <button class=\"btn btn-danger gpLoginCancelIframe pull-right\" *ngIf=\"!forceLogin\" (click)=\"cancel()\">\n        <span class=\"fas fa-times-circle\"></span> Cancel\n    </button>\n    <div class=\"gpLoginWindow\" *ngIf=\"showLoginModal\">\n        <iframe id=\"gpLoginIFrame\" src=\"/login?redirect_url=${encodeURIComponent(`${window.location.origin}/auth/loading?cachebuster=${(new Date()).getTime()}`)}&cachebuster=${(new Date()).getTime()}\"></iframe>\n    </div>\n</div>\n",
         styles: [`
         .gpLoginCover {

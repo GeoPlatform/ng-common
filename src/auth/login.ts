@@ -9,7 +9,7 @@ import { AppAuthService } from './auth.service';
 
 
 @Component({
-    selector: 'gpmv-login-button',
+    selector: 'gp-login-button',
     styles: [
         `
         .btn-login.btn-link {
@@ -149,7 +149,7 @@ export class LoginButtonComponent extends AuthenticatedComponent implements OnIn
 
 
 @Component({
-    selector: 'gpmv-login-modal',
+    selector: 'gp-login-modal',
     styles: [
     `
         .gpLoginCover {
