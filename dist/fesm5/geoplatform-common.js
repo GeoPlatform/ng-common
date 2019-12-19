@@ -584,6 +584,28 @@ var GeoPlatformIconDirective = /** @class */ (function () {
     return GeoPlatformIconDirective;
 }());
 
+var HeaderComponent = /** @class */ (function () {
+    function HeaderComponent() {
+        this.appName = "Application";
+        this.class = 'o-header';
+        this.portalUrl = Config.portalUrl || 'https://www.geoplatform.gov';
+    }
+    __decorate([
+        Input()
+    ], HeaderComponent.prototype, "appName", void 0);
+    __decorate([
+        HostBinding('class')
+    ], HeaderComponent.prototype, "class", void 0);
+    HeaderComponent = __decorate([
+        Component({
+            selector: 'gp-app-header',
+            template: "<div class=\"o-header__primary\" role=\"banner\">\n    <h1 class=\"a-brand\">\n        <a href=\"{{portalUrl}}\">\n            <img src=\"/assets/favicon.png\" style=\"vertical-align:top;\">\n            GeoPlatform.gov\n        </a>\n        &nbsp;\n        {{appName}}\n    </h1>\n    <nav class=\"a-nav\" role=\"navigation\" aria-label=\"top-level navigation links\">\n        <ng-content select=\"[menu]\"></ng-content>\n        <gp-login-button role=\"menuitem\">Sign In</gp-login-button>\n    </nav>\n</div>\n",
+            styles: [".o-header .o-header__primary{padding:1em 1.5em}.o-header .o-header__primary .a-nav a{font-weight:700;border-right:none;padding:.375em .75em}.o-header .o-header__primary .a-nav a.active{border-bottom:1px solid #185b8a}"]
+        })
+    ], HeaderComponent);
+    return HeaderComponent;
+}());
+
 var ASSETS = [
     ItemTypes.DATASET, ItemTypes.SERVICE, ItemTypes.LAYER, ItemTypes.MAP,
     ItemTypes.GALLERY, ItemTypes.COMMUNITY, ItemTypes.APPLICATION, ItemTypes.TOPIC,
@@ -1375,6 +1397,7 @@ var GeoPlatformCommonModule = /** @class */ (function () {
                 SelectedItemsComponent,
                 ResourceLinkComponent,
                 LoginButtonComponent, LoginModalComponent,
+                HeaderComponent,
                 ArrayedItemsPipe,
                 LimitToPipe,
                 SortByPipe,
@@ -1389,6 +1412,7 @@ var GeoPlatformCommonModule = /** @class */ (function () {
                 SelectedItemsComponent,
                 ResourceLinkComponent,
                 LoginButtonComponent, LoginModalComponent,
+                HeaderComponent,
                 ArrayedItemsPipe,
                 LimitToPipe,
                 SortByPipe,
@@ -1448,5 +1472,5 @@ var DefaultSortOptions = [
  * Generated bundle index. Do not edit.
  */
 
-export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, DefaultSortOptions, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, GeoPlatformIconDirective as ɵi, AppAuthService as ɵj };
+export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, DefaultSortOptions, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, HeaderComponent, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, HeaderComponent as ɵi, GeoPlatformIconDirective as ɵj, AppAuthService as ɵk };
 //# sourceMappingURL=geoplatform-common.js.map

@@ -771,6 +771,28 @@
         return GeoPlatformIconDirective;
     }());
 
+    var HeaderComponent = /** @class */ (function () {
+        function HeaderComponent() {
+            this.appName = "Application";
+            this.class = 'o-header';
+            this.portalUrl = client.Config.portalUrl || 'https://www.geoplatform.gov';
+        }
+        __decorate([
+            core.Input()
+        ], HeaderComponent.prototype, "appName", void 0);
+        __decorate([
+            core.HostBinding('class')
+        ], HeaderComponent.prototype, "class", void 0);
+        HeaderComponent = __decorate([
+            core.Component({
+                selector: 'gp-app-header',
+                template: "<div class=\"o-header__primary\" role=\"banner\">\n    <h1 class=\"a-brand\">\n        <a href=\"{{portalUrl}}\">\n            <img src=\"/assets/favicon.png\" style=\"vertical-align:top;\">\n            GeoPlatform.gov\n        </a>\n        &nbsp;\n        {{appName}}\n    </h1>\n    <nav class=\"a-nav\" role=\"navigation\" aria-label=\"top-level navigation links\">\n        <ng-content select=\"[menu]\"></ng-content>\n        <gp-login-button role=\"menuitem\">Sign In</gp-login-button>\n    </nav>\n</div>\n",
+                styles: [".o-header .o-header__primary{padding:1em 1.5em}.o-header .o-header__primary .a-nav a{font-weight:700;border-right:none;padding:.375em .75em}.o-header .o-header__primary .a-nav a.active{border-bottom:1px solid #185b8a}"]
+            })
+        ], HeaderComponent);
+        return HeaderComponent;
+    }());
+
     var ASSETS = [
         client.ItemTypes.DATASET, client.ItemTypes.SERVICE, client.ItemTypes.LAYER, client.ItemTypes.MAP,
         client.ItemTypes.GALLERY, client.ItemTypes.COMMUNITY, client.ItemTypes.APPLICATION, client.ItemTypes.TOPIC,
@@ -1562,6 +1584,7 @@
                     SelectedItemsComponent,
                     ResourceLinkComponent,
                     LoginButtonComponent, LoginModalComponent,
+                    HeaderComponent,
                     ArrayedItemsPipe,
                     LimitToPipe,
                     SortByPipe,
@@ -1576,6 +1599,7 @@
                     SelectedItemsComponent,
                     ResourceLinkComponent,
                     LoginButtonComponent, LoginModalComponent,
+                    HeaderComponent,
                     ArrayedItemsPipe,
                     LimitToPipe,
                     SortByPipe,
@@ -1644,6 +1668,7 @@
     exports.GeoPlatformError = GeoPlatformError;
     exports.GeoPlatformErrorService = GeoPlatformErrorService;
     exports.GeoPlatformIconDirective = GeoPlatformIconDirective;
+    exports.HeaderComponent = HeaderComponent;
     exports.ImageFallbackDirective = ImageFallbackDirective;
     exports.ItemFactory = ItemFactory;
     exports.ItemHelper = ItemHelper;
@@ -1674,8 +1699,9 @@
     exports.ɵf = ResourceLinkComponent;
     exports.ɵg = LoginButtonComponent;
     exports.ɵh = LoginModalComponent;
-    exports.ɵi = GeoPlatformIconDirective;
-    exports.ɵj = AppAuthService;
+    exports.ɵi = HeaderComponent;
+    exports.ɵj = GeoPlatformIconDirective;
+    exports.ɵk = AppAuthService;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

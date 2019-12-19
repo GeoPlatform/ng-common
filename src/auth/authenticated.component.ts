@@ -65,22 +65,22 @@ export abstract class AuthenticatedComponent {
     }
 
     /** @return {boolean} */
-    isAuthenticated() : boolean { return !!this.user; }
+    public isAuthenticated() : boolean { return !!this.user; }
 
     /** @return {GeoPlatformUser} */
-    getUser() : GeoPlatformUser { return this.user; }
+    public getUser() : GeoPlatformUser { return this.user; }
 
     /** @return {string} JWT token associated with the current user or null */
-    getAuthToken() : string { return this.authService.getToken(); }
+    public getAuthToken() : string { return this.authService.getToken(); }
 
     /** @return Promise containing current user or null */
-    checkAuth() : Promise<GeoPlatformUser> { return this.authService.check(); }
+    public checkAuth() : Promise<GeoPlatformUser> { return this.authService.check(); }
 
     /**
      * @param item - optional object the user may be able to edit
      * @return boolean indicating whether user can edit the requested item or is an editor if no item was specified
      */
-    canUserEdit(item ?: any) : boolean {
+    public canUserEdit(item ?: any) : boolean {
         if(!this.user) return false;
         if(this.user.isAuthorized(EDIT_ROLE)) return true;
         return this.isAuthorOf(item);
@@ -90,7 +90,7 @@ export abstract class AuthenticatedComponent {
      * @param item - object the user may be the owner of
      * @return boolean indicating if the user is the associated creator/owner of the item
      */
-    isAuthorOf(item ?: any) : boolean {
+    public isAuthorOf(item ?: any) : boolean {
         if(!this.user || !item) return false;
         return item.createdBy && item.createdBy === this.user.username;
     }

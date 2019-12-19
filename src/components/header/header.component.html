@@ -1,0 +1,14 @@
+<div class="o-header__primary" role="banner">
+    <h1 class="a-brand">
+        <a href="{{portalUrl}}">
+            <img src="/assets/favicon.png" style="vertical-align:top;">
+            GeoPlatform.gov
+        </a>
+        &nbsp;
+        {{appName}}
+    </h1>
+    <nav class="a-nav" role="navigation" aria-label="top-level navigation links">
+        <ng-content select="[menu]"></ng-content>
+        <gp-login-button role="menuitem">Sign In</gp-login-button>
+    </nav>
+</div>

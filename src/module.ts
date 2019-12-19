@@ -28,7 +28,8 @@ import {
     ImageFallbackDirective,
     ThumbnailComponent,
     ResourceLinkComponent,
-    SelectedItemsComponent
+    SelectedItemsComponent,
+    HeaderComponent
 } from './components';
 
 import {
@@ -60,6 +61,7 @@ import { ItemHelper               } from './item-helper';
         SelectedItemsComponent,
         ResourceLinkComponent,
         LoginButtonComponent, LoginModalComponent,
+        HeaderComponent,
 
         ArrayedItemsPipe,
         LimitToPipe,
@@ -76,6 +78,7 @@ import { ItemHelper               } from './item-helper';
         SelectedItemsComponent,
         ResourceLinkComponent,
         LoginButtonComponent, LoginModalComponent,
+        HeaderComponent,
 
         ArrayedItemsPipe,
         LimitToPipe,
