@@ -16,5 +16,6 @@ export * from './item-helper';
 export * from './map-types';
 export * from './pipes';
 export * from './resolvers';
+export * from './search';
 export * from './module';
 export * from './tracking.factory';

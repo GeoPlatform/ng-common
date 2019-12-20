@@ -23,6 +23,8 @@ import { TrackingServiceFactory } from './tracking.factory';
 
 import { AppAuthService, LoginButtonComponent, LoginModalComponent } from './auth';
 import { ListSelectDialog, MessageDialog } from './dialogs/';
+import { SearchService } from './search';
+
 
 import {
     ImageFallbackDirective,
@@ -96,6 +98,7 @@ import { ItemHelper               } from './item-helper';
         VersionResolver,
         GeoPlatformErrorService,
         ItemHelper,
+        SearchService,
         // {
         //     provide: RPMStatsService,
         //     useFactory: RPMStatsServiceFactory,

@@ -1,4 +1,4 @@
-import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService } from '@geoplatform/client';
+import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService, Query } from '@geoplatform/client';
 import { __decorate, __param } from 'tslib';
 import { Inject, ɵɵdefineInjectable, ɵɵinject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, NgModule } from '@angular/core';
 import { Subject, BehaviorSubject, of, empty } from 'rxjs';
@@ -1432,6 +1432,133 @@ ErrorResolver = __decorate([
     Injectable()
 ], ErrorResolver);
 
+/**
+ *
+ */
+let SearchService = class SearchService {
+    constructor(service) {
+        this.service = service;
+        this.selected = [];
+        this.subject = new Subject();
+        this.subject$ = this.subject.asObservable();
+    }
+    setQuery(query) {
+        this.query = query ? query.clone() : new Query();
+        this.subject.next({ query: this.query.clone() });
+    }
+    getQuery() {
+        return this.query.clone();
+    }
+    getResults() {
+        return this.results;
+    }
+    search(query) {
+        //if a query was provided, store it and use it
+        if (query)
+            this.setQuery(query);
+        this.service.search(this.query)
+            .then((response) => {
+            logger.debug('SearchService.search() - ' + response.totalResults + " results found");
+            this.results = response;
+            this.subject.next({ results: response });
+        })
+            .catch((error) => {
+            logger.error(error.message);
+        });
+    }
+    /**
+     * @param item - item or array of item selected from search results
+     * @param asBaseLayer - boolean indicating how to select the layer
+     */
+    select(item) {
+        if (Array.isArray(item)) { //multiple selections
+            item.forEach(it => this._toggleItem(it, false));
+            this.subject.next({ selected: this.selected });
+            return;
+        }
+        this._toggleItem(item, true);
+    }
+    /**
+     *
+     */
+    _toggleItem(item, fireEvent) {
+        if (!item || !item.id)
+            return;
+        let position = this.selected.findIndex(s => s.id === item.id);
+        if (position >= 0) { //already selected, deselect it and return
+            this.selected.splice(position, 1);
+            if (fireEvent)
+                this.subject.next({ selected: this.selected });
+            return;
+        }
+        //new selection
+        // logger.error(`Selecting ${item.label} as ${entry.type.toString()}`);
+        //fetch full object and replace placeholder in selected array
+        this.service.get(item.id)
+            .then(fullItem => {
+            this.selected.push(fullItem);
+            this.selected.sort((a, b) => a.label > b.label ? 1 : -1);
+            if (fireEvent)
+                this.subject.next({ selected: this.selected });
+        })
+            .catch(e => {
+            logger.error("SearchService.select() - " +
+                "Error encountered fetching selected item's details: " + e.message);
+        });
+    }
+    /**
+     * @param item Item
+     * @return boolean
+     */
+    isSelected(item) {
+        return this.selected.length &&
+            item && item.id &&
+            this.selected.findIndex(it => it.id === item.id) >= 0;
+    }
+    /**
+     *
+     */
+    hasSelected() {
+        return this.selected && this.selected.length > 0;
+    }
+    /**
+     * @return Item[]
+     */
+    getSelected() {
+        return this.selected;
+    }
+    clearSelected() {
+        this.selected = [];
+        this.subject.next({ selected: this.selected });
+    }
+    subscribe(listener) {
+        let obs = {
+            next: (value) => {
+                if (typeof (value) === 'undefined' || value === null)
+                    return;
+                if (value.query)
+                    listener.onQueryChange(value.query);
+                if (value.results)
+                    listener.onResultsChange(value.results);
+                if (value.selected)
+                    listener.onSelectedChange(value.selected);
+            },
+            error: (err) => {
+                console.log("[ERROR] " + err.message);
+            },
+            complete: () => { }
+        };
+        return this.subject$.subscribe(obs);
+    }
+};
+SearchService.ctorParameters = () => [
+    { type: undefined, decorators: [{ type: Inject, args: [ItemService,] }] }
+];
+SearchService = __decorate([
+    Injectable(),
+    __param(0, Inject(ItemService))
+], SearchService);
+
 let trackingServiceInst;
 function TrackingServiceFactory(rpm) {
     if (!trackingServiceInst) {
@@ -1490,6 +1617,7 @@ GeoPlatformCommonModule = __decorate([
             VersionResolver,
             GeoPlatformErrorService,
             ItemHelper,
+            SearchService,
             // {
             //     provide: RPMStatsService,
             //     useFactory: RPMStatsServiceFactory,
@@ -1532,5 +1660,5 @@ const DefaultSortOptions = [
  * Generated bundle index. Do not edit.
  */
 
-export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, DefaultSortOptions, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, HeaderComponent, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, HeaderComponent as ɵi, GeoPlatformIconDirective as ɵj, AppAuthService as ɵk };
+export { AppAuthService, ArrayedItemsPipe, AuthenticatedComponent, DefaultSortOptions, ErrorResolver, EventTypes, FixLabelPipe, FriendlyTypePipe, GeoPlatformCommonModule, GeoPlatformCommonVersion, GeoPlatformError, GeoPlatformErrorService, GeoPlatformIconDirective, HeaderComponent, ImageFallbackDirective, ItemFactory, ItemHelper, ItemResolver, LimitToPipe, ListSelectDialog, LoginButtonComponent, LoginModalComponent, MapTypes, MessageDialog, NewItemResolver, ResourceLinkComponent, SearchEvent, SearchService, SelectedItemsComponent, SortByPipe, ThumbnailComponent, TrackingServiceFactory, VersionResolver, authServiceFactory, logger, ɵ0, ɵ1, ListSelectDialog as ɵa, MessageDialog as ɵb, ImageFallbackDirective as ɵc, ThumbnailComponent as ɵd, SelectedItemsComponent as ɵe, ResourceLinkComponent as ɵf, LoginButtonComponent as ɵg, LoginModalComponent as ɵh, HeaderComponent as ɵi, GeoPlatformIconDirective as ɵj, AppAuthService as ɵk, SearchService as ɵl };
 //# sourceMappingURL=geoplatform-common.js.map

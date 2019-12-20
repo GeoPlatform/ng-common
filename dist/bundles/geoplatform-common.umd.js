@@ -1556,6 +1556,137 @@
         return ErrorResolver;
     }());
 
+    /**
+     *
+     */
+    var SearchService = /** @class */ (function () {
+        function SearchService(service) {
+            this.service = service;
+            this.selected = [];
+            this.subject = new rxjs.Subject();
+            this.subject$ = this.subject.asObservable();
+        }
+        SearchService.prototype.setQuery = function (query) {
+            this.query = query ? query.clone() : new client.Query();
+            this.subject.next({ query: this.query.clone() });
+        };
+        SearchService.prototype.getQuery = function () {
+            return this.query.clone();
+        };
+        SearchService.prototype.getResults = function () {
+            return this.results;
+        };
+        SearchService.prototype.search = function (query) {
+            var _this = this;
+            //if a query was provided, store it and use it
+            if (query)
+                this.setQuery(query);
+            this.service.search(this.query)
+                .then(function (response) {
+                logger.debug('SearchService.search() - ' + response.totalResults + " results found");
+                _this.results = response;
+                _this.subject.next({ results: response });
+            })
+                .catch(function (error) {
+                logger.error(error.message);
+            });
+        };
+        /**
+         * @param item - item or array of item selected from search results
+         * @param asBaseLayer - boolean indicating how to select the layer
+         */
+        SearchService.prototype.select = function (item) {
+            var _this = this;
+            if (Array.isArray(item)) { //multiple selections
+                item.forEach(function (it) { return _this._toggleItem(it, false); });
+                this.subject.next({ selected: this.selected });
+                return;
+            }
+            this._toggleItem(item, true);
+        };
+        /**
+         *
+         */
+        SearchService.prototype._toggleItem = function (item, fireEvent) {
+            var _this = this;
+            if (!item || !item.id)
+                return;
+            var position = this.selected.findIndex(function (s) { return s.id === item.id; });
+            if (position >= 0) { //already selected, deselect it and return
+                this.selected.splice(position, 1);
+                if (fireEvent)
+                    this.subject.next({ selected: this.selected });
+                return;
+            }
+            //new selection
+            // logger.error(`Selecting ${item.label} as ${entry.type.toString()}`);
+            //fetch full object and replace placeholder in selected array
+            this.service.get(item.id)
+                .then(function (fullItem) {
+                _this.selected.push(fullItem);
+                _this.selected.sort(function (a, b) { return a.label > b.label ? 1 : -1; });
+                if (fireEvent)
+                    _this.subject.next({ selected: _this.selected });
+            })
+                .catch(function (e) {
+                logger.error("SearchService.select() - " +
+                    "Error encountered fetching selected item's details: " + e.message);
+            });
+        };
+        /**
+         * @param item Item
+         * @return boolean
+         */
+        SearchService.prototype.isSelected = function (item) {
+            return this.selected.length &&
+                item && item.id &&
+                this.selected.findIndex(function (it) { return it.id === item.id; }) >= 0;
+        };
+        /**
+         *
+         */
+        SearchService.prototype.hasSelected = function () {
+            return this.selected && this.selected.length > 0;
+        };
+        /**
+         * @return Item[]
+         */
+        SearchService.prototype.getSelected = function () {
+            return this.selected;
+        };
+        SearchService.prototype.clearSelected = function () {
+            this.selected = [];
+            this.subject.next({ selected: this.selected });
+        };
+        SearchService.prototype.subscribe = function (listener) {
+            var obs = {
+                next: function (value) {
+                    if (typeof (value) === 'undefined' || value === null)
+                        return;
+                    if (value.query)
+                        listener.onQueryChange(value.query);
+                    if (value.results)
+                        listener.onResultsChange(value.results);
+                    if (value.selected)
+                        listener.onSelectedChange(value.selected);
+                },
+                error: function (err) {
+                    console.log("[ERROR] " + err.message);
+                },
+                complete: function () { }
+            };
+            return this.subject$.subscribe(obs);
+        };
+        SearchService.ctorParameters = function () { return [
+            { type: undefined, decorators: [{ type: core.Inject, args: [client.ItemService,] }] }
+        ]; };
+        SearchService = __decorate([
+            core.Injectable(),
+            __param(0, core.Inject(client.ItemService))
+        ], SearchService);
+        return SearchService;
+    }());
+
     var trackingServiceInst;
     function TrackingServiceFactory(rpm) {
         if (!trackingServiceInst) {
@@ -1615,6 +1746,7 @@
                     VersionResolver,
                     GeoPlatformErrorService,
                     ItemHelper,
+                    SearchService,
                     // {
                     //     provide: RPMStatsService,
                     //     useFactory: RPMStatsServiceFactory,
@@ -1682,6 +1814,7 @@
     exports.NewItemResolver = NewItemResolver;
     exports.ResourceLinkComponent = ResourceLinkComponent;
     exports.SearchEvent = SearchEvent;
+    exports.SearchService = SearchService;
     exports.SelectedItemsComponent = SelectedItemsComponent;
     exports.SortByPipe = SortByPipe;
     exports.ThumbnailComponent = ThumbnailComponent;
@@ -1702,6 +1835,7 @@
     exports.ɵi = HeaderComponent;
     exports.ɵj = GeoPlatformIconDirective;
     exports.ɵk = AppAuthService;
+    exports.ɵl = SearchService;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 
