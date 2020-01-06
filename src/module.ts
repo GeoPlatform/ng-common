@@ -17,13 +17,32 @@ import { RPMService }        from '@geoplatform/rpm/src/iRPMService'
 // }
 
 
+// import { GeoPlatformClientModule } from '@geoplatform/client/angular';
+
 import { TrackingService } from '@geoplatform/client';
 import { TrackingServiceFactory } from './tracking.factory';
 
 
 import { AppAuthService, LoginButtonComponent, LoginModalComponent } from './auth';
 import { ListSelectDialog, MessageDialog } from './dialogs/';
-import { SearchService } from './search';
+
+
+import {
+    SearchService,
+
+    CommunityFilterComponent,
+    CreatedByFilterComponent,
+    KeywordFilterComponent,
+    PublisherFilterComponent,
+    SchemeFilterComponent,
+    SemanticFilterComponent, SemanticFilterDialog,
+    ServiceTypeFilterComponent,
+    SimilarityFilterComponent,
+    ThemeFilterComponent,
+    TopicFilterComponent,
+    TypeFilterComponent,
+    ModifiedFilterComponent
+} from './search';
 
 
 import {
@@ -48,13 +67,17 @@ import {
 import { GeoPlatformErrorService  } from './error.service';
 import { ItemHelper               } from './item-helper';
 
+
+
+
 @NgModule({
     imports: [
         RouterModule,
         CommonModule,
         FormsModule,
         MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
-        NgbModule
+        NgbModule,
+        // GeoPlatformClientModule
     ],
     exports: [
         ListSelectDialog,
@@ -71,7 +94,20 @@ import { ItemHelper               } from './item-helper';
         FriendlyTypePipe,
         FixLabelPipe,
 
-        GeoPlatformIconDirective
+        GeoPlatformIconDirective,
+
+        CommunityFilterComponent,
+        CreatedByFilterComponent,
+        KeywordFilterComponent,
+        PublisherFilterComponent,
+        SchemeFilterComponent,
+        SemanticFilterComponent, SemanticFilterDialog,
+        ServiceTypeFilterComponent,
+        SimilarityFilterComponent,
+        ThemeFilterComponent,
+        TopicFilterComponent,
+        TypeFilterComponent,
+        ModifiedFilterComponent
     ],
     declarations: [
         ListSelectDialog,
@@ -88,7 +124,21 @@ import { ItemHelper               } from './item-helper';
         FriendlyTypePipe,
         FixLabelPipe,
 
-        GeoPlatformIconDirective
+        GeoPlatformIconDirective,
+
+
+        CommunityFilterComponent,
+        CreatedByFilterComponent,
+        KeywordFilterComponent,
+        PublisherFilterComponent,
+        SchemeFilterComponent,
+        SemanticFilterComponent, SemanticFilterDialog,
+        ServiceTypeFilterComponent,
+        SimilarityFilterComponent,
+        ThemeFilterComponent,
+        TopicFilterComponent,
+        TypeFilterComponent,
+        ModifiedFilterComponent
     ],
     providers: [
         AppAuthService,

@@ -1,0 +1,24 @@
+<div class="m-article o-query-filter" *ngIf="isSupported()">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Filter by {{filterLabel}}
+    </div>
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+        <a *ngIf="dialog" class="m-facet is-linkless" (click)="openDialog()">
+            <span class="fas fa-search"></span> Find {{filterLabel}}...
+        </a>
+        <a class="m-facet active" (click)="clear()" *ngIf="!hasSelections()">No values selected</a>
+        <a class="m-facet" (click)="clear()" *ngIf="hasSelections()">Clear selected</a>
+        <div class="m-facet active" *ngFor="let item of selected" (click)="toggle(item)">
+            <span class="fas fa-check"></span>&nbsp;
+            <span gpIcon [item]="item"></span>
+            {{item.label||"Untitled option"}}
+        </div>
+    </div>
+</div>

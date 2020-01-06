@@ -15,7 +15,8 @@
       "lib": ["es2015", "es2017", "dom"],
       "compilerOptions": {
           "paths": {
-              "@geoplatform/common": ["dist/"]
+              "@geoplatform/common": ["dist/"],
+              "@geoplatform/client/angular": ["node_modules/@geoplatform/client/dist/angular"]
           }
       }
   },

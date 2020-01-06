@@ -1,0 +1,46 @@
+<div class="m-article o-query-filter">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Filter by Modified Date
+    </div>
+
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+
+        <div *ngIf="isCollapsed" class="m-facet active">
+            <span *ngIf="value">{{lastModifiedDir.value}} {{value}}</span>
+            <span *ngIf="!value">No date specified</span>
+        </div>
+
+        <div class="m-facet  d-flex flex-justify-between flex-align-stretch">
+
+            <select class="form-control flex-1 u-mg-right--md"
+                ([ngModel])="lastModifiedDir"
+                (change)="onDirChange()"
+                aria-label="Select before or after modification date constraint">
+                <option *ngFor="let opt of lastModifiedOptions" [value]="opt">{{opt.value}}</option>
+            </select>
+
+            <div class="flex-2 input-group-slick">
+                <!-- <span class="fas fa-calendar"
+                    title="Open date picker to select a date"
+                    (click)="toggle($event)">
+                </span> -->
+                <input type="text" class="form-control"
+                    placeholder="Specify modified date"
+                    aria-label="Specify modified date"
+                    ([ngModel])="value"
+                    (change)="onValueChange(value)" />
+                <span class="fas fa-times" title="Clear value"
+                    *ngIf="value" (click)="clear()">
+                </span>
+            </div>
+        </div>
+
+    </div>
+</div>

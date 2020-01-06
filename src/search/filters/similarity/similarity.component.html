@@ -1,0 +1,21 @@
+<div class="m-article o-query-filter" *ngIf="item">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Find Similar
+    </div>
+    <div class="u-text--sm" *ngIf="!isCollapsed">
+        Searching for items similar to:
+    </div>
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+        <a  class="m-facet active" (click)="clear()">
+            <span class="fas fa-times-circle t-fg--danger"></span>&nbsp;
+            <span gpIcon [item]="item"></span> {{item.label}}
+        </a>
+    </div>
+</div>

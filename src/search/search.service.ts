@@ -166,7 +166,13 @@ export class SearchService {
             complete : () => { }
         };
 
-        return this.subject$.subscribe( obs );
+        let sub = this.subject$.subscribe( obs );
+
+        if(this.query) this.subject.next({ query : this.query.clone() });
+        if(this.results) this.subject.next({ results : this.results });
+        if(this.selected) this.subject.next({ selected : this.selected });
+
+        return sub;
     }
 
 }

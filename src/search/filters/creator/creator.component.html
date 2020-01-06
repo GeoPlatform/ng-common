@@ -1,0 +1,74 @@
+<div class="m-article o-query-filter">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Filter by Creator
+    </div>
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+
+        <a class="m-facet" (click)="clear()" [ngClass]="{active:!hasSelections()}">
+            <span class="u-mg-right--sm far"
+                [ngClass]="{'fa-check-square': !hasSelections(), 'fa-square': hasSelections()}"></span>
+            <span *ngIf="!hasSelections()">Any creator</span>
+            <span *ngIf="hasSelections()">Clear Selections</span>
+        </a>
+
+        <a class="m-facet"
+            *ngIf="isAuthenticated() && !isSelected( getCurrentUserName() )"
+            (click)="toggle( getCurrentUserName() )">
+            <span class="fas fa-square t-fg--gray-lt"></span>
+            Me ({{getCurrentUserName()||""}})
+        </a>
+
+        <div class="m-facet" *ngIf="values.length">
+            <div class="input-group-slick">
+                <span class="fas fa-search"></span>
+                <input type="text" class="form-control" placeholder="Find creator by name"
+                    ([ngModel])="typeaheadValue" (change)="updatePagedValues(true)">
+                <span class="fas fa-times" *ngIf="typeaheadValue?.length" (click)="clearTypeAhead()"></span>
+            </div>
+        </div>
+
+        <div class="m-facet d-flex flex-justify-between flex-align-center" *ngIf="values?.length">
+            <button type="button" class="btn btn-xs btn-light" (click)="prevPage()">
+                <span class="fas fa-backward"></span>
+            </button>
+            <div>
+                showing {{pagedValues?.length||'0'}}
+                <span *ngIf="typeaheadValue?.length">matches</span>
+                of {{values?.length||'0'}} results
+            </div>
+            <button type="button" class="btn btn-xs btn-light" (click)="nextPage()">
+                <span class="fas fa-forward"></span>
+            </button>
+        </div>
+        <div *ngFor="let value of pagedValues; let $index = index" class="m-facet">
+            <a  *ngIf="!isAuthenticated() || (value.id !== getCurrentUserName())"
+                (click)="toggle(value.id)"
+                [ngClass]="{active:isSelected(value.id),'is-hidden':$index>visibleAmount}">
+                <span class="u-mg-right--sm far"
+                    [ngClass]="{'fa-check-square': isSelected(value.id), 'fa-square': !isSelected(value.id)}"></span>
+                <span class="u-mg-right--xs far fa-user"></span>
+                <span>{{value.label}}</span>
+                <span class="badge badge-secondary">{{value.count}}</span>
+            </a>
+        </div>
+        <!-- show selections that are not in the filtered values above -->
+        <hr *ngIf="!isCollapsed && outsideSelection">
+        <a  *ngIf="outsideSelection" class="m-facet"
+            (click)="toggle(outsideSelection.id)">
+            <span class="fas fa-check-square"></span>
+            <span class="badge u-text--md t-fg--gray-md"
+                title="This item is selected but not in the filtered values above">
+                <span class="fas fa-info-circle"></span>
+            </span>
+            <span class="u-mg-right--xs far fa-user"></span>
+            {{outsideSelection}}
+        </a>
+    </div>
+</div>

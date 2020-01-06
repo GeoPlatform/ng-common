@@ -1,0 +1,32 @@
+
+<div class="m-article o-query-filter">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Filter by Semantic Concepts
+    </div>
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+
+        <a class="m-facet is-linkless" (click)="openDialog()">
+            <span class="fas fa-search"></span> Find Concepts...
+        </a>
+
+        <a class="m-facet" (click)="clear()" [ngClass]="{active:!hasSelections()}">
+            <span *ngIf="!hasSelections()">No concepts selected</span>
+            <span *ngIf="hasSelections()">Clear Selections</span>
+        </a>
+
+        <div class="m-facet" *ngFor="let concept of selected; let $index = index" (click)="toggle(concept)"
+            [ngClass]="{active:isSelected(concept),'is-hidden':$index>visibleAmount}">
+            <span class="fas fa-check" *ngIf="isSelected(concept)"></span>
+            <span class="fas fa-square t-fg--gray-xlt" *ngIf="!isSelected(concept)"></span>
+            {{concept.prefLabel}}
+            <div class="u-break--all u-text--sm">{{concept.uri}}</div>
+        </div>
+    </div>
+</div>

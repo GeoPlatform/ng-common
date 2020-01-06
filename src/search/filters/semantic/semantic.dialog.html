@@ -1,0 +1,55 @@
+<h5 mat-dialog-title>Search for Concepts to Constraining Search Results</h5>
+<div mat-dialog-content>
+    <mat-form-field appearance="outline">
+        <mat-label>
+            <mat-icon><span class="fas fa-search"></span></mat-icon>
+            Search
+        </mat-label>
+        <input matInput [(ngModel)]="termQuery" (ngModelChange)="filterValues($event)"
+            placeholder="Enter keywords to find recommended concepts">
+        <span matSuffix *ngIf="termQuery?.length" (click)="termQuery=null"
+            class="fas fa-times t-fg--gray-md">
+        </span>
+    </mat-form-field>
+
+    <div class="a-heading d-flex flex-justify-between flex-align-center u-mg-bottom--md">
+        Recommendations ({{totalSuggested||0}})
+        <div class="u-text--sm" *ngIf="totalSuggested>0">
+            <ngb-pagination [collectionSize]="totalSuggested"
+                [pageSize]="12" [maxSize]="2" [size]="'sm'"
+                [rotate]="true" [(page)]="currentPage"
+                (pageChange)="onPageChange($event)">
+            </ngb-pagination>
+        </div>
+    </div>
+
+    <div class="m-list-section">
+        <div class="list-group">
+            <em *ngIf="!suggested?.length">Enter keywords above to receive suggested concepts to use.</em>
+            <div *ngFor="let concept of suggested" class="list-group-item"
+                (click)="addValue(concept)" [ngClass]="{'active':isSelected(concept)}">
+                <div><a class="is-linkless">{{concept.prefLabel||concept.label}}</a></div>
+                <small class="t-fg--gray-md">{{concept.uri}}</small>
+            </div>
+        </div>
+    </div>
+    <hr>
+    <div class="a-heading">Selected ({{data?.selected?.length||0}})</div>
+    <div class="m-list-section">
+        <div class="list-group">
+            <em *ngIf="!data.selected?.length">No concepts selected.</em>
+            <div *ngFor="let concept of data?.selected" class="list-group-item">
+                <div>
+                    <span class="fas fa-times t-fg--danger" (click)="removeValue(concept)"></span>
+                    {{concept.prefLabel||concept.label}}
+                </div>
+                <small class="t-fg--gray-md">{{concept.uri}}</small>
+            </div>
+        </div>
+    </div>
+
+</div>
+<div mat-dialog-actions class="d-flex flex-justify-end flex-align-center">
+    <button type="button" mat-flat-button (click)="onNoClick()">Cancel</button>
+    <button type="button" mat-flat-button color="primary" [mat-dialog-close]="data.selected" cdkFocusInitial>Ok</button>
+</div>

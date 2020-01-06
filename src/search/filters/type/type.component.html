@@ -1,0 +1,30 @@
+<div class="m-article o-query-filter">
+    <div class="m-article__heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas"
+                [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}">
+            </span>
+        </button>
+        Filter by Type
+    </div>
+    <div class="m-article__desc o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+        <a class="m-facet" (click)="clear()" [ngClass]="{active:!hasSelections()}">
+            <span class="u-mg-right--sm far"
+                [ngClass]="{'fa-check-square':!hasSelections(), 'fa-square t-fg--gray-xlt':hasSelections()}">
+            </span>
+            Any Type
+        </a>
+        <div class="m-facet" *ngFor="let option of choices; let $index=index"
+            (click)="toggle(option.value)"
+            [ngClass]="{active:isSelected(option.value),'is-hidden':$index>visibleAmount}">
+            <span class="u-mg-right--sm far"
+                [ngClass]="{'fa-check-square':isSelected(option.value),'fa-square':!isSelected(option.value)}">
+            </span>
+            <span class="icon-{{option.label.toLowerCase().replace(' ','')}} is-themed"></span>
+            {{option.label}}
+            <span class="badge badge-secondary">{{getCount(option.value)}}</span>
+        </div>
+    </div>
+</div>

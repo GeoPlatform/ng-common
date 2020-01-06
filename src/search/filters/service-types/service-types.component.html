@@ -1,0 +1,70 @@
+<div class="card o-query-filter" *ngIf="isSupported()">
+    <div class="a-heading">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas" [ngClass]="{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}"></span>
+        </button>
+        Filter by Service Types
+    </div>
+    <div class="o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+
+        <a class="m-facet active" (click)="clear()" *ngIf="!hasSelections()">
+            <span *ngIf="isCollapsed">No values selected</span>
+            <span *ngIf="!isCollapsed">Any Service Type</span>
+        </a>
+        <a class="m-facet" (click)="clear()" *ngIf="hasSelections()">Clear selections</a>
+        <a *ngFor="let type of types" class="m-facet"
+            (click)="toggle(type.id)" [ngClass]="{active:isSelected(type.id)}">
+            <span class="fas fa-check" *ngIf="isSelected(type.id)"></span>
+            <span class="fas fa-square t-fg--gray-lt" *ngIf="!isSelected(type.id)"></span>
+            <span class="badge badge-secondary">{{getCount(type.id)}}</span>
+            {{type.label}}
+        </a>
+    </div>
+</div>
+
+
+<!-- <div class="o-query-filter card">
+    <div class="a-heading l-flex-container flex-justify-between flex-align-center">
+        <button type="button" class="btn btn-sm btn-link"
+            title="{{isCollapsed?'Expand':'Collapse'}}"
+            (click)="isCollapsed = !isCollapsed">
+            <span class="fas" [ngClass]="{'fa-minus':!isCollapsed,'fa-plus':isCollapsed}"></span>
+        </button>
+        <span class="flex-1">Filter by Service</span>
+    </div>
+    <div class="card-content">
+        <div class="o-facets" [ngClass]="{'is-collapsed':isCollapsed}">
+            <div class="m-facet">
+                <div class="input-group-slick">
+                    <input name="scheme-typeahead" type="text" class="form-control"
+                        ng-model="typeaheadValue"
+                        ng-change="updateValues(typeaheadValue)"
+                        ng-model-options="{debounce:200}"
+                        placeholder="Search Services">
+                    <span class="fas fa-times"
+                        title="Clear query"
+                        ng-if="typeaheadValue.length"
+                        (click)="updateValues(typeaheadValue=null)">
+                    </span>
+                </div>
+            </div>
+            <a class="m-facet" (click)="clear()"
+                [ngClass]="{active:!hasSelections()}">
+                <span class="fas"
+                    [ngClass]="{'fa-check':!hasSelections(), 'fa-square t-fg--gray-lt':hasSelections()}">
+                </span>
+                Any Service
+            </a>
+            <a  *ngFor="let value of values"
+                class="m-facet"
+                (click)="toggle(value)"
+                [ngClass]="{active:isSelected(value)}">
+                <span class="fas"
+                    [ngClass]="{'fa-check':isSelected(value),'fa-square t-fg--gray-lt':!isSelected(value)}"></span>
+                {{value.label}}
+            </a>
+        </div>
+    </div>
+</div> -->
