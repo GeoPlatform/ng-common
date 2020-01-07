@@ -1,8 +1,8 @@
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@geoplatform/client'), require('@angular/core'), require('rxjs'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/common'), require('@angular/forms'), require('@angular/material'), require('@ng-bootstrap/ng-bootstrap'), require('@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js')) :
-    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@geoplatform/client', '@angular/core', 'rxjs', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/common', '@angular/forms', '@angular/material', '@ng-bootstrap/ng-bootstrap', '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js'], factory) :
-    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.geoplatform.client, global.ng.core, global.rxjs, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.common, global.ng.forms, global.ng.material, global.ngBootstrap, global.geoplatform.rpm));
-}(this, (function (exports, client, core, rxjs, iRPMService, angular, dialog, operators, platformBrowser, router, common, forms, material, ngBootstrap, geoplatform_rpm_browser_js) { 'use strict';
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('@geoplatform/client'), require('@angular/core'), require('rxjs'), require('@geoplatform/rpm/src/iRPMService'), require('@geoplatform/oauth-ng/angular'), require('@angular/material/dialog'), require('rxjs/operators'), require('@angular/platform-browser'), require('@angular/router'), require('@angular/material'), require('@angular/common'), require('@angular/forms'), require('@ng-bootstrap/ng-bootstrap'), require('@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js')) :
+    typeof define === 'function' && define.amd ? define('@geoplatform/common', ['exports', '@geoplatform/client', '@angular/core', 'rxjs', '@geoplatform/rpm/src/iRPMService', '@geoplatform/oauth-ng/angular', '@angular/material/dialog', 'rxjs/operators', '@angular/platform-browser', '@angular/router', '@angular/material', '@angular/common', '@angular/forms', '@ng-bootstrap/ng-bootstrap', '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js'], factory) :
+    (global = global || self, factory((global.geoplatform = global.geoplatform || {}, global.geoplatform.common = {}), global.geoplatform.client, global.ng.core, global.rxjs, global.RPMService, global.geoplatform['oauth-ng'], global.ng.material.dialog, global.rxjs.operators, global.ng.platformBrowser, global.ng.router, global.ng.material, global.ng.common, global.ng.forms, global.ngBootstrap, global.geoplatform.rpm));
+}(this, (function (exports, client, core, rxjs, iRPMService, angular, dialog, operators, platformBrowser, router, material, common, forms, ngBootstrap, geoplatform_rpm_browser_js) { 'use strict';
 
     /*! *****************************************************************************
     Copyright (c) Microsoft Corporation. All rights reserved.
@@ -2719,40 +2719,47 @@
         return TypeFilterComponent;
     }());
 
+    var BEFORE = "Before";
+    var AFTER = "After";
     var ModifiedFilterComponent = /** @class */ (function () {
         function ModifiedFilterComponent() {
             this.key = client.QueryParameters.MODIFIED;
             this.onEvent = new core.EventEmitter();
             this.isCollapsed = true;
-            this.format = 'MMM dd yyyy';
+            this.format = 'MM/DD/YYYY'; //'MMM dd yyyy';
             this.debouncePromise = null;
-            this.lastModifiedOptions = [
-                { value: "Before", before: true },
-                { value: "After", before: false }
-            ];
-            this.lastModifiedDir = this.lastModifiedOptions[1];
+            this.lastModifiedOptions = [BEFORE, AFTER];
+            this.lastModifiedDir = BEFORE;
         }
         ModifiedFilterComponent.prototype.ngOnInit = function () {
+            // console.log("Modified.init() : " + this.lastModifiedDir);
         };
-        ModifiedFilterComponent.prototype.onKeyUp = function ($event) {
-            var text = $event.target.value;
-            this.onValueChange(text);
+        // onKeyUp($event) {
+        //     let text = $event.target.value;
+        //     this.onValueChange(text);
+        // }
+        ModifiedFilterComponent.prototype.onDateChanged = function (event) {
+            this.value = event && event.value ? event.value.getTime() : null;
+            this.onValueChange(this.value);
         };
         ModifiedFilterComponent.prototype.onValueChange = function (value) {
             var change = {};
-            if (this.lastModifiedDir.before) {
+            if (BEFORE === this.lastModifiedDir) {
                 change[client.QueryParameters.MODIFIED_BEFORE] = value;
                 change[client.QueryParameters.MODIFIED_AFTER] = null;
             }
             else {
-                change[client.QueryParameters.MODIFIED_BEFORE] = null;
                 change[client.QueryParameters.MODIFIED_AFTER] = value;
+                change[client.QueryParameters.MODIFIED_BEFORE] = null;
             }
             var event = new SearchEvent(EventTypes.QUERY, change);
             this.onEvent.emit(event);
         };
         ModifiedFilterComponent.prototype.onDirChange = function () {
-            this.onValueChange(this.value);
+            // console.log("Modified.onDirChange() : " + this.lastModifiedDir);
+            if (this.value) {
+                this.onValueChange(this.value);
+            }
         };
         ModifiedFilterComponent.prototype.clear = function () {
             if (this.value) {
@@ -2772,10 +2779,13 @@
         __decorate([
             core.Output()
         ], ModifiedFilterComponent.prototype, "onEvent", void 0);
+        __decorate([
+            core.ViewChild(material.MatDatepicker, { static: false })
+        ], ModifiedFilterComponent.prototype, "datepicker", void 0);
         ModifiedFilterComponent = __decorate([
             core.Component({
                 selector: 'gp-modified-filter',
-                template: "<div class=\"m-article o-query-filter\">\n    <div class=\"m-article__heading\">\n        <button type=\"button\" class=\"btn btn-sm btn-link\"\n            title=\"{{isCollapsed?'Expand':'Collapse'}}\"\n            (click)=\"isCollapsed = !isCollapsed\">\n            <span class=\"fas\"\n                [ngClass]=\"{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}\">\n            </span>\n        </button>\n        Filter by Modified Date\n    </div>\n\n    <div class=\"m-article__desc o-facets\" [ngClass]=\"{'is-collapsed':isCollapsed}\">\n\n        <div *ngIf=\"isCollapsed\" class=\"m-facet active\">\n            <span *ngIf=\"value\">{{lastModifiedDir.value}} {{value}}</span>\n            <span *ngIf=\"!value\">No date specified</span>\n        </div>\n\n        <div class=\"m-facet  d-flex flex-justify-between flex-align-stretch\">\n\n            <select class=\"form-control flex-1 u-mg-right--md\"\n                ([ngModel])=\"lastModifiedDir\"\n                (change)=\"onDirChange()\"\n                aria-label=\"Select before or after modification date constraint\">\n                <option *ngFor=\"let opt of lastModifiedOptions\" [value]=\"opt\">{{opt.value}}</option>\n            </select>\n\n            <div class=\"flex-2 input-group-slick\">\n                <!-- <span class=\"fas fa-calendar\"\n                    title=\"Open date picker to select a date\"\n                    (click)=\"toggle($event)\">\n                </span> -->\n                <input type=\"text\" class=\"form-control\"\n                    placeholder=\"Specify modified date\"\n                    aria-label=\"Specify modified date\"\n                    ([ngModel])=\"value\"\n                    (change)=\"onValueChange(value)\" />\n                <span class=\"fas fa-times\" title=\"Clear value\"\n                    *ngIf=\"value\" (click)=\"clear()\">\n                </span>\n            </div>\n        </div>\n\n    </div>\n</div>\n",
+                template: "<div class=\"m-article o-query-filter\">\n    <div class=\"m-article__heading\">\n        <button type=\"button\" class=\"btn btn-sm btn-link\"\n            title=\"{{isCollapsed?'Expand':'Collapse'}}\"\n            (click)=\"isCollapsed = !isCollapsed\">\n            <span class=\"fas\"\n                [ngClass]=\"{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}\">\n            </span>\n        </button>\n        Filter by Modified Date\n    </div>\n\n    <div class=\"m-article__desc o-facets\" [ngClass]=\"{'is-collapsed':isCollapsed}\">\n\n        <div *ngIf=\"isCollapsed\" class=\"m-facet active\">\n            <span *ngIf=\"value\">{{lastModifiedDir}} {{value}}</span>\n            <span *ngIf=\"!value\">No date specified</span>\n        </div>\n\n        <div class=\"m-facet\">\n\n            <div class=\"  d-flex flex-justify-between flex-align-stretch\">\n\n                <select class=\"form-control flex-1 u-mg-right--md\"\n                    [(ngModel)]=\"lastModifiedDir\"\n                    (change)=\"onDirChange()\"\n                    aria-label=\"Select before or after modification date constraint\">\n                    <option *ngFor=\"let opt of lastModifiedOptions\" value=\"{{opt}}\">{{opt}}</option>\n                </select>\n\n                <!--\n                <div class=\"flex-2 input-group-slick\">\n                    <span class=\"fas fa-calendar\"\n                        title=\"Open date picker to select a date\"\n                        (click)=\"toggle($event)\">\n                    </span>\n                    <input type=\"text\" class=\"form-control\"\n                        placeholder=\"Specify modified date\"\n                        aria-label=\"Specify modified date\"\n                        [(ngModel)]=\"value\"\n                        (change)=\"onValueChange(value)\" />\n                    <span class=\"fas fa-times\" title=\"Clear value\"\n                        *ngIf=\"value\" (click)=\"clear()\">\n                    </span>\n                </div>\n                -->\n\n                <mat-form-field class=\"flex-2\">\n                    <input matInput [matDatepicker]=\"modifiedFilterDatePicker\" (dateInput)=\"onDateChanged($event)\">\n                    <mat-datepicker-toggle matSuffix [for]=\"modifiedFilterDatePicker\"></mat-datepicker-toggle>\n                    <mat-datepicker #modifiedFilterDatePicker></mat-datepicker>\n                </mat-form-field>\n            </div>\n            <div class=\"u-text--sm t-fg--gray-md\">Date format {{format}}</div>\n        </div>\n\n\n    </div>\n</div>\n",
                 styles: [""]
             })
         ], ModifiedFilterComponent);
@@ -2801,6 +2811,7 @@
                     common.CommonModule,
                     forms.FormsModule,
                     material.MatInputModule, material.MatButtonModule, material.MatIconModule, material.MatDialogModule,
+                    material.MatDatepickerModule, material.MatNativeDateModule, material.NativeDateModule,
                     ngBootstrap.NgbModule,
                 ],
                 exports: [

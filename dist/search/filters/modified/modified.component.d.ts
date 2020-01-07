@@ -1,16 +1,18 @@
 import { OnInit, EventEmitter } from '@angular/core';
+import { MatDatepicker, MatDatepickerInputEvent } from '@angular/material';
 export declare class ModifiedFilterComponent implements OnInit {
     key: string;
-    value: Date;
+    value: number;
     onEvent: EventEmitter<any>;
+    datepicker: MatDatepicker<Date>;
     isCollapsed: boolean;
     format: string;
     debouncePromise: any;
-    lastModifiedOptions: any[];
-    lastModifiedDir: any;
+    lastModifiedOptions: string[];
+    lastModifiedDir: string;
     constructor();
     ngOnInit(): void;
-    onKeyUp($event: any): void;
+    onDateChanged(event: MatDatepickerInputEvent<Date>): void;
     onValueChange(value: any): void;
     onDirChange(): void;
     clear(): void;

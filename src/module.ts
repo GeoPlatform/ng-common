@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
-    MatInputModule, MatButtonModule, MatIconModule, MatDialogModule
+    MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
+    MatDatepickerModule, MatNativeDateModule, NativeDateModule
 } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -76,6 +77,7 @@ import { ItemHelper               } from './item-helper';
         CommonModule,
         FormsModule,
         MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
+        MatDatepickerModule, MatNativeDateModule, NativeDateModule,
         NgbModule,
         // GeoPlatformClientModule
     ],

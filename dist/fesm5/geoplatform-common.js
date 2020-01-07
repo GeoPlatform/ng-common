@@ -1,6 +1,6 @@
 import { __spread, __decorate, __param, __extends } from 'tslib';
 import { Config, ItemTypes, TrackingEventFactory, TrackingTypes, ItemService, TrackingService, Query, QueryParameters, QueryFacets, KGQuery, KGService, ItemTypeLabels } from '@geoplatform/client';
-import { Inject, ɵɵdefineInjectable, ɵɵinject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, NgModule } from '@angular/core';
+import { Inject, ɵɵdefineInjectable, ɵɵinject, Injectable, Component, HostBinding, ElementRef, Input, Directive, EventEmitter, Output, Pipe, ViewChild, NgModule } from '@angular/core';
 import { Subject, BehaviorSubject, of, empty } from 'rxjs';
 import { RPMService } from '@geoplatform/rpm/src/iRPMService';
 import { ngGpoauthFactory } from '@geoplatform/oauth-ng/angular';
@@ -8,9 +8,9 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dial
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterModule } from '@angular/router';
+import { MatDatepicker, MatInputModule, MatButtonModule, MatIconModule, MatDialogModule, MatDatepickerModule, MatNativeDateModule, NativeDateModule } from '@angular/material';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatInputModule, MatButtonModule, MatIconModule, MatDialogModule } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 import { RPMServiceFactory } from '@geoplatform/rpm/dist/js/geoplatform.rpm.browser.js';
 
@@ -2532,40 +2532,47 @@ var TypeFilterComponent = /** @class */ (function () {
     return TypeFilterComponent;
 }());
 
+var BEFORE = "Before";
+var AFTER = "After";
 var ModifiedFilterComponent = /** @class */ (function () {
     function ModifiedFilterComponent() {
         this.key = QueryParameters.MODIFIED;
         this.onEvent = new EventEmitter();
         this.isCollapsed = true;
-        this.format = 'MMM dd yyyy';
+        this.format = 'MM/DD/YYYY'; //'MMM dd yyyy';
         this.debouncePromise = null;
-        this.lastModifiedOptions = [
-            { value: "Before", before: true },
-            { value: "After", before: false }
-        ];
-        this.lastModifiedDir = this.lastModifiedOptions[1];
+        this.lastModifiedOptions = [BEFORE, AFTER];
+        this.lastModifiedDir = BEFORE;
     }
     ModifiedFilterComponent.prototype.ngOnInit = function () {
+        // console.log("Modified.init() : " + this.lastModifiedDir);
     };
-    ModifiedFilterComponent.prototype.onKeyUp = function ($event) {
-        var text = $event.target.value;
-        this.onValueChange(text);
+    // onKeyUp($event) {
+    //     let text = $event.target.value;
+    //     this.onValueChange(text);
+    // }
+    ModifiedFilterComponent.prototype.onDateChanged = function (event) {
+        this.value = event && event.value ? event.value.getTime() : null;
+        this.onValueChange(this.value);
     };
     ModifiedFilterComponent.prototype.onValueChange = function (value) {
         var change = {};
-        if (this.lastModifiedDir.before) {
+        if (BEFORE === this.lastModifiedDir) {
             change[QueryParameters.MODIFIED_BEFORE] = value;
             change[QueryParameters.MODIFIED_AFTER] = null;
         }
         else {
-            change[QueryParameters.MODIFIED_BEFORE] = null;
             change[QueryParameters.MODIFIED_AFTER] = value;
+            change[QueryParameters.MODIFIED_BEFORE] = null;
         }
         var event = new SearchEvent(EventTypes.QUERY, change);
         this.onEvent.emit(event);
     };
     ModifiedFilterComponent.prototype.onDirChange = function () {
-        this.onValueChange(this.value);
+        // console.log("Modified.onDirChange() : " + this.lastModifiedDir);
+        if (this.value) {
+            this.onValueChange(this.value);
+        }
     };
     ModifiedFilterComponent.prototype.clear = function () {
         if (this.value) {
@@ -2585,10 +2592,13 @@ var ModifiedFilterComponent = /** @class */ (function () {
     __decorate([
         Output()
     ], ModifiedFilterComponent.prototype, "onEvent", void 0);
+    __decorate([
+        ViewChild(MatDatepicker, { static: false })
+    ], ModifiedFilterComponent.prototype, "datepicker", void 0);
     ModifiedFilterComponent = __decorate([
         Component({
             selector: 'gp-modified-filter',
-            template: "<div class=\"m-article o-query-filter\">\n    <div class=\"m-article__heading\">\n        <button type=\"button\" class=\"btn btn-sm btn-link\"\n            title=\"{{isCollapsed?'Expand':'Collapse'}}\"\n            (click)=\"isCollapsed = !isCollapsed\">\n            <span class=\"fas\"\n                [ngClass]=\"{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}\">\n            </span>\n        </button>\n        Filter by Modified Date\n    </div>\n\n    <div class=\"m-article__desc o-facets\" [ngClass]=\"{'is-collapsed':isCollapsed}\">\n\n        <div *ngIf=\"isCollapsed\" class=\"m-facet active\">\n            <span *ngIf=\"value\">{{lastModifiedDir.value}} {{value}}</span>\n            <span *ngIf=\"!value\">No date specified</span>\n        </div>\n\n        <div class=\"m-facet  d-flex flex-justify-between flex-align-stretch\">\n\n            <select class=\"form-control flex-1 u-mg-right--md\"\n                ([ngModel])=\"lastModifiedDir\"\n                (change)=\"onDirChange()\"\n                aria-label=\"Select before or after modification date constraint\">\n                <option *ngFor=\"let opt of lastModifiedOptions\" [value]=\"opt\">{{opt.value}}</option>\n            </select>\n\n            <div class=\"flex-2 input-group-slick\">\n                <!-- <span class=\"fas fa-calendar\"\n                    title=\"Open date picker to select a date\"\n                    (click)=\"toggle($event)\">\n                </span> -->\n                <input type=\"text\" class=\"form-control\"\n                    placeholder=\"Specify modified date\"\n                    aria-label=\"Specify modified date\"\n                    ([ngModel])=\"value\"\n                    (change)=\"onValueChange(value)\" />\n                <span class=\"fas fa-times\" title=\"Clear value\"\n                    *ngIf=\"value\" (click)=\"clear()\">\n                </span>\n            </div>\n        </div>\n\n    </div>\n</div>\n",
+            template: "<div class=\"m-article o-query-filter\">\n    <div class=\"m-article__heading\">\n        <button type=\"button\" class=\"btn btn-sm btn-link\"\n            title=\"{{isCollapsed?'Expand':'Collapse'}}\"\n            (click)=\"isCollapsed = !isCollapsed\">\n            <span class=\"fas\"\n                [ngClass]=\"{'fa-minus-square':!isCollapsed,'fa-plus-square':isCollapsed}\">\n            </span>\n        </button>\n        Filter by Modified Date\n    </div>\n\n    <div class=\"m-article__desc o-facets\" [ngClass]=\"{'is-collapsed':isCollapsed}\">\n\n        <div *ngIf=\"isCollapsed\" class=\"m-facet active\">\n            <span *ngIf=\"value\">{{lastModifiedDir}} {{value}}</span>\n            <span *ngIf=\"!value\">No date specified</span>\n        </div>\n\n        <div class=\"m-facet\">\n\n            <div class=\"  d-flex flex-justify-between flex-align-stretch\">\n\n                <select class=\"form-control flex-1 u-mg-right--md\"\n                    [(ngModel)]=\"lastModifiedDir\"\n                    (change)=\"onDirChange()\"\n                    aria-label=\"Select before or after modification date constraint\">\n                    <option *ngFor=\"let opt of lastModifiedOptions\" value=\"{{opt}}\">{{opt}}</option>\n                </select>\n\n                <!--\n                <div class=\"flex-2 input-group-slick\">\n                    <span class=\"fas fa-calendar\"\n                        title=\"Open date picker to select a date\"\n                        (click)=\"toggle($event)\">\n                    </span>\n                    <input type=\"text\" class=\"form-control\"\n                        placeholder=\"Specify modified date\"\n                        aria-label=\"Specify modified date\"\n                        [(ngModel)]=\"value\"\n                        (change)=\"onValueChange(value)\" />\n                    <span class=\"fas fa-times\" title=\"Clear value\"\n                        *ngIf=\"value\" (click)=\"clear()\">\n                    </span>\n                </div>\n                -->\n\n                <mat-form-field class=\"flex-2\">\n                    <input matInput [matDatepicker]=\"modifiedFilterDatePicker\" (dateInput)=\"onDateChanged($event)\">\n                    <mat-datepicker-toggle matSuffix [for]=\"modifiedFilterDatePicker\"></mat-datepicker-toggle>\n                    <mat-datepicker #modifiedFilterDatePicker></mat-datepicker>\n                </mat-form-field>\n            </div>\n            <div class=\"u-text--sm t-fg--gray-md\">Date format {{format}}</div>\n        </div>\n\n\n    </div>\n</div>\n",
             styles: [""]
         })
     ], ModifiedFilterComponent);
@@ -2614,6 +2624,7 @@ var GeoPlatformCommonModule = /** @class */ (function () {
                 CommonModule,
                 FormsModule,
                 MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
+                MatDatepickerModule, MatNativeDateModule, NativeDateModule,
                 NgbModule,
             ],
             exports: [
