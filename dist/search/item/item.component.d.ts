@@ -42,6 +42,7 @@ export declare class SearchResultsItemComponent implements OnInit, OnChanges, On
     item: Item;
     adapter: SearchResultsItemAdapter<Item>;
     isSelected: boolean;
+    canSelect: boolean;
     showDesc: boolean;
     itemHeadingTemplate: TemplateRef<any>;
     itemThumbnailTemplate: TemplateRef<any>;

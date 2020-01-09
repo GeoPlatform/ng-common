@@ -8,4 +8,5 @@ export declare class KeywordFilterComponent implements OnInit {
     ngOnInit(): void;
     onKeyUp($event: any): void;
     onValueChange(value: any): void;
+    clear(): void;
 }

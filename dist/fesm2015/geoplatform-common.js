@@ -1664,6 +1664,7 @@ const AGOL_MAP_RESOURCE_TYPE$1 = 'http://www.geoplatform.gov/ont/openmap/AGOLMap
 let SearchResultsItemComponent = class SearchResultsItemComponent {
     constructor() {
         this.isSelected = false;
+        this.canSelect = true;
         this.showDesc = false;
         this.onEvent = new EventEmitter();
     }
@@ -1732,6 +1733,9 @@ __decorate([
 ], SearchResultsItemComponent.prototype, "isSelected", void 0);
 __decorate([
     Input()
+], SearchResultsItemComponent.prototype, "canSelect", void 0);
+__decorate([
+    Input()
 ], SearchResultsItemComponent.prototype, "showDesc", void 0);
 __decorate([
     Input()
@@ -1754,7 +1758,7 @@ __decorate([
 SearchResultsItemComponent = __decorate([
     Component({
         selector: 'gp-search-results-item',
-        template: "<div class=\"m-results-item\" id=\"map-{{adapter?.getId(item)}}\" [ngClass]=\"{selected:item.selected}\">\n\n    <div class=\"m-results-item__body flex-align-center\">\n\n        <!-- Selection button -->\n        <div class=\"u-mg-right--md\">\n            <button type=\"button\" class=\"btn btn-light btn-lg\" title=\"Select this item\"\n                (click)=\"select()\" [ngClass]=\"{'active':isSelected}\">\n                <span class=\"far fa-square t-fg--gray-lt\" *ngIf=\"!isSelected\"></span>\n                <span class=\"fas fa-check\" *ngIf=\"isSelected\"></span>\n                <span class=\"sr-only\">Select this item</span>\n            </button>\n        </div>\n\n        <div class=\"flex-1\">\n\n            <div class=\"m-results-item__heading\">\n                <ng-container\n                    [ngTemplateOutlet]=\"itemHeadingTemplate || defaultResultItemHeadingTemplate\"\n                    [ngTemplateOutletContext]=\"{item: item}\">\n                </ng-container>\n            </div>\n\n            <div class=\"m-results-item__facets\">\n                <strong>\n                    <span class=\"{{adapter?.getIconClass(item)}}\"></span>\n                    {{adapter?.getTypeLabel(item)}}\n                </strong>\n                <span *ngIf=\"adapter?.getAuthorName(item)\">\n                    &nbsp;by\n                    <a class=\"is-linkless\" title=\"Find more maps by this author\"\n                        (click)=\"constrainToUser(adapter.getAuthorName(item))\">\n                        {{adapter.getAuthorName(item)}}\n                    </a>\n                </span>\n\n                <span *ngIf=\"adapter?.getCreatedDate(item)\">\n                    &nbsp;\n                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n                <span *ngIf=\"adapter?.getModifiedDate(item)\">\n                    &nbsp;\n                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n            </div>\n\n            <div class=\"m-results-item__description u-break--all\" *ngIf=\"showDesc\">\n                <div *ngIf=\"adapter?.getDescription(item)\" [innerHTML]=\"adapter?.getDescription(item)\"> </div>\n                <div *ngIf=\"!adapter?.getDescription(item)\">No description provided</div>\n            </div>\n\n        </div>\n\n        <div class=\"m-results-item__icon\">\n            <ng-container\n                [ngTemplateOutlet]=\"itemThumbnailTemplate || defaultResultItemThumbnailTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n    </div>\n\n    <div class=\"m-results-item__footer\" *ngIf=\"itemFooterTemplate || itemStatsTemplate || itemActionsTemplate\">\n        <ng-container *ngIf=\"itemFooterTemplate\"\n            [ngTemplateOutlet]=\"itemFooterTemplate\"\n            [ngTemplateOutletContext]=\"{item: item}\">\n        </ng-container>\n        <div class=\"m-results-item__stats\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemStatsTemplate\"\n                [ngTemplateOutlet]=\"itemStatsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n        <div class=\"m-results-item__actions\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemActionsTemplate\"\n                [ngTemplateOutlet]=\"itemActionsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n    </div>\n\n\n\n    <ng-template #defaultResultItemHeadingTemplate let-item=\"item\">\n        {{adapter?.getLabel(item)}}\n    </ng-template>\n    <ng-template #defaultResultItemThumbnailTemplate let-item=\"item\">\n        <gp-item-thumbnail [item]=\"item\"></gp-item-thumbnail>\n    </ng-template>\n\n</div>\n",
+        template: "<div class=\"m-results-item\" id=\"map-{{adapter?.getId(item)}}\" [ngClass]=\"{selected:item.selected}\">\n\n    <div class=\"m-results-item__body flex-align-center\">\n\n        <!-- Selection button -->\n        <div class=\"u-mg-right--md\" *ngIf=\"canSelect\">\n            <button type=\"button\" class=\"btn btn-light btn-lg\" title=\"Select this item\"\n                (click)=\"select()\" [ngClass]=\"{'active':isSelected}\">\n                <span class=\"far fa-square t-fg--gray-lt\" *ngIf=\"!isSelected\"></span>\n                <span class=\"fas fa-check\" *ngIf=\"isSelected\"></span>\n                <span class=\"sr-only\">Select this item</span>\n            </button>\n        </div>\n\n        <div class=\"flex-1\">\n\n            <div class=\"m-results-item__heading\">\n                <ng-container\n                    [ngTemplateOutlet]=\"itemHeadingTemplate || defaultResultItemHeadingTemplate\"\n                    [ngTemplateOutletContext]=\"{item: item}\">\n                </ng-container>\n            </div>\n\n            <div class=\"m-results-item__facets\">\n                <strong>\n                    <span class=\"{{adapter?.getIconClass(item)}}\"></span>\n                    {{adapter?.getTypeLabel(item)}}\n                </strong>\n                <span *ngIf=\"adapter?.getAuthorName(item)\">\n                    &nbsp;by\n                    <a class=\"is-linkless\" title=\"Find more maps by this author\"\n                        (click)=\"constrainToUser(adapter.getAuthorName(item))\">\n                        {{adapter.getAuthorName(item)}}\n                    </a>\n                </span>\n\n                <span *ngIf=\"adapter?.getCreatedDate(item)\">\n                    &nbsp;\n                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n                <span *ngIf=\"adapter?.getModifiedDate(item)\">\n                    &nbsp;\n                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n            </div>\n\n            <div class=\"m-results-item__description u-break--all\" *ngIf=\"showDesc\">\n                <div *ngIf=\"adapter?.getDescription(item)\" [innerHTML]=\"adapter?.getDescription(item)\"> </div>\n                <div *ngIf=\"!adapter?.getDescription(item)\">No description provided</div>\n            </div>\n\n        </div>\n\n        <div class=\"m-results-item__icon\">\n            <ng-container\n                [ngTemplateOutlet]=\"itemThumbnailTemplate || defaultResultItemThumbnailTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n    </div>\n\n    <div class=\"m-results-item__footer\" *ngIf=\"itemFooterTemplate || itemStatsTemplate || itemActionsTemplate\">\n        <ng-container *ngIf=\"itemFooterTemplate\"\n            [ngTemplateOutlet]=\"itemFooterTemplate\"\n            [ngTemplateOutletContext]=\"{item: item}\">\n        </ng-container>\n        <div class=\"m-results-item__stats\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemStatsTemplate\"\n                [ngTemplateOutlet]=\"itemStatsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n        <div class=\"m-results-item__actions\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemActionsTemplate\"\n                [ngTemplateOutlet]=\"itemActionsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n    </div>\n\n\n\n    <ng-template #defaultResultItemHeadingTemplate let-item=\"item\">\n        {{adapter?.getLabel(item)}}\n    </ng-template>\n    <ng-template #defaultResultItemThumbnailTemplate let-item=\"item\">\n        <gp-item-thumbnail [item]=\"item\"></gp-item-thumbnail>\n    </ng-template>\n\n</div>\n",
         styles: [":host .m-results-item .m-results-item__body{-webkit-box-align:center;align-items:center}.m-results-item:hover{background-color:#f8f9fa;box-shadow:none}.m-results-item gp-item-thumbnail{-webkit-box-flex:0;flex:0 1 128px;max-width:128px}@media (min-width:768px){.m-results-item .m-results-item__description{margin:0}}"]
     })
 ], SearchResultsItemComponent);
@@ -1768,6 +1772,60 @@ const DEFAULT_SORT_OPTIONS = [
     { value: "label,desc", label: "Title [Z-A]" },
     { value: "reliability,asc", label: "Reliability" }
 ];
+/**
+ * Search Results Component
+ *
+ * This component is used to display search results.
+ *
+ * Example:
+ *   <gp-search-results [service]="service">
+ *   </gp-search-results>
+ *
+ *
+ * Listen for selection or other events by passing an "onEvent" callback
+ *
+ * Example:
+ *   <gp-search-results  [service]="service"
+ *        (onEvent)="handleItemEvent($event)">
+ *   </gp-search-results>
+ *
+ *
+ * Support custom items by providing a SearchResultsItemAdapter
+ *
+ * Example:
+ *   class CustomItemAdapter implements SearchResultsItemAdapter<Item> {
+ *      constructor() {}
+ *      getId( item: Item ) : string { return item.idField; }
+ *      getLabel( item: Item ) : string { return item.heading; }
+ *      //remaining methods...
+ *   }
+ *   ...
+ *
+ *   public myCustomItemAdapter : SearchResultsItemAdapter<Item> = new CustomItemAdapter();
+ *
+ *   ...
+ *
+ *   <gp-search-results [service]="service"
+ *        [adapter]="myCustomItemAdapter">
+ *   </gp-search-results>
+ *
+ *
+ *
+ * Customize how items are displayed using any of the template bindings
+ *
+ * Example:
+ *   <gp-search-results [service]="service"
+ *        [itemHeadingTemplate]="myCustomItemHeadingTemplate"
+ *        [itemActionsTemplate]="myCustomItemActionsTemplate">
+ *   </gp-search-results>
+ *   <ng-template #myCustomItemHeadingTemplate let-item="item">
+ *     <div>My Customized {{item.label}}</div>
+ *   </ng-template>
+ *   <ng-template #myCustomItemActionsTemplate let-item="item">
+ *     <button type="button" class="btn btn-link" (click)="handleClick(item)">Click Me</button>
+ *   </ng-template>
+ *
+ */
 let SearchResultsComponent = class SearchResultsComponent {
     constructor(
     // @Inject(AppAuthService) authService : AppAuthService,
@@ -2291,6 +2349,10 @@ let KeywordFilterComponent = class KeywordFilterComponent {
         let event = new SearchEvent(EventTypes.QUERY, change);
         this.onEvent.emit(event);
     }
+    clear() {
+        this.searchString = null;
+        this.onValueChange(null);
+    }
 };
 __decorate([
     Input()
@@ -2307,7 +2369,7 @@ __decorate([
 KeywordFilterComponent = __decorate([
     Component({
         selector: 'gp-keywords-filter',
-        template: "\n<div class=\"input-group-slick flex-1\">\n    <span class=\"fas fa-search\"></span>\n    <input type=\"text\" class=\"form-control\"\n        placeholder=\"{{placeholder}}\"\n        [(ngModel)]=\"searchString\" (keyup.enter)=\"onKeyUp($event)\">\n    <button type=\"button\" class=\"btn btn-light\" title=\"Clear keywords\"\n        *ngIf=\"searchString?.length\" (click)=\"searchString=null\">\n        <span class=\"fas fa-times\"></span>\n    </button>\n</div>\n\n<button type=\"button\" class=\"btn btn-secondary\"\n    [disabled]=\"!searchString||!searchString.length\"\n    (click)=\"onValueChange(searchString)\"\n    title=\"Search the GeoPlatform\">\n    Search\n</button>\n",
+        template: "\n<div class=\"input-group-slick flex-1\">\n    <span class=\"fas fa-search\"></span>\n    <input type=\"text\" class=\"form-control\"\n        placeholder=\"{{placeholder}}\"\n        [(ngModel)]=\"searchString\" (keyup.enter)=\"onKeyUp($event)\">\n    <button type=\"button\" class=\"btn btn-light\" title=\"Clear keywords\"\n        *ngIf=\"searchString?.length\" (click)=\"clear()\">\n        <span class=\"fas fa-times\"></span>\n    </button>\n</div>\n\n<button type=\"button\" class=\"btn btn-secondary\"\n    [disabled]=\"!searchString||!searchString.length\"\n    (click)=\"onValueChange(searchString)\"\n    title=\"Search the GeoPlatform\">\n    Search\n</button>\n",
         styles: [":host{display:-webkit-box;display:flex;-webkit-box-pack:justify;justify-content:space-between}:host>:last-child{margin-left:1em}"]
     })
 ], KeywordFilterComponent);

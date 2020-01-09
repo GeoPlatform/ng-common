@@ -9,6 +9,60 @@ export interface SearchSortOption {
     value: string;
     label: string;
 }
+/**
+ * Search Results Component
+ *
+ * This component is used to display search results.
+ *
+ * Example:
+ *   <gp-search-results [service]="service">
+ *   </gp-search-results>
+ *
+ *
+ * Listen for selection or other events by passing an "onEvent" callback
+ *
+ * Example:
+ *   <gp-search-results  [service]="service"
+ *        (onEvent)="handleItemEvent($event)">
+ *   </gp-search-results>
+ *
+ *
+ * Support custom items by providing a SearchResultsItemAdapter
+ *
+ * Example:
+ *   class CustomItemAdapter implements SearchResultsItemAdapter<Item> {
+ *      constructor() {}
+ *      getId( item: Item ) : string { return item.idField; }
+ *      getLabel( item: Item ) : string { return item.heading; }
+ *      //remaining methods...
+ *   }
+ *   ...
+ *
+ *   public myCustomItemAdapter : SearchResultsItemAdapter<Item> = new CustomItemAdapter();
+ *
+ *   ...
+ *
+ *   <gp-search-results [service]="service"
+ *        [adapter]="myCustomItemAdapter">
+ *   </gp-search-results>
+ *
+ *
+ *
+ * Customize how items are displayed using any of the template bindings
+ *
+ * Example:
+ *   <gp-search-results [service]="service"
+ *        [itemHeadingTemplate]="myCustomItemHeadingTemplate"
+ *        [itemActionsTemplate]="myCustomItemActionsTemplate">
+ *   </gp-search-results>
+ *   <ng-template #myCustomItemHeadingTemplate let-item="item">
+ *     <div>My Customized {{item.label}}</div>
+ *   </ng-template>
+ *   <ng-template #myCustomItemActionsTemplate let-item="item">
+ *     <button type="button" class="btn btn-link" (click)="handleClick(item)">Click Me</button>
+ *   </ng-template>
+ *
+ */
 export declare class SearchResultsComponent implements OnInit, OnDestroy, SearchAwareComponent {
     private dialog;
     service: SearchService;
