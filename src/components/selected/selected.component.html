@@ -1,17 +1,14 @@
 <div class="o-selected-items">
 
-    <div class="list-group list-group-sm u-text--sm">
+    <div class="list-group list-group-sm u-text--sm"
+        *ngIf="selected && selected.length > 0; else noContent">
 
-        <div *ngIf="!selected || !selected.length" class="list-group-item">
-            <div class="t-fg--gray-md t-text--italic">Nothing selected</div>
-        </div>
-
-        <div *ngFor="let item of selected"
-            class="list-group-item d-flex flex-justify-between flex-align-center">
-            <div class="flex-1">
-                <span class="icon-{{item.type.toLowerCase()}} is-themed"></span>
-                {{item.label}}
-            </div>
+        <div class="list-group-item d-flex flex-justify-between flex-align-center"
+            *ngFor="let item of selected">
+            <ng-container
+                [ngTemplateOutlet]="itemTemplate || defaultItemTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
             <button type="button" class="btn btn-link u-mg-left--sm" (click)="remove(item)">
                 <span class="fas fa-times-circle t-fg--danger"></span>
             </button>
@@ -19,10 +16,14 @@
 
     </div>
 
-    <div class="list-group list-group-sm u-text--sm u-mg-top--md">
+    <!-- actions -->
+    <div class="list-group list-group-sm u-text--sm u-mg-top--md"
+        *ngIf="selected && selected.length">
 
+        <!-- custom actions provided -->
         <ng-content select="[actions]"></ng-content>
 
+        <!-- default clear all action -->
         <div class="list-group-item d-flex flex-justify-between flex-align-center"
             [ngClass]="{'is-faded':!selected?.length}"
             (click)="clear()">
@@ -32,5 +33,16 @@
             </button>
         </div>
     </div>
+
+    <ng-template #noContent>
+      <div class="t-fg--gray-md t-text--italic">Nothing selected</div>
+    </ng-template>
+    <ng-template #defaultItemTemplate let-item="item">
+        <div class="flex-1">
+            <span class="icon-{{item.type.toLowerCase()}} is-themed"></span>
+            {{item.label||item.title||item.prefLabel||"Un-titled Item"}}
+        </div>
+    </ng-template>
+
 
 </div>

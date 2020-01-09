@@ -32,4 +32,9 @@ export class KeywordFilterComponent implements OnInit {
         let event = new SearchEvent(EventTypes.QUERY, change);
         this.onEvent.emit(event);
     }
+
+    clear() {
+        this.searchString=null;
+        this.onValueChange(null);
+    }
 }

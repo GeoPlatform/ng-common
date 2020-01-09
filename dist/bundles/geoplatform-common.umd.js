@@ -928,19 +928,26 @@
 
     var ResourceLinkComponent = /** @class */ (function () {
         function ResourceLinkComponent() {
+            // @Input() icon : any;
             this.external = false; //open link in new window/tab
+            this.showIcon = true;
         }
         ResourceLinkComponent.prototype.ngOnInit = function () {
+            if (client.Config.portalUrl)
+                this.portalUrl = client.Config.portalUrl;
+            else {
+                this.portalUrl = client.Config.ualUrl.replace("sit-ual", 'sit')
+                    .replace("stg-ual", "stg").replace("ual", "www");
+            }
         };
         ResourceLinkComponent.prototype.hasIcon = function () {
-            // return this.icon !== null && this.icon !== undefined;
-            return true;
+            return this.showIcon;
         };
         ResourceLinkComponent.prototype.getIcon = function () {
             return ItemHelper.getIcon(this.item);
         };
         ResourceLinkComponent.prototype.getLabel = function () {
-            return ItemHelper.getLabel(this.item);
+            return this.label || ItemHelper.getLabel(this.item);
         };
         ResourceLinkComponent.prototype.getType = function () {
             return ItemHelper.getTypeKey(this.item);
@@ -958,18 +965,53 @@
         ], ResourceLinkComponent.prototype, "item", void 0);
         __decorate([
             core.Input()
-        ], ResourceLinkComponent.prototype, "icon", void 0);
+        ], ResourceLinkComponent.prototype, "external", void 0);
         __decorate([
             core.Input()
-        ], ResourceLinkComponent.prototype, "external", void 0);
+        ], ResourceLinkComponent.prototype, "label", void 0);
+        __decorate([
+            core.Input()
+        ], ResourceLinkComponent.prototype, "showIcon", void 0);
         ResourceLinkComponent = __decorate([
             core.Component({
                 selector: 'gp-resource-link',
-                template: "<a routerLink=\"/view/{{item?.id}}\">\n    <span *ngIf=\"hasIcon()\" class=\"a-icon {{getIconClass()}}\"></span>\n    {{getLabel()}}\n</a>\n",
+                template: "<a routerLink=\"{{portalUrl}}/resources/{{getType()}}/{{item?.id}}\">\n    <span *ngIf=\"hasIcon()\" class=\"a-icon {{getIconClass()}}\"></span>\n    {{getLabel()}}\n</a>\n",
                 styles: [""]
             })
         ], ResourceLinkComponent);
         return ResourceLinkComponent;
+    }());
+
+    /**
+     *
+     */
+    var EventTypes = {
+        CLOSE: Symbol("Close"),
+        OPEN: Symbol("Open"),
+        RESET: Symbol("Reset"),
+        SELECT: Symbol("Select"),
+        SELECT_NONE: Symbol("SelectNone"),
+        QUERY: Symbol("Query"),
+        ADDED: Symbol("Added"),
+        REMOVED: Symbol("Removed"),
+        CHANGED: Symbol("Changed"),
+        ERROR: Symbol("Error") //
+    };
+    /**
+     * Search Event
+     *
+     */
+    var SearchEvent = /** @class */ (function () {
+        function SearchEvent(type, options) {
+            this.options = {};
+            this.type = type;
+            if (options) {
+                Object.assign(this.options, options);
+            }
+        }
+        SearchEvent.prototype.getType = function () { return this.type; };
+        SearchEvent.prototype.getOptions = function () { return this.options; };
+        return SearchEvent;
     }());
 
     var SelectedItemsComponent = /** @class */ (function () {
@@ -981,20 +1023,26 @@
         SelectedItemsComponent.prototype.ngOnChanges = function (changes) {
         };
         SelectedItemsComponent.prototype.clear = function () {
-            this.onEvent.emit({ name: 'selected:clear' });
+            var event = new SearchEvent(EventTypes.SELECT_NONE);
+            this.onEvent.emit(event);
         };
         SelectedItemsComponent.prototype.remove = function (item) {
+            var event = new SearchEvent(EventTypes.SELECT, { value: item });
+            this.onEvent.emit(event);
         };
         __decorate([
             core.Input()
         ], SelectedItemsComponent.prototype, "selected", void 0);
+        __decorate([
+            core.Input()
+        ], SelectedItemsComponent.prototype, "itemTemplate", void 0);
         __decorate([
             core.Output()
         ], SelectedItemsComponent.prototype, "onEvent", void 0);
         SelectedItemsComponent = __decorate([
             core.Component({
                 selector: 'gp-selected-items',
-                template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\">\n\n        <div *ngIf=\"!selected || !selected.length\" class=\"list-group-item\">\n            <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n        </div>\n\n        <div *ngFor=\"let item of selected\"\n            class=\"list-group-item d-flex flex-justify-between flex-align-center\">\n            <div class=\"flex-1\">\n                <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n                {{item.label}}\n            </div>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\">\n\n        <ng-content select=\"[actions]\"></ng-content>\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n</div>\n",
+                template: "<div class=\"o-selected-items\">\n\n    <div class=\"list-group list-group-sm u-text--sm\"\n        *ngIf=\"selected && selected.length > 0; else noContent\">\n\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            *ngFor=\"let item of selected\">\n            <ng-container\n                [ngTemplateOutlet]=\"itemTemplate || defaultItemTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n            <button type=\"button\" class=\"btn btn-link u-mg-left--sm\" (click)=\"remove(item)\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n\n    </div>\n\n    <!-- actions -->\n    <div class=\"list-group list-group-sm u-text--sm u-mg-top--md\"\n        *ngIf=\"selected && selected.length\">\n\n        <!-- custom actions provided -->\n        <ng-content select=\"[actions]\"></ng-content>\n\n        <!-- default clear all action -->\n        <div class=\"list-group-item d-flex flex-justify-between flex-align-center\"\n            [ngClass]=\"{'is-faded':!selected?.length}\"\n            (click)=\"clear()\">\n            <div class=\"flex-1\">Clear Selections</div>\n            <button type=\"button\" class=\"btn btn-link\">\n                <span class=\"fas fa-times-circle t-fg--danger\"></span>\n            </button>\n        </div>\n    </div>\n\n    <ng-template #noContent>\n      <div class=\"t-fg--gray-md t-text--italic\">Nothing selected</div>\n    </ng-template>\n    <ng-template #defaultItemTemplate let-item=\"item\">\n        <div class=\"flex-1\">\n            <span class=\"icon-{{item.type.toLowerCase()}} is-themed\"></span>\n            {{item.label||item.title||item.prefLabel||\"Un-titled Item\"}}\n        </div>\n    </ng-template>\n\n\n</div>\n",
                 styles: [".o-selected-items{padding:1em}"]
             })
         ], SelectedItemsComponent);
@@ -1137,38 +1185,6 @@
             core.Injectable()
         ], GeoPlatformErrorService);
         return GeoPlatformErrorService;
-    }());
-
-    /**
-     *
-     */
-    var EventTypes = {
-        CLOSE: Symbol("Close"),
-        OPEN: Symbol("Open"),
-        RESET: Symbol("Reset"),
-        SELECT: Symbol("Select"),
-        SELECT_NONE: Symbol("SelectNone"),
-        QUERY: Symbol("Query"),
-        ADDED: Symbol("Added"),
-        REMOVED: Symbol("Removed"),
-        CHANGED: Symbol("Changed"),
-        ERROR: Symbol("Error") //
-    };
-    /**
-     * Search Event
-     *
-     */
-    var SearchEvent = /** @class */ (function () {
-        function SearchEvent(type, options) {
-            this.options = {};
-            this.type = type;
-            if (options) {
-                Object.assign(this.options, options);
-            }
-        }
-        SearchEvent.prototype.getType = function () { return this.type; };
-        SearchEvent.prototype.getOptions = function () { return this.options; };
-        return SearchEvent;
     }());
 
     var Visibilities = {
@@ -1692,6 +1708,339 @@
             __param(0, core.Inject(client.ItemService))
         ], SearchService);
         return SearchService;
+    }());
+
+    var GP_MAP_RESOURCE_TYPE = 'http://www.geoplatform.gov/ont/openmap/GeoplatformMap';
+    var AGOL_MAP_RESOURCE_TYPE = 'http://www.geoplatform.gov/ont/openmap/AGOLMap';
+    var GeoPlatformResultsItemAdapter = /** @class */ (function () {
+        function GeoPlatformResultsItemAdapter() {
+        }
+        GeoPlatformResultsItemAdapter.prototype.getId = function (item) { return item.id; };
+        GeoPlatformResultsItemAdapter.prototype.getLabel = function (item) {
+            return item.label || item.title ||
+                item.prefLabel || "Untitled Item";
+        };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getDescription = function (item) { return item.description; };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getAuthorName = function (item) { return item.createdBy; };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getEditorName = function (item) { return item.lastModifiedBy; };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getCreatedDate = function (item) { return item.created; };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getModifiedDate = function (item) { return item.modified; };
+        ;
+        GeoPlatformResultsItemAdapter.prototype.getIconClass = function (item) {
+            var type = item.type.replace(/^[a-z]+\:/i, '').toLowerCase();
+            return 'icon-' + type;
+        };
+        GeoPlatformResultsItemAdapter.prototype.getTypeLabel = function (item) {
+            if (client.ItemTypes.SERVICE === item.type && !!item.serviceType)
+                return item.serviceType.label || "Service";
+            if (client.ItemTypes.MAP === item.type) {
+                var resTypes = item.resourceTypes || [];
+                if (~resTypes.indexOf(GP_MAP_RESOURCE_TYPE))
+                    return 'GeoPlatform Map';
+                if (~resTypes.indexOf(AGOL_MAP_RESOURCE_TYPE))
+                    return 'ArcGIS Online Map';
+                return "Map";
+            }
+            if (client.ItemTypes.CONTACT === item.type)
+                return 'Contact';
+            return item.type.replace(/^[a-z]+\:/i, '');
+        };
+        return GeoPlatformResultsItemAdapter;
+    }());
+
+    var GP_MAP_RESOURCE_TYPE$1 = 'http://www.geoplatform.gov/ont/openmap/GeoplatformMap';
+    var AGOL_MAP_RESOURCE_TYPE$1 = 'http://www.geoplatform.gov/ont/openmap/AGOLMap';
+    /**
+     * Search Results Item Component
+     *
+     * This component is used to display search results items.
+     *
+     * Example:
+     *   <div *ngFor="let item of results">
+     *     <gp-search-results-item [item]="item"></gp-search-results-item>
+     *   </div>
+     *
+     * Listen for selection or other events by passing an "onEvent" callback
+     *
+     * Example:
+     *   <div *ngFor="let item of results">
+     *     <gp-search-results-item [item]="item"
+     *          (onEvent)="handleItemEvent($event)">
+     *     </gp-search-results-item>
+     *   </div>
+     *
+     * Customize how the item is displayed using any of the template bindings
+     *
+     * Example:
+     *   <div *ngFor="let item of results">
+     *     <gp-search-results-item [item]="item"
+     *          [itemHeadingTemplate]="myCustomHeadingTemplate"
+     *          [itemActionsTemplate]="myCustomActionsTemplate">
+     *     </gp-search-results-item>
+     *   </div>
+     *   <ng-template #myCustomHeadingTemplate let-item="item">
+     *     <div>My Customized {{item.label}}</div>
+     *   </ng-template>
+     *   <ng-template #myCustomActionsTemplate let-item="item">
+     *     <button type="button" class="btn btn-link" (click)="handleClick(item)">Click Me</button>
+     *   </ng-template>
+     *
+     */
+    var SearchResultsItemComponent = /** @class */ (function () {
+        function SearchResultsItemComponent() {
+            this.isSelected = false;
+            this.showDesc = false;
+            this.onEvent = new core.EventEmitter();
+        }
+        SearchResultsItemComponent.prototype.ngOnInit = function () {
+            if (!this.adapter) {
+                this.adapter = new GeoPlatformResultsItemAdapter();
+            }
+        };
+        SearchResultsItemComponent.prototype.ngOnChanges = function (changes) {
+            if (changes.item || changes.adapter) {
+                // let item = changes.item ? changes.item.currentValue : null;
+                // let adapter = changes.adapter ? changes.adapter.currentValue : (
+                //     this.adapter
+                //     );
+                //
+                // if(item && !adapter) {
+                //     this.adapter =
+                // }
+            }
+        };
+        SearchResultsItemComponent.prototype.ngOnDestroy = function () {
+            this.adapter = null;
+        };
+        /**
+         * Triggers a selection event for the item
+         */
+        SearchResultsItemComponent.prototype.select = function () {
+            var event = new SearchEvent(EventTypes.SELECT, { value: this.item });
+            this.onEvent.emit(event);
+        };
+        // getIconClass() {
+        //     let type = this.item.type.replace(/^[a-z]+\:/i, '').toLowerCase();
+        //     return 'icon-' + type;
+        // }
+        //
+        // getTypeLabel() {
+        //     if( ItemTypes.SERVICE === this.item.type && !!this.item.serviceType )
+        //         return this.item.serviceType.label || "Service";
+        //     if( ItemTypes.MAP === this.item.type) {
+        //         let resTypes = this.item.resourceTypes || [];
+        //         if( ~resTypes.indexOf(GP_MAP_RESOURCE_TYPE) ) return 'GeoPlatform Map';
+        //         if( ~resTypes.indexOf(AGOL_MAP_RESOURCE_TYPE) ) return 'ArcGIS Online Map';
+        //         return "Map";
+        //     }
+        //     if( ItemTypes.CONTACT === this.item.type) return 'Contact';
+        //     return this.item.type.replace(/^[a-z]+\:/i, '');
+        // }
+        /**
+         * Trigger a search event which constrains by creator
+         */
+        SearchResultsItemComponent.prototype.constrainToUser = function (username) {
+            var change = {};
+            change[client.QueryParameters.CREATED_BY] = username;
+            var event = new SearchEvent(EventTypes.QUERY, change);
+            this.onEvent.emit(event);
+        };
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "item", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "adapter", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "isSelected", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "showDesc", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "itemHeadingTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "itemThumbnailTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "itemFooterTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "itemStatsTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "itemActionsTemplate", void 0);
+        __decorate([
+            core.Output()
+        ], SearchResultsItemComponent.prototype, "onEvent", void 0);
+        SearchResultsItemComponent = __decorate([
+            core.Component({
+                selector: 'gp-search-results-item',
+                template: "<div class=\"m-results-item\" id=\"map-{{adapter?.getId(item)}}\" [ngClass]=\"{selected:item.selected}\">\n\n    <div class=\"m-results-item__body flex-align-center\">\n\n        <!-- Selection button -->\n        <div class=\"u-mg-right--md\">\n            <button type=\"button\" class=\"btn btn-light btn-lg\" title=\"Select this item\"\n                (click)=\"select()\" [ngClass]=\"{'active':isSelected}\">\n                <span class=\"far fa-square t-fg--gray-lt\" *ngIf=\"!isSelected\"></span>\n                <span class=\"fas fa-check\" *ngIf=\"isSelected\"></span>\n                <span class=\"sr-only\">Select this item</span>\n            </button>\n        </div>\n\n        <div class=\"flex-1\">\n\n            <div class=\"m-results-item__heading\">\n                <ng-container\n                    [ngTemplateOutlet]=\"itemHeadingTemplate || defaultResultItemHeadingTemplate\"\n                    [ngTemplateOutletContext]=\"{item: item}\">\n                </ng-container>\n            </div>\n\n            <div class=\"m-results-item__facets\">\n                <strong>\n                    <span class=\"{{adapter?.getIconClass(item)}}\"></span>\n                    {{adapter?.getTypeLabel(item)}}\n                </strong>\n                <span *ngIf=\"adapter?.getAuthorName(item)\">\n                    &nbsp;by\n                    <a class=\"is-linkless\" title=\"Find more maps by this author\"\n                        (click)=\"constrainToUser(adapter.getAuthorName(item))\">\n                        {{adapter.getAuthorName(item)}}\n                    </a>\n                </span>\n\n                <span *ngIf=\"adapter?.getCreatedDate(item)\">\n                    &nbsp;\n                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n                <span *ngIf=\"adapter?.getModifiedDate(item)\">\n                    &nbsp;\n                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n            </div>\n\n            <div class=\"m-results-item__description u-break--all\" *ngIf=\"showDesc\">\n                <div *ngIf=\"adapter?.getDescription(item)\" [innerHTML]=\"adapter?.getDescription(item)\"> </div>\n                <div *ngIf=\"!adapter?.getDescription(item)\">No description provided</div>\n            </div>\n\n        </div>\n\n        <div class=\"m-results-item__icon\">\n            <ng-container\n                [ngTemplateOutlet]=\"itemThumbnailTemplate || defaultResultItemThumbnailTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n    </div>\n\n    <div class=\"m-results-item__footer\" *ngIf=\"itemFooterTemplate || itemStatsTemplate || itemActionsTemplate\">\n        <ng-container *ngIf=\"itemFooterTemplate\"\n            [ngTemplateOutlet]=\"itemFooterTemplate\"\n            [ngTemplateOutletContext]=\"{item: item}\">\n        </ng-container>\n        <div class=\"m-results-item__stats\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemStatsTemplate\"\n                [ngTemplateOutlet]=\"itemStatsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n        <div class=\"m-results-item__actions\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemActionsTemplate\"\n                [ngTemplateOutlet]=\"itemActionsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n    </div>\n\n\n\n    <ng-template #defaultResultItemHeadingTemplate let-item=\"item\">\n        {{adapter?.getLabel(item)}}\n    </ng-template>\n    <ng-template #defaultResultItemThumbnailTemplate let-item=\"item\">\n        <gp-item-thumbnail [item]=\"item\"></gp-item-thumbnail>\n    </ng-template>\n\n</div>\n",
+                styles: [":host .m-results-item .m-results-item__body{-webkit-box-align:center;align-items:center}.m-results-item:hover{background-color:#f8f9fa;box-shadow:none}.m-results-item gp-item-thumbnail{-webkit-box-flex:0;flex:0 1 128px;max-width:128px}@media (min-width:768px){.m-results-item .m-results-item__description{margin:0}}"]
+            })
+        ], SearchResultsItemComponent);
+        return SearchResultsItemComponent;
+    }());
+
+    ;
+    var DEFAULT_SORT_OPTIONS = [
+        { value: "_score,desc", label: "Relevance" },
+        { value: "modified,desc", label: "Most Recently Modified" },
+        { value: "modified,asc", label: "Least Recently Modified" },
+        { value: "label,asc", label: "Title [A-Z]" },
+        { value: "label,desc", label: "Title [Z-A]" },
+        { value: "reliability,asc", label: "Reliability" }
+    ];
+    var SearchResultsComponent = /** @class */ (function () {
+        function SearchResultsComponent(
+        // @Inject(AppAuthService) authService : AppAuthService,
+        dialog) {
+            this.dialog = dialog;
+            this.sortOptions = DEFAULT_SORT_OPTIONS;
+            this.showDesc = false;
+            this.onEvent = new core.EventEmitter();
+            this.isLoading = false;
+            // super(authService);
+        }
+        SearchResultsComponent.prototype.ngOnInit = function () {
+            // super.init();
+            if (!this.adapter) {
+                this.adapter = new GeoPlatformResultsItemAdapter();
+            }
+            this.sortValue = this.sortOptions[0].value;
+            this.subscription = this.service.subscribe(this);
+        };
+        SearchResultsComponent.prototype.ngOnDestroy = function () {
+            // super.destroy();
+            if (this.subscription) {
+                this.subscription.unsubscribe();
+                this.subscription = null;
+            }
+            this.query = null;
+            this.results = null;
+            this.selected = null;
+        };
+        SearchResultsComponent.prototype.onQueryChange = function (query) {
+            this.query = query;
+            this.isLoading = true;
+        };
+        SearchResultsComponent.prototype.onResultsChange = function (results, error) {
+            this.results = results;
+            this.error = (error) ? error : null;
+            this.isLoading = false;
+        };
+        SearchResultsComponent.prototype.onSelectedChange = function (selected) {
+            this.selected = selected;
+        };
+        /**
+         *
+         */
+        SearchResultsComponent.prototype.isSelected = function (item) {
+            return this.service.isSelected(item);
+        };
+        SearchResultsComponent.prototype.selectAllInPage = function () {
+            if (this.onEvent) {
+                var event_1 = new SearchEvent(EventTypes.SELECT, {
+                    value: this.results.results
+                });
+                this.onEvent.emit(event_1);
+            }
+        };
+        SearchResultsComponent.prototype.deselectAll = function () {
+            this.service.clearSelected();
+        };
+        /**
+         *
+         */
+        SearchResultsComponent.prototype.onItemEvent = function ($event) {
+            var name = $event.getType(); //$event.name;
+            if (!name)
+                return;
+            switch (name) {
+                case EventTypes.SELECT:
+                    if (this.onEvent)
+                        this.onEvent.emit($event);
+                    break;
+                case EventTypes.QUERY:
+                    var query = this.service.getQuery();
+                    query.applyParameters($event.getOptions());
+                    this.service.search(query);
+                    break;
+            }
+        };
+        /**
+         * @param pageNo - new page number being requested
+         */
+        SearchResultsComponent.prototype.onPagingEvent = function (event) {
+            var query = this.service.getQuery();
+            var previous = query.getPage();
+            var current = event.pageIndex;
+            if (previous !== current) {
+                query.page(current);
+            }
+            query.setPageSize(event.pageSize);
+            if (this.onEvent) {
+                var event_2 = new SearchEvent(EventTypes.QUERY, { value: query });
+                this.onEvent.emit(event_2);
+            }
+        };
+        SearchResultsComponent.prototype.onSortChange = function ($event) {
+            var query = this.service.getQuery();
+            query.sort(this.sortValue);
+            if (this.onEvent) {
+                var event_3 = new SearchEvent(EventTypes.QUERY, { value: query });
+                this.onEvent.emit(event_3);
+            }
+        };
+        SearchResultsComponent.ctorParameters = function () { return [
+            { type: material.MatDialog }
+        ]; };
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "service", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "sortOptions", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "showDesc", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "adapter", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemHeadingTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemThumbnailTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemFooterTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemStatsTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemActionsTemplate", void 0);
+        __decorate([
+            core.Output()
+        ], SearchResultsComponent.prototype, "onEvent", void 0);
+        SearchResultsComponent = __decorate([
+            core.Component({
+                selector: 'gp-search-results',
+                template: "<div class=\"o-search-results\">\n\n    <div class=\"o-search-results__toolbar\">\n\n        <div class=\"flex-1 u-mg-left--md\">\n            <div class=\"btn-group\">\n                <button type=\"button\" class=\"btn btn-light dropdown-toggle\"\n                    data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">\n                    <span *ngIf=\"!selected || !selected.length\" class=\"far fa-square\"></span>\n                    <span *ngIf=\"selected?.length\" class=\"fas fa-check-square\"></span>\n                    <span class=\"caret\"></span>\n                </button>\n                <div class=\"dropdown-menu dropdown-menu-right\">\n                    <a class=\"dropdown-item\" (click)=\"selectAllInPage()\">\n                        Select all on this page\n                    </a>\n                    <a class=\"dropdown-item\"  (click)=\"deselectAll()\">\n                        Deselect all\n                    </a>\n                </div>\n            </div>\n        </div>\n\n        <mat-paginator\n            [length]=\"results?.totalResults || 0\"\n            [pageSize]=\"query?.pageSize || 10\"\n            [pageSizeOptions]=\"[10, 25, 50, 100]\"\n            (page)=\"onPagingEvent($event)\">\n        </mat-paginator>\n\n        <mat-form-field>\n            <strong matPrefix><span class=\"fas fa-sort-amount-down\"></span> Sort by&nbsp;</strong>\n            <mat-select [(ngModel)]=\"sortValue\" (selectionChange)=\"onSortChange($event)\">\n                <mat-option *ngFor=\"let option of sortOptions\" value=\"{{option.value}}\">{{option.label}}</mat-option>\n            </mat-select>\n        </mat-form-field>\n\n    </div>\n\n    <!-- Loading indicator -->\n    <mat-progress-bar mode=\"indeterminate\" *ngIf=\"isLoading\"></mat-progress-bar>\n\n    <div class=\"m-results\" *ngIf=\"results\">\n        <div *ngFor=\"let result of results.results\">\n            <gp-search-results-item\n                [item]=\"result\"\n                [adapter]=\"adapter\"\n                [showDesc]=\"showDesc\"\n                [isSelected]=\"isSelected(result)\"\n                [itemHeadingTemplate]=\"itemHeadingTemplate\"\n                [itemThumbnailTemplate]=\"itemThumbnailTemplate\"\n                [itemFooterTemplate]=\"itemFooterTemplate\"\n                [itemStatsTemplate]=\"itemStatsTemplate\"\n                [itemActionsTemplate]=\"itemActionsTemplate\"\n                (onEvent)=\"onItemEvent($event)\">\n            </gp-search-results-item>\n        </div>\n    </div>\n\n</div>\n",
+                styles: [":host{display:block;width:100%;height:100%;overflow-y:auto}.o-search-results__toolbar{display:-webkit-box;display:flex;-webkit-box-pack:justify;justify-content:space-between;-webkit-box-align:center;align-items:center;border-bottom:1px solid #ddd;background:#f9f9f9}"]
+            })
+        ], SearchResultsComponent);
+        return SearchResultsComponent;
     }());
 
     var ItemFilterComponent = /** @class */ (function () {
@@ -2810,7 +3159,8 @@
                     router.RouterModule,
                     common.CommonModule,
                     forms.FormsModule,
-                    material.MatInputModule, material.MatButtonModule, material.MatIconModule, material.MatDialogModule,
+                    material.MatButtonModule, material.MatIconModule, material.MatInputModule, material.MatSelectModule,
+                    material.MatDialogModule, material.MatProgressBarModule, material.MatTabsModule, material.MatPaginatorModule,
                     material.MatDatepickerModule, material.MatNativeDateModule, material.NativeDateModule,
                     ngBootstrap.NgbModule,
                 ],
@@ -2828,6 +3178,8 @@
                     FriendlyTypePipe,
                     FixLabelPipe,
                     GeoPlatformIconDirective,
+                    SearchResultsComponent,
+                    SearchResultsItemComponent,
                     CommunityFilterComponent,
                     CreatedByFilterComponent,
                     KeywordFilterComponent,
@@ -2855,6 +3207,8 @@
                     FriendlyTypePipe,
                     FixLabelPipe,
                     GeoPlatformIconDirective,
+                    SearchResultsComponent,
+                    SearchResultsItemComponent,
                     CommunityFilterComponent,
                     CreatedByFilterComponent,
                     KeywordFilterComponent,
@@ -2932,6 +3286,7 @@
     exports.GeoPlatformError = GeoPlatformError;
     exports.GeoPlatformErrorService = GeoPlatformErrorService;
     exports.GeoPlatformIconDirective = GeoPlatformIconDirective;
+    exports.GeoPlatformResultsItemAdapter = GeoPlatformResultsItemAdapter;
     exports.HeaderComponent = HeaderComponent;
     exports.ImageFallbackDirective = ImageFallbackDirective;
     exports.ItemFactory = ItemFactory;
@@ -2951,6 +3306,8 @@
     exports.ResourceLinkComponent = ResourceLinkComponent;
     exports.SchemeFilterComponent = SchemeFilterComponent;
     exports.SearchEvent = SearchEvent;
+    exports.SearchResultsComponent = SearchResultsComponent;
+    exports.SearchResultsItemComponent = SearchResultsItemComponent;
     exports.SearchService = SearchService;
     exports.SelectedItemsComponent = SelectedItemsComponent;
     exports.SemanticFilterComponent = SemanticFilterComponent;
@@ -2970,6 +3327,7 @@
     exports.ɵ1 = ɵ1;
     exports.ɵa = ListSelectDialog;
     exports.ɵb = MessageDialog;
+    exports.ɵba = SearchService;
     exports.ɵc = ImageFallbackDirective;
     exports.ɵd = ThumbnailComponent;
     exports.ɵe = SelectedItemsComponent;
@@ -2978,21 +3336,22 @@
     exports.ɵh = LoginModalComponent;
     exports.ɵi = HeaderComponent;
     exports.ɵj = GeoPlatformIconDirective;
-    exports.ɵk = CommunityFilterComponent;
-    exports.ɵl = CreatedByFilterComponent;
-    exports.ɵm = KeywordFilterComponent;
-    exports.ɵn = PublisherFilterComponent;
-    exports.ɵo = SchemeFilterComponent;
-    exports.ɵp = SemanticFilterComponent;
-    exports.ɵq = SemanticFilterDialog;
-    exports.ɵr = ServiceTypeFilterComponent;
-    exports.ɵs = SimilarityFilterComponent;
-    exports.ɵt = ThemeFilterComponent;
-    exports.ɵu = TopicFilterComponent;
-    exports.ɵv = TypeFilterComponent;
-    exports.ɵw = ModifiedFilterComponent;
-    exports.ɵx = AppAuthService;
-    exports.ɵy = SearchService;
+    exports.ɵk = SearchResultsComponent;
+    exports.ɵl = SearchResultsItemComponent;
+    exports.ɵm = CommunityFilterComponent;
+    exports.ɵn = CreatedByFilterComponent;
+    exports.ɵo = KeywordFilterComponent;
+    exports.ɵp = PublisherFilterComponent;
+    exports.ɵq = SchemeFilterComponent;
+    exports.ɵr = SemanticFilterComponent;
+    exports.ɵs = SemanticFilterDialog;
+    exports.ɵt = ServiceTypeFilterComponent;
+    exports.ɵu = SimilarityFilterComponent;
+    exports.ɵv = ThemeFilterComponent;
+    exports.ɵw = TopicFilterComponent;
+    exports.ɵx = TypeFilterComponent;
+    exports.ɵy = ModifiedFilterComponent;
+    exports.ɵz = AppAuthService;
 
     Object.defineProperty(exports, '__esModule', { value: true });
 

@@ -1,8 +1,10 @@
 import { OnInit } from '@angular/core';
 export declare class ResourceLinkComponent implements OnInit {
     item: any;
-    icon: any;
     external: boolean;
+    label: string;
+    showIcon: boolean;
+    portalUrl: string;
     constructor();
     ngOnInit(): void;
     hasIcon(): boolean;

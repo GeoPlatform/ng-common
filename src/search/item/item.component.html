@@ -1,0 +1,93 @@
+<div class="m-results-item" id="map-{{adapter?.getId(item)}}" [ngClass]="{selected:item.selected}">
+
+    <div class="m-results-item__body flex-align-center">
+
+        <!-- Selection button -->
+        <div class="u-mg-right--md" *ngIf="canSelect">
+            <button type="button" class="btn btn-light btn-lg" title="Select this item"
+                (click)="select()" [ngClass]="{'active':isSelected}">
+                <span class="far fa-square t-fg--gray-lt" *ngIf="!isSelected"></span>
+                <span class="fas fa-check" *ngIf="isSelected"></span>
+                <span class="sr-only">Select this item</span>
+            </button>
+        </div>
+
+        <div class="flex-1">
+
+            <div class="m-results-item__heading">
+                <ng-container
+                    [ngTemplateOutlet]="itemHeadingTemplate || defaultResultItemHeadingTemplate"
+                    [ngTemplateOutletContext]="{item: item}">
+                </ng-container>
+            </div>
+
+            <div class="m-results-item__facets">
+                <strong>
+                    <span class="{{adapter?.getIconClass(item)}}"></span>
+                    {{adapter?.getTypeLabel(item)}}
+                </strong>
+                <span *ngIf="adapter?.getAuthorName(item)">
+                    &nbsp;by
+                    <a class="is-linkless" title="Find more maps by this author"
+                        (click)="constrainToUser(adapter.getAuthorName(item))">
+                        {{adapter.getAuthorName(item)}}
+                    </a>
+                </span>
+
+                <span *ngIf="adapter?.getCreatedDate(item)">
+                    &nbsp;
+                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>
+                </span>
+
+                <span *ngIf="adapter?.getModifiedDate(item)">
+                    &nbsp;
+                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>
+                </span>
+
+            </div>
+
+            <div class="m-results-item__description u-break--all" *ngIf="showDesc">
+                <div *ngIf="adapter?.getDescription(item)" [innerHTML]="adapter?.getDescription(item)"> </div>
+                <div *ngIf="!adapter?.getDescription(item)">No description provided</div>
+            </div>
+
+        </div>
+
+        <div class="m-results-item__icon">
+            <ng-container
+                [ngTemplateOutlet]="itemThumbnailTemplate || defaultResultItemThumbnailTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
+        </div>
+
+    </div>
+
+    <div class="m-results-item__footer" *ngIf="itemFooterTemplate || itemStatsTemplate || itemActionsTemplate">
+        <ng-container *ngIf="itemFooterTemplate"
+            [ngTemplateOutlet]="itemFooterTemplate"
+            [ngTemplateOutletContext]="{item: item}">
+        </ng-container>
+        <div class="m-results-item__stats" *ngIf="!itemFooterTemplate">
+            <ng-container *ngIf="itemStatsTemplate"
+                [ngTemplateOutlet]="itemStatsTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
+        </div>
+        <div class="m-results-item__actions" *ngIf="!itemFooterTemplate">
+            <ng-container *ngIf="itemActionsTemplate"
+                [ngTemplateOutlet]="itemActionsTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
+        </div>
+    </div>
+
+
+
+    <ng-template #defaultResultItemHeadingTemplate let-item="item">
+        {{adapter?.getLabel(item)}}
+    </ng-template>
+    <ng-template #defaultResultItemThumbnailTemplate let-item="item">
+        <gp-item-thumbnail [item]="item"></gp-item-thumbnail>
+    </ng-template>
+
+</div>

@@ -1,0 +1,19 @@
+:host .m-results-item .m-results-item__body {
+    align-items: center;
+}
+
+.m-results-item:hover {
+    background-color: #f8f9fa;  //<- same as bootstrap btn-light
+    box-shadow: none;
+}
+
+.m-results-item gp-item-thumbnail {
+    flex: 0 1 128px;
+    max-width: 128px;
+}
+
+@media (min-width: 768px) {
+    .m-results-item .m-results-item__description {
+        margin: 0;
+    }
+}

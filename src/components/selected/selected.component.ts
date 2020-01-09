@@ -1,8 +1,10 @@
 import {
-    Component, OnInit, OnChanges,
+    Component, OnInit, OnChanges, TemplateRef,
     Input, Output, EventEmitter, SimpleChanges
 } from '@angular/core';
 import { Item } from "@geoplatform/client";
+
+import { SearchEvent, EventTypes } from '../../event';
 
 @Component({
   selector: 'gp-selected-items',
@@ -11,7 +13,8 @@ import { Item } from "@geoplatform/client";
 })
 export class SelectedItemsComponent implements OnInit {
 
-    @Input() selected : Item[];
+    @Input() public selected : Item[];
+    @Input() public itemTemplate: TemplateRef<any>;
     @Output() onEvent : EventEmitter<any> = new EventEmitter<any>();
 
     constructor() { }
@@ -24,10 +27,12 @@ export class SelectedItemsComponent implements OnInit {
     }
 
     clear() {
-        this.onEvent.emit( { name: 'selected:clear' } );
+        let event = new SearchEvent(EventTypes.SELECT_NONE);
+        this.onEvent.emit(event);
     }
 
     remove( item : Item ) {
-
+        let event = new SearchEvent(EventTypes.SELECT, {value: item});
+        this.onEvent.emit(event);
     }
 }

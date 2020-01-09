@@ -1,5 +1,5 @@
 import { Component, OnInit, Input } from '@angular/core';
-import { ItemTypes } from "@geoplatform/client";
+import { Config, ItemTypes } from "@geoplatform/client";
 
 import { ItemHelper } from '../../item-helper';
 
@@ -11,17 +11,26 @@ import { ItemHelper } from '../../item-helper';
 export class ResourceLinkComponent implements OnInit {
 
     @Input() item : any;
-    @Input() icon : any;
+    // @Input() icon : any;
     @Input() external : boolean = false;    //open link in new window/tab
+    @Input() label : string;
+    @Input() showIcon : boolean = true;
+
+    public portalUrl : string;
+
 
     constructor() { }
 
     ngOnInit() {
+        if(Config.portalUrl) this.portalUrl= Config.portalUrl;
+        else {
+            this.portalUrl = Config.ualUrl.replace("sit-ual",'sit')
+                .replace("stg-ual","stg").replace("ual","www");
+        }
     }
 
     hasIcon() : boolean {
-        // return this.icon !== null && this.icon !== undefined;
-        return true;
+        return this.showIcon;
     }
 
     getIcon() : string {
@@ -29,7 +38,7 @@ export class ResourceLinkComponent implements OnInit {
     }
 
     getLabel() : string {
-        return ItemHelper.getLabel(this.item);
+        return this.label || ItemHelper.getLabel(this.item);
     }
 
     getType() : string {

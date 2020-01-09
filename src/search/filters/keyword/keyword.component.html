@@ -5,7 +5,7 @@
         placeholder="{{placeholder}}"
         [(ngModel)]="searchString" (keyup.enter)="onKeyUp($event)">
     <button type="button" class="btn btn-light" title="Clear keywords"
-        *ngIf="searchString?.length" (click)="searchString=null">
+        *ngIf="searchString?.length" (click)="clear()">
         <span class="fas fa-times"></span>
     </button>
 </div>

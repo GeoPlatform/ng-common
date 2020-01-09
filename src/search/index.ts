@@ -1,5 +1,8 @@
 
 export * from './search.service';
+export * from './item/item-adapter';
+export * from './item/item.component';
+export * from './results/results.component';
 export * from './filters/community/community.component';
 export * from './filters/creator/creator.component';
 export * from './filters/keyword/keyword.component';

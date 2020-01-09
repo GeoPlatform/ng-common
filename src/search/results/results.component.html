@@ -1,0 +1,60 @@
+<div class="o-search-results">
+
+    <div class="o-search-results__toolbar">
+
+        <div class="flex-1 u-mg-left--md">
+            <div class="btn-group">
+                <button type="button" class="btn btn-light dropdown-toggle"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span *ngIf="!selected || !selected.length" class="far fa-square"></span>
+                    <span *ngIf="selected?.length" class="fas fa-check-square"></span>
+                    <span class="caret"></span>
+                </button>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <a class="dropdown-item" (click)="selectAllInPage()">
+                        Select all on this page
+                    </a>
+                    <a class="dropdown-item"  (click)="deselectAll()">
+                        Deselect all
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <mat-paginator
+            [length]="results?.totalResults || 0"
+            [pageSize]="query?.pageSize || 10"
+            [pageSizeOptions]="[10, 25, 50, 100]"
+            (page)="onPagingEvent($event)">
+        </mat-paginator>
+
+        <mat-form-field>
+            <strong matPrefix><span class="fas fa-sort-amount-down"></span> Sort by&nbsp;</strong>
+            <mat-select [(ngModel)]="sortValue" (selectionChange)="onSortChange($event)">
+                <mat-option *ngFor="let option of sortOptions" value="{{option.value}}">{{option.label}}</mat-option>
+            </mat-select>
+        </mat-form-field>
+
+    </div>
+
+    <!-- Loading indicator -->
+    <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
+
+    <div class="m-results" *ngIf="results">
+        <div *ngFor="let result of results.results">
+            <gp-search-results-item
+                [item]="result"
+                [adapter]="adapter"
+                [showDesc]="showDesc"
+                [isSelected]="isSelected(result)"
+                [itemHeadingTemplate]="itemHeadingTemplate"
+                [itemThumbnailTemplate]="itemThumbnailTemplate"
+                [itemFooterTemplate]="itemFooterTemplate"
+                [itemStatsTemplate]="itemStatsTemplate"
+                [itemActionsTemplate]="itemActionsTemplate"
+                (onEvent)="onItemEvent($event)">
+            </gp-search-results-item>
+        </div>
+    </div>
+
+</div>

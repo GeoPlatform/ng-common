@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import {
-    MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
+    MatButtonModule, MatIconModule, MatInputModule, MatSelectModule,
+    MatDialogModule, MatProgressBarModule, MatTabsModule, MatPaginatorModule,
     MatDatepickerModule, MatNativeDateModule, NativeDateModule
 } from '@angular/material';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
@@ -30,6 +31,8 @@ import { ListSelectDialog, MessageDialog } from './dialogs/';
 
 import {
     SearchService,
+    SearchResultsComponent,
+    SearchResultsItemComponent,
 
     CommunityFilterComponent,
     CreatedByFilterComponent,
@@ -76,7 +79,8 @@ import { ItemHelper               } from './item-helper';
         RouterModule,
         CommonModule,
         FormsModule,
-        MatInputModule, MatButtonModule, MatIconModule, MatDialogModule,
+        MatButtonModule, MatIconModule, MatInputModule, MatSelectModule,
+        MatDialogModule, MatProgressBarModule, MatTabsModule, MatPaginatorModule,
         MatDatepickerModule, MatNativeDateModule, NativeDateModule,
         NgbModule,
         // GeoPlatformClientModule
@@ -97,6 +101,9 @@ import { ItemHelper               } from './item-helper';
         FixLabelPipe,
 
         GeoPlatformIconDirective,
+
+        SearchResultsComponent,
+        SearchResultsItemComponent,
 
         CommunityFilterComponent,
         CreatedByFilterComponent,
@@ -128,6 +135,8 @@ import { ItemHelper               } from './item-helper';
 
         GeoPlatformIconDirective,
 
+        SearchResultsComponent,
+        SearchResultsItemComponent,
 
         CommunityFilterComponent,
         CreatedByFilterComponent,
