@@ -3,7 +3,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { MatDialog, MatSelectChange } from '@angular/material';
 import { Query, SearchResults, Item } from "@geoplatform/client";
 import { SearchEvent } from "../../event";
-import { SearchService, SearchAwareComponent } from "../search.service";
+import { GeoPlatformSearchService, SearchAwareComponent } from "../search.service";
 import { SearchResultsItemAdapter } from "../item/item-adapter";
 export interface SearchSortOption {
     value: string;
@@ -63,17 +63,21 @@ export interface SearchSortOption {
  *   </ng-template>
  *
  */
-export declare class SearchResultsComponent implements OnInit, OnDestroy, SearchAwareComponent {
+export declare class SearchResultsComponent implements OnInit, OnDestroy, SearchAwareComponent<Query, SearchResults, Item> {
     private dialog;
-    service: SearchService;
+    service: GeoPlatformSearchService;
     sortOptions: SearchSortOption[];
     showDesc: boolean;
+    hasPrimaryAction: boolean;
     adapter: SearchResultsItemAdapter<Item>;
     itemHeadingTemplate: TemplateRef<any>;
+    itemSubHeadingTemplate: TemplateRef<any>;
     itemThumbnailTemplate: TemplateRef<any>;
+    itemContentTemplate: TemplateRef<any>;
     itemFooterTemplate: TemplateRef<any>;
     itemStatsTemplate: TemplateRef<any>;
     itemActionsTemplate: TemplateRef<any>;
+    itemPrimaryActionTemplate: TemplateRef<any>;
     onEvent: EventEmitter<SearchEvent>;
     query: Query;
     results: SearchResults;

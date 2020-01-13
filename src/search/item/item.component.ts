@@ -62,17 +62,24 @@ export class SearchResultsItemComponent implements OnInit, OnChanges, OnDestroy 
     @Input() public isSelected : boolean = false;
     @Input() public canSelect  : boolean = true;
     @Input() public showDesc   : boolean = false;
+    @Input() public hasPrimaryAction : boolean = true;
 
     //custom heading template
-    @Input() public itemHeadingTemplate   : TemplateRef<any>;
+    @Input() public headingTemplate   : TemplateRef<any>;
+    //
+    @Input() public subHeadingTemplate : TemplateRef<any>;
     //custom thumbnail template
-    @Input() public itemThumbnailTemplate : TemplateRef<any>;
+    @Input() public thumbnailTemplate : TemplateRef<any>;
+    //
+    @Input() public contentTemplate : TemplateRef<any>;
     //custom footer (complete)
-    @Input() public itemFooterTemplate    : TemplateRef<any>;
+    @Input() public footerTemplate    : TemplateRef<any>;
     //custom footer stats template
-    @Input() public itemStatsTemplate     : TemplateRef<any>;
+    @Input() public statsTemplate     : TemplateRef<any>;
     //custom footer actions template
-    @Input() public itemActionsTemplate   : TemplateRef<any>;
+    @Input() public actionsTemplate   : TemplateRef<any>;
+    //custom primary action template
+    @Input() public primaryActionTemplate : TemplateRef<any>;
 
     @Output() onEvent : EventEmitter<SearchEvent> = new EventEmitter<SearchEvent>();
 

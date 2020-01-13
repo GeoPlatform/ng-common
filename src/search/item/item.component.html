@@ -2,80 +2,63 @@
 
     <div class="m-results-item__body flex-align-center">
 
-        <!-- Selection button -->
-        <div class="u-mg-right--md" *ngIf="canSelect">
-            <button type="button" class="btn btn-light btn-lg" title="Select this item"
-                (click)="select()" [ngClass]="{'active':isSelected}">
-                <span class="far fa-square t-fg--gray-lt" *ngIf="!isSelected"></span>
-                <span class="fas fa-check" *ngIf="isSelected"></span>
-                <span class="sr-only">Select this item</span>
-            </button>
+        <!-- Left-side media -->
+        <div class="m-results-item__action--primary" *ngIf="hasPrimaryAction">
+            <ng-container
+                [ngTemplateOutlet]="primaryActionTemplate || defaultResultItemPrimaryActionTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
         </div>
 
-        <div class="flex-1">
+        <div class="m-results-item__content">
 
             <div class="m-results-item__heading">
                 <ng-container
-                    [ngTemplateOutlet]="itemHeadingTemplate || defaultResultItemHeadingTemplate"
+                    [ngTemplateOutlet]="headingTemplate || defaultResultItemHeadingTemplate"
                     [ngTemplateOutletContext]="{item: item}">
                 </ng-container>
             </div>
 
-            <div class="m-results-item__facets">
-                <strong>
-                    <span class="{{adapter?.getIconClass(item)}}"></span>
-                    {{adapter?.getTypeLabel(item)}}
-                </strong>
-                <span *ngIf="adapter?.getAuthorName(item)">
-                    &nbsp;by
-                    <a class="is-linkless" title="Find more maps by this author"
-                        (click)="constrainToUser(adapter.getAuthorName(item))">
-                        {{adapter.getAuthorName(item)}}
-                    </a>
-                </span>
-
-                <span *ngIf="adapter?.getCreatedDate(item)">
-                    &nbsp;
-                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>
-                </span>
-
-                <span *ngIf="adapter?.getModifiedDate(item)">
-                    &nbsp;
-                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>
-                </span>
-
-            </div>
+            <ng-container
+                [ngTemplateOutlet]="subHeadingTemplate || defaultResultItemSubHeadingTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
 
             <div class="m-results-item__description u-break--all" *ngIf="showDesc">
                 <div *ngIf="adapter?.getDescription(item)" [innerHTML]="adapter?.getDescription(item)"> </div>
                 <div *ngIf="!adapter?.getDescription(item)">No description provided</div>
             </div>
 
+            <ng-container *ngIf="contentTemplate"
+                [ngTemplateOutlet]="contentTemplate"
+                [ngTemplateOutletContext]="{item: item}">
+            </ng-container>
+
         </div>
 
         <div class="m-results-item__icon">
             <ng-container
-                [ngTemplateOutlet]="itemThumbnailTemplate || defaultResultItemThumbnailTemplate"
+                [ngTemplateOutlet]="thumbnailTemplate || defaultResultItemThumbnailTemplate"
                 [ngTemplateOutletContext]="{item: item}">
             </ng-container>
         </div>
 
     </div>
 
-    <div class="m-results-item__footer" *ngIf="itemFooterTemplate || itemStatsTemplate || itemActionsTemplate">
-        <ng-container *ngIf="itemFooterTemplate"
-            [ngTemplateOutlet]="itemFooterTemplate"
+    <div class="m-results-item__footer" *ngIf="footerTemplate || statsTemplate || actionsTemplate">
+        <ng-container *ngIf="footerTemplate"
+            [ngTemplateOutlet]="footerTemplate"
             [ngTemplateOutletContext]="{item: item}">
         </ng-container>
-        <div class="m-results-item__stats" *ngIf="!itemFooterTemplate">
-            <ng-container *ngIf="itemStatsTemplate"
-                [ngTemplateOutlet]="itemStatsTemplate"
+        <div class="m-results-item__stats" *ngIf="!footerTemplate">
+            <ng-container *ngIf="statsTemplate"
+                [ngTemplateOutlet]="statsTemplate"
                 [ngTemplateOutletContext]="{item: item}">
             </ng-container>
         </div>
-        <div class="m-results-item__actions" *ngIf="!itemFooterTemplate">
-            <ng-container *ngIf="itemActionsTemplate"
-                [ngTemplateOutlet]="itemActionsTemplate"
+        <div class="m-results-item__actions" *ngIf="!footerTemplate">
+            <ng-container *ngIf="actionsTemplate"
+                [ngTemplateOutlet]="actionsTemplate"
                 [ngTemplateOutletContext]="{item: item}">
             </ng-container>
         </div>
@@ -86,8 +69,39 @@
     <ng-template #defaultResultItemHeadingTemplate let-item="item">
         {{adapter?.getLabel(item)}}
     </ng-template>
+    <ng-template #defaultResultItemSubHeadingTemplate let-item="item">
+        <div class="m-results-item__facets">
+            <strong>
+                <span class="{{adapter?.getIconClass(item)}}"></span>
+                {{adapter?.getTypeLabel(item)}}
+            </strong>
+            <span *ngIf="adapter?.getAuthorName(item)">
+                &nbsp;by
+                <a class="is-linkless" title="Find more maps by this author"
+                    (click)="constrainToUser(adapter.getAuthorName(item))">
+                    {{adapter.getAuthorName(item)}}
+                </a>
+            </span>
+            <span *ngIf="adapter?.getCreatedDate(item)">
+                &nbsp;
+                created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>
+            </span>
+            <span *ngIf="adapter?.getModifiedDate(item)">
+                &nbsp;
+                last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>
+            </span>
+        </div>
+    </ng-template>
     <ng-template #defaultResultItemThumbnailTemplate let-item="item">
         <gp-item-thumbnail [item]="item"></gp-item-thumbnail>
+    </ng-template>
+    <ng-template #defaultResultItemPrimaryActionTemplate let-item="item">
+        <button type="button" class="btn btn-light btn-lg" title="Select this item"
+            (click)="select()" [ngClass]="{'active':isSelected}">
+            <span class="far fa-square t-fg--gray-lt" *ngIf="!isSelected"></span>
+            <span class="fas fa-check" *ngIf="isSelected"></span>
+            <span class="sr-only">Select this item</span>
+        </button>
     </ng-template>
 
 </div>

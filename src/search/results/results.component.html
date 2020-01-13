@@ -40,18 +40,40 @@
     <!-- Loading indicator -->
     <mat-progress-bar mode="indeterminate" *ngIf="isLoading"></mat-progress-bar>
 
+    <!-- error displayed to user if present -->
+    <div *ngIf="error" class="m-message--error">
+        <div class="a-heading">
+            <span class="fas fa-exclamation-circle"></span>
+            An Error Occurred
+        </div>
+        <div>{{error.message}}</div>
+        <div class="d-flex flex-justify-end">
+            <button type="button" class="btn btn-link" (click)="error=null">DISMISS</button>
+        </div>
+    </div>
+
+    <!-- Search results display -->
     <div class="m-results" *ngIf="results">
+
+        <div *ngIf="!results.totalResults" class="m-message--warning">
+            <em>No results found matching the specified criteria.</em>
+        </div>
+
         <div *ngFor="let result of results.results">
             <gp-search-results-item
                 [item]="result"
                 [adapter]="adapter"
                 [showDesc]="showDesc"
                 [isSelected]="isSelected(result)"
-                [itemHeadingTemplate]="itemHeadingTemplate"
-                [itemThumbnailTemplate]="itemThumbnailTemplate"
-                [itemFooterTemplate]="itemFooterTemplate"
-                [itemStatsTemplate]="itemStatsTemplate"
-                [itemActionsTemplate]="itemActionsTemplate"
+                [hasPrimaryAction]="hasPrimaryAction"
+                [headingTemplate]="itemHeadingTemplate"
+                [subHeadingTemplate]="itemSubHeadingTemplate"
+                [thumbnailTemplate]="itemThumbnailTemplate"
+                [contentTemplate]="itemContentTemplate"
+                [footerTemplate]="itemFooterTemplate"
+                [statsTemplate]="itemStatsTemplate"
+                [actionsTemplate]="itemActionsTemplate"
+                [primaryActionTemplate]="itemPrimaryActionTemplate"
                 (onEvent)="onItemEvent($event)">
             </gp-search-results-item>
         </div>

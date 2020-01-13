@@ -1572,109 +1572,113 @@
         return ErrorResolver;
     }());
 
+    var INVALID_SUBJECT_ERROR = "SearchService implementation must create a valid Subject using SearchService.prototype.createSubject()";
     /**
+     * Abstract Search Service
      *
+     * Base Search Service implementation which implements most of the interfaces
+     * methods. The remaning methods are required to be implemented by specific
+     * implementations of this class
      */
-    var SearchService = /** @class */ (function () {
-        function SearchService(service) {
-            this.service = service;
-            this.selected = [];
-            this.subject = new rxjs.Subject();
+    var AbstractSearchService = /** @class */ (function () {
+        function AbstractSearchService() {
+            // protected results  : R;
+            this._selected = [];
+            this.subject = this.createSubject();
+            if (!this.subject) {
+                throw new Error(INVALID_SUBJECT_ERROR);
+            }
             this.subject$ = this.subject.asObservable();
         }
-        SearchService.prototype.setQuery = function (query) {
-            this.query = query ? query.clone() : new client.Query();
-            this.subject.next({ query: this.query.clone() });
-        };
-        SearchService.prototype.getQuery = function () {
-            return this.query.clone();
-        };
-        SearchService.prototype.getResults = function () {
-            return this.results;
-        };
-        SearchService.prototype.search = function (query) {
-            var _this = this;
-            //if a query was provided, store it and use it
-            if (query)
-                this.setQuery(query);
-            this.service.search(this.query)
-                .then(function (response) {
-                logger.debug('SearchService.search() - ' + response.totalResults + " results found");
-                _this.results = response;
-                _this.subject.next({ results: response });
-            })
-                .catch(function (error) {
-                logger.error(error.message);
-            });
-        };
         /**
-         * @param item - item or array of item selected from search results
-         * @param asBaseLayer - boolean indicating how to select the layer
+         * Notify subscribers of a change to one or more pieces of managed data
          */
-        SearchService.prototype.select = function (item) {
+        AbstractSearchService.prototype.emit = function (event) {
+            this.subject.next(event);
+        };
+        AbstractSearchService.prototype.getError = function () { return this._error; };
+        AbstractSearchService.prototype.setError = function (err) { this._error = err; };
+        /**
+         * Updates the query managed by this search service instance and optionally
+         * triggers a refresh of search results using that query
+         */
+        AbstractSearchService.prototype.setQuery = function (query, andSearch) {
+            this._query = query;
+            this.emit({ query: query });
+            if (true === andSearch) {
+                this.search();
+            }
+        };
+        AbstractSearchService.prototype.getQuery = function () { return this._query; };
+        AbstractSearchService.prototype.getResults = function () { return this._results; };
+        AbstractSearchService.prototype.setResults = function (results) { this._results = results; };
+        /**
+         * Toggle one or more items as selected
+         */
+        AbstractSearchService.prototype.select = function (item) {
             var _this = this;
             if (Array.isArray(item)) { //multiple selections
                 item.forEach(function (it) { return _this._toggleItem(it, false); });
-                this.subject.next({ selected: this.selected });
+                this.emit({ selected: this._selected });
                 return;
             }
             this._toggleItem(item, true);
         };
         /**
-         *
+         * Internal method which toggles an Item as selected (or de-selected if it
+         * was already selected) and optionally triggers a notification of a change
+         * in the selected items managed by this service instance
          */
-        SearchService.prototype._toggleItem = function (item, fireEvent) {
+        AbstractSearchService.prototype._toggleItem = function (item, fireEvent) {
             var _this = this;
-            if (!item || !item.id)
+            if (!item)
                 return;
-            var position = this.selected.findIndex(function (s) { return s.id === item.id; });
+            var position = this._selected.findIndex(function (s) { return _this.compareItems(s, item); });
             if (position >= 0) { //already selected, deselect it and return
-                this.selected.splice(position, 1);
+                this._selected.splice(position, 1);
                 if (fireEvent)
-                    this.subject.next({ selected: this.selected });
+                    this.emit({ selected: this._selected });
                 return;
             }
-            //new selection
-            // logger.error(`Selecting ${item.label} as ${entry.type.toString()}`);
-            //fetch full object and replace placeholder in selected array
-            this.service.get(item.id)
-                .then(function (fullItem) {
-                _this.selected.push(fullItem);
-                _this.selected.sort(function (a, b) { return a.label > b.label ? 1 : -1; });
-                if (fireEvent)
-                    _this.subject.next({ selected: _this.selected });
-            })
-                .catch(function (e) {
-                logger.error("SearchService.select() - " +
-                    "Error encountered fetching selected item's details: " + e.message);
-            });
+            this._selected.push(item);
+            this.sortItems(this._selected);
+            if (fireEvent)
+                this.emit({ selected: this._selected });
         };
         /**
-         * @param item Item
+         * @param item being checked for selection
          * @return boolean
          */
-        SearchService.prototype.isSelected = function (item) {
-            return this.selected.length &&
-                item && item.id &&
-                this.selected.findIndex(function (it) { return it.id === item.id; }) >= 0;
+        AbstractSearchService.prototype.isSelected = function (item) {
+            var _this = this;
+            return this._selected.length && item &&
+                this._selected.findIndex(function (it) { return _this.compareItems(it, item); }) >= 0;
         };
         /**
-         *
+         * @return boolean true if there is one or more selected items
          */
-        SearchService.prototype.hasSelected = function () {
-            return this.selected && this.selected.length > 0;
+        AbstractSearchService.prototype.hasSelected = function () {
+            return this._selected && this._selected.length > 0;
         };
         /**
-         * @return Item[]
+         * @return array of selected items
          */
-        SearchService.prototype.getSelected = function () {
-            return this.selected;
+        AbstractSearchService.prototype.getSelected = function () {
+            return this._selected;
         };
-        SearchService.prototype.clearSelected = function () {
-            this.selected = [];
-            this.subject.next({ selected: this.selected });
+        AbstractSearchService.prototype.setSelected = function (sel) { this._selected = sel; };
+        /**
+         * De-selects all currently selected items
+         */
+        AbstractSearchService.prototype.clearSelected = function () {
+            this._selected = [];
+            this.emit({ selected: this._selected });
         };
-        SearchService.prototype.subscribe = function (listener) {
+        /**
+         * Registers a listener on this service's subject which will be notified
+         * upon any change in managed data
+         */
+        AbstractSearchService.prototype.subscribe = function (listener) {
             var obs = {
                 next: function (value) {
                     if (typeof (value) === 'undefined' || value === null)
@@ -1682,7 +1686,7 @@
                     if (value.query)
                         listener.onQueryChange(value.query);
                     if (value.results)
-                        listener.onResultsChange(value.results);
+                        listener.onResultsChange(value.results, value.error || null);
                     if (value.selected)
                         listener.onSelectedChange(value.selected);
                 },
@@ -1692,23 +1696,117 @@
                 complete: function () { }
             };
             var sub = this.subject$.subscribe(obs);
-            if (this.query)
-                this.subject.next({ query: this.query.clone() });
-            if (this.results)
-                this.subject.next({ results: this.results });
-            if (this.selected)
-                this.subject.next({ selected: this.selected });
+            if (this._query) {
+                this.emit({ query: this._query });
+            }
+            if (this._results || this._error) {
+                this.emit({ results: this._results, error: this._error || null });
+            }
+            if (this._selected) {
+                this.emit({ selected: this._selected });
+            }
             return sub;
         };
-        SearchService.ctorParameters = function () { return [
+        return AbstractSearchService;
+    }());
+    /**
+     * GeoPlatform Search Service
+     *
+     * Instance of SearchService which allows searching GeoPlatform Portfolio (RIM)
+     * Items (Datasets, Maps, Layers, Services, etc)
+     */
+    var GeoPlatformSearchService = /** @class */ (function (_super) {
+        __extends(GeoPlatformSearchService, _super);
+        function GeoPlatformSearchService(service) {
+            var _this = _super.call(this) || this;
+            _this.service = service;
+            return _this;
+        }
+        GeoPlatformSearchService.prototype.getService = function () { return this.service; };
+        GeoPlatformSearchService.prototype.createSubject = function () {
+            return new rxjs.Subject();
+        };
+        /**
+         *
+         */
+        GeoPlatformSearchService.prototype.getQuery = function () {
+            return _super.prototype.getQuery.call(this).clone();
+        };
+        // /**
+        //  *
+        //  */
+        // setQuery(query : Query) {
+        //     super.setQuery( query ? query.clone() : query );
+        // }
+        /**
+         *
+         */
+        GeoPlatformSearchService.prototype.search = function (query) {
+            var _this = this;
+            //if a query was provided, store it and use it
+            if (query)
+                this.setQuery(query);
+            this.service.search(_super.prototype.getQuery.call(this))
+                .then(function (response) {
+                logger.debug('SearchService.search() - ' + response.totalResults + " results found");
+                _this.setResults(response);
+                _this.setError(null);
+                _this.emit({ results: response, error: null });
+            })
+                .catch(function (error) {
+                logger.error(error.message);
+                _this.setError(error);
+                _this.emit({ results: null, error: error });
+            });
+        };
+        /**
+         *
+         */
+        GeoPlatformSearchService.prototype._toggleItem = function (item, fireEvent) {
+            var _this = this;
+            if (!item || !item.id)
+                return;
+            var selected = this.getSelected();
+            var position = selected.findIndex(function (s) { return s.id === item.id; });
+            if (position >= 0) { //already selected, deselect it and return
+                selected.splice(position, 1);
+                this.setSelected(selected);
+                if (fireEvent)
+                    this.emit({ selected: selected });
+                return;
+            }
+            //new selection
+            // logger.error(`Selecting ${item.label} as ${entry.type.toString()}`);
+            //fetch full object and replace placeholder in selected array
+            this.service.get(item.id)
+                .then(function (fullItem) {
+                var selected = _this.getSelected();
+                selected.push(fullItem);
+                _this.sortItems(selected);
+                _this.setSelected(selected);
+                if (fireEvent)
+                    _this.emit({ selected: selected });
+            })
+                .catch(function (e) {
+                logger.error("SearchService.select() - " +
+                    "Error encountered fetching selected item's details: " + e.message);
+            });
+        };
+        GeoPlatformSearchService.prototype.compareItems = function (a, b) {
+            return a.id === b.id;
+        };
+        GeoPlatformSearchService.prototype.sortItems = function (items) {
+            items.sort(function (a, b) { return a.label > b.label ? 1 : -1; });
+        };
+        GeoPlatformSearchService.ctorParameters = function () { return [
             { type: undefined, decorators: [{ type: core.Inject, args: [client.ItemService,] }] }
         ]; };
-        SearchService = __decorate([
+        GeoPlatformSearchService = __decorate([
             core.Injectable(),
             __param(0, core.Inject(client.ItemService))
-        ], SearchService);
-        return SearchService;
-    }());
+        ], GeoPlatformSearchService);
+        return GeoPlatformSearchService;
+    }(AbstractSearchService));
 
     var GP_MAP_RESOURCE_TYPE = 'http://www.geoplatform.gov/ont/openmap/GeoplatformMap';
     var AGOL_MAP_RESOURCE_TYPE = 'http://www.geoplatform.gov/ont/openmap/AGOLMap';
@@ -1796,6 +1894,7 @@
             this.isSelected = false;
             this.canSelect = true;
             this.showDesc = false;
+            this.hasPrimaryAction = true;
             this.onEvent = new core.EventEmitter();
         }
         SearchResultsItemComponent.prototype.ngOnInit = function () {
@@ -1868,27 +1967,39 @@
         ], SearchResultsItemComponent.prototype, "showDesc", void 0);
         __decorate([
             core.Input()
-        ], SearchResultsItemComponent.prototype, "itemHeadingTemplate", void 0);
+        ], SearchResultsItemComponent.prototype, "hasPrimaryAction", void 0);
         __decorate([
             core.Input()
-        ], SearchResultsItemComponent.prototype, "itemThumbnailTemplate", void 0);
+        ], SearchResultsItemComponent.prototype, "headingTemplate", void 0);
         __decorate([
             core.Input()
-        ], SearchResultsItemComponent.prototype, "itemFooterTemplate", void 0);
+        ], SearchResultsItemComponent.prototype, "subHeadingTemplate", void 0);
         __decorate([
             core.Input()
-        ], SearchResultsItemComponent.prototype, "itemStatsTemplate", void 0);
+        ], SearchResultsItemComponent.prototype, "thumbnailTemplate", void 0);
         __decorate([
             core.Input()
-        ], SearchResultsItemComponent.prototype, "itemActionsTemplate", void 0);
+        ], SearchResultsItemComponent.prototype, "contentTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "footerTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "statsTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "actionsTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsItemComponent.prototype, "primaryActionTemplate", void 0);
         __decorate([
             core.Output()
         ], SearchResultsItemComponent.prototype, "onEvent", void 0);
         SearchResultsItemComponent = __decorate([
             core.Component({
                 selector: 'gp-search-results-item',
-                template: "<div class=\"m-results-item\" id=\"map-{{adapter?.getId(item)}}\" [ngClass]=\"{selected:item.selected}\">\n\n    <div class=\"m-results-item__body flex-align-center\">\n\n        <!-- Selection button -->\n        <div class=\"u-mg-right--md\" *ngIf=\"canSelect\">\n            <button type=\"button\" class=\"btn btn-light btn-lg\" title=\"Select this item\"\n                (click)=\"select()\" [ngClass]=\"{'active':isSelected}\">\n                <span class=\"far fa-square t-fg--gray-lt\" *ngIf=\"!isSelected\"></span>\n                <span class=\"fas fa-check\" *ngIf=\"isSelected\"></span>\n                <span class=\"sr-only\">Select this item</span>\n            </button>\n        </div>\n\n        <div class=\"flex-1\">\n\n            <div class=\"m-results-item__heading\">\n                <ng-container\n                    [ngTemplateOutlet]=\"itemHeadingTemplate || defaultResultItemHeadingTemplate\"\n                    [ngTemplateOutletContext]=\"{item: item}\">\n                </ng-container>\n            </div>\n\n            <div class=\"m-results-item__facets\">\n                <strong>\n                    <span class=\"{{adapter?.getIconClass(item)}}\"></span>\n                    {{adapter?.getTypeLabel(item)}}\n                </strong>\n                <span *ngIf=\"adapter?.getAuthorName(item)\">\n                    &nbsp;by\n                    <a class=\"is-linkless\" title=\"Find more maps by this author\"\n                        (click)=\"constrainToUser(adapter.getAuthorName(item))\">\n                        {{adapter.getAuthorName(item)}}\n                    </a>\n                </span>\n\n                <span *ngIf=\"adapter?.getCreatedDate(item)\">\n                    &nbsp;\n                    created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n                <span *ngIf=\"adapter?.getModifiedDate(item)\">\n                    &nbsp;\n                    last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>\n                </span>\n\n            </div>\n\n            <div class=\"m-results-item__description u-break--all\" *ngIf=\"showDesc\">\n                <div *ngIf=\"adapter?.getDescription(item)\" [innerHTML]=\"adapter?.getDescription(item)\"> </div>\n                <div *ngIf=\"!adapter?.getDescription(item)\">No description provided</div>\n            </div>\n\n        </div>\n\n        <div class=\"m-results-item__icon\">\n            <ng-container\n                [ngTemplateOutlet]=\"itemThumbnailTemplate || defaultResultItemThumbnailTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n    </div>\n\n    <div class=\"m-results-item__footer\" *ngIf=\"itemFooterTemplate || itemStatsTemplate || itemActionsTemplate\">\n        <ng-container *ngIf=\"itemFooterTemplate\"\n            [ngTemplateOutlet]=\"itemFooterTemplate\"\n            [ngTemplateOutletContext]=\"{item: item}\">\n        </ng-container>\n        <div class=\"m-results-item__stats\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemStatsTemplate\"\n                [ngTemplateOutlet]=\"itemStatsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n        <div class=\"m-results-item__actions\" *ngIf=\"!itemFooterTemplate\">\n            <ng-container *ngIf=\"itemActionsTemplate\"\n                [ngTemplateOutlet]=\"itemActionsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n    </div>\n\n\n\n    <ng-template #defaultResultItemHeadingTemplate let-item=\"item\">\n        {{adapter?.getLabel(item)}}\n    </ng-template>\n    <ng-template #defaultResultItemThumbnailTemplate let-item=\"item\">\n        <gp-item-thumbnail [item]=\"item\"></gp-item-thumbnail>\n    </ng-template>\n\n</div>\n",
-                styles: [":host .m-results-item .m-results-item__body{-webkit-box-align:center;align-items:center}.m-results-item:hover{background-color:#f8f9fa;box-shadow:none}.m-results-item gp-item-thumbnail{-webkit-box-flex:0;flex:0 1 128px;max-width:128px}@media (min-width:768px){.m-results-item .m-results-item__description{margin:0}}"]
+                template: "<div class=\"m-results-item\" id=\"map-{{adapter?.getId(item)}}\" [ngClass]=\"{selected:item.selected}\">\n\n    <div class=\"m-results-item__body flex-align-center\">\n\n        <!-- Left-side media -->\n        <div class=\"m-results-item__action--primary\" *ngIf=\"hasPrimaryAction\">\n            <ng-container\n                [ngTemplateOutlet]=\"primaryActionTemplate || defaultResultItemPrimaryActionTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n        <div class=\"m-results-item__content\">\n\n            <div class=\"m-results-item__heading\">\n                <ng-container\n                    [ngTemplateOutlet]=\"headingTemplate || defaultResultItemHeadingTemplate\"\n                    [ngTemplateOutletContext]=\"{item: item}\">\n                </ng-container>\n            </div>\n\n            <ng-container\n                [ngTemplateOutlet]=\"subHeadingTemplate || defaultResultItemSubHeadingTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n\n            <div class=\"m-results-item__description u-break--all\" *ngIf=\"showDesc\">\n                <div *ngIf=\"adapter?.getDescription(item)\" [innerHTML]=\"adapter?.getDescription(item)\"> </div>\n                <div *ngIf=\"!adapter?.getDescription(item)\">No description provided</div>\n            </div>\n\n            <ng-container *ngIf=\"contentTemplate\"\n                [ngTemplateOutlet]=\"contentTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n\n        </div>\n\n        <div class=\"m-results-item__icon\">\n            <ng-container\n                [ngTemplateOutlet]=\"thumbnailTemplate || defaultResultItemThumbnailTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n\n    </div>\n\n    <div class=\"m-results-item__footer\" *ngIf=\"footerTemplate || statsTemplate || actionsTemplate\">\n        <ng-container *ngIf=\"footerTemplate\"\n            [ngTemplateOutlet]=\"footerTemplate\"\n            [ngTemplateOutletContext]=\"{item: item}\">\n        </ng-container>\n        <div class=\"m-results-item__stats\" *ngIf=\"!footerTemplate\">\n            <ng-container *ngIf=\"statsTemplate\"\n                [ngTemplateOutlet]=\"statsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n        <div class=\"m-results-item__actions\" *ngIf=\"!footerTemplate\">\n            <ng-container *ngIf=\"actionsTemplate\"\n                [ngTemplateOutlet]=\"actionsTemplate\"\n                [ngTemplateOutletContext]=\"{item: item}\">\n            </ng-container>\n        </div>\n    </div>\n\n\n\n    <ng-template #defaultResultItemHeadingTemplate let-item=\"item\">\n        {{adapter?.getLabel(item)}}\n    </ng-template>\n    <ng-template #defaultResultItemSubHeadingTemplate let-item=\"item\">\n        <div class=\"m-results-item__facets\">\n            <strong>\n                <span class=\"{{adapter?.getIconClass(item)}}\"></span>\n                {{adapter?.getTypeLabel(item)}}\n            </strong>\n            <span *ngIf=\"adapter?.getAuthorName(item)\">\n                &nbsp;by\n                <a class=\"is-linkless\" title=\"Find more maps by this author\"\n                    (click)=\"constrainToUser(adapter.getAuthorName(item))\">\n                    {{adapter.getAuthorName(item)}}\n                </a>\n            </span>\n            <span *ngIf=\"adapter?.getCreatedDate(item)\">\n                &nbsp;\n                created <em>{{adapter.getCreatedDate(item)|date:'mediumDate':'UTC'}}</em>\n            </span>\n            <span *ngIf=\"adapter?.getModifiedDate(item)\">\n                &nbsp;\n                last modified <em>{{adapter.getModifiedDate(item)|date:'mediumDate':'UTC'}}</em>\n            </span>\n        </div>\n    </ng-template>\n    <ng-template #defaultResultItemThumbnailTemplate let-item=\"item\">\n        <gp-item-thumbnail [item]=\"item\"></gp-item-thumbnail>\n    </ng-template>\n    <ng-template #defaultResultItemPrimaryActionTemplate let-item=\"item\">\n        <button type=\"button\" class=\"btn btn-light btn-lg\" title=\"Select this item\"\n            (click)=\"select()\" [ngClass]=\"{'active':isSelected}\">\n            <span class=\"far fa-square t-fg--gray-lt\" *ngIf=\"!isSelected\"></span>\n            <span class=\"fas fa-check\" *ngIf=\"isSelected\"></span>\n            <span class=\"sr-only\">Select this item</span>\n        </button>\n    </ng-template>\n\n</div>\n",
+                styles: [":host .m-results-item .m-results-item__body{-webkit-box-align:center;align-items:center}.m-results-item:hover{background-color:#f8f9fa;box-shadow:none}.m-results-item gp-item-thumbnail{-webkit-box-flex:0;flex:0 1 128px;max-width:128px}@media (min-width:768px){.m-results-item .m-results-item__description{margin:0}}.m-results-item__action--primary{margin-right:1em}.m-results-item__content{-webkit-box-flex:1;flex:1}"]
             })
         ], SearchResultsItemComponent);
         return SearchResultsItemComponent;
@@ -1964,6 +2075,7 @@
             this.dialog = dialog;
             this.sortOptions = DEFAULT_SORT_OPTIONS;
             this.showDesc = false;
+            this.hasPrimaryAction = true;
             this.onEvent = new core.EventEmitter();
             this.isLoading = false;
             // super(authService);
@@ -2072,13 +2184,22 @@
         ], SearchResultsComponent.prototype, "showDesc", void 0);
         __decorate([
             core.Input()
+        ], SearchResultsComponent.prototype, "hasPrimaryAction", void 0);
+        __decorate([
+            core.Input()
         ], SearchResultsComponent.prototype, "adapter", void 0);
         __decorate([
             core.Input()
         ], SearchResultsComponent.prototype, "itemHeadingTemplate", void 0);
         __decorate([
             core.Input()
+        ], SearchResultsComponent.prototype, "itemSubHeadingTemplate", void 0);
+        __decorate([
+            core.Input()
         ], SearchResultsComponent.prototype, "itemThumbnailTemplate", void 0);
+        __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemContentTemplate", void 0);
         __decorate([
             core.Input()
         ], SearchResultsComponent.prototype, "itemFooterTemplate", void 0);
@@ -2089,12 +2210,15 @@
             core.Input()
         ], SearchResultsComponent.prototype, "itemActionsTemplate", void 0);
         __decorate([
+            core.Input()
+        ], SearchResultsComponent.prototype, "itemPrimaryActionTemplate", void 0);
+        __decorate([
             core.Output()
         ], SearchResultsComponent.prototype, "onEvent", void 0);
         SearchResultsComponent = __decorate([
             core.Component({
                 selector: 'gp-search-results',
-                template: "<div class=\"o-search-results\">\n\n    <div class=\"o-search-results__toolbar\">\n\n        <div class=\"flex-1 u-mg-left--md\">\n            <div class=\"btn-group\">\n                <button type=\"button\" class=\"btn btn-light dropdown-toggle\"\n                    data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">\n                    <span *ngIf=\"!selected || !selected.length\" class=\"far fa-square\"></span>\n                    <span *ngIf=\"selected?.length\" class=\"fas fa-check-square\"></span>\n                    <span class=\"caret\"></span>\n                </button>\n                <div class=\"dropdown-menu dropdown-menu-right\">\n                    <a class=\"dropdown-item\" (click)=\"selectAllInPage()\">\n                        Select all on this page\n                    </a>\n                    <a class=\"dropdown-item\"  (click)=\"deselectAll()\">\n                        Deselect all\n                    </a>\n                </div>\n            </div>\n        </div>\n\n        <mat-paginator\n            [length]=\"results?.totalResults || 0\"\n            [pageSize]=\"query?.pageSize || 10\"\n            [pageSizeOptions]=\"[10, 25, 50, 100]\"\n            (page)=\"onPagingEvent($event)\">\n        </mat-paginator>\n\n        <mat-form-field>\n            <strong matPrefix><span class=\"fas fa-sort-amount-down\"></span> Sort by&nbsp;</strong>\n            <mat-select [(ngModel)]=\"sortValue\" (selectionChange)=\"onSortChange($event)\">\n                <mat-option *ngFor=\"let option of sortOptions\" value=\"{{option.value}}\">{{option.label}}</mat-option>\n            </mat-select>\n        </mat-form-field>\n\n    </div>\n\n    <!-- Loading indicator -->\n    <mat-progress-bar mode=\"indeterminate\" *ngIf=\"isLoading\"></mat-progress-bar>\n\n    <div class=\"m-results\" *ngIf=\"results\">\n        <div *ngFor=\"let result of results.results\">\n            <gp-search-results-item\n                [item]=\"result\"\n                [adapter]=\"adapter\"\n                [showDesc]=\"showDesc\"\n                [isSelected]=\"isSelected(result)\"\n                [itemHeadingTemplate]=\"itemHeadingTemplate\"\n                [itemThumbnailTemplate]=\"itemThumbnailTemplate\"\n                [itemFooterTemplate]=\"itemFooterTemplate\"\n                [itemStatsTemplate]=\"itemStatsTemplate\"\n                [itemActionsTemplate]=\"itemActionsTemplate\"\n                (onEvent)=\"onItemEvent($event)\">\n            </gp-search-results-item>\n        </div>\n    </div>\n\n</div>\n",
+                template: "<div class=\"o-search-results\">\n\n    <div class=\"o-search-results__toolbar\">\n\n        <div class=\"flex-1 u-mg-left--md\">\n            <div class=\"btn-group\">\n                <button type=\"button\" class=\"btn btn-light dropdown-toggle\"\n                    data-toggle=\"dropdown\" aria-haspopup=\"true\" aria-expanded=\"false\">\n                    <span *ngIf=\"!selected || !selected.length\" class=\"far fa-square\"></span>\n                    <span *ngIf=\"selected?.length\" class=\"fas fa-check-square\"></span>\n                    <span class=\"caret\"></span>\n                </button>\n                <div class=\"dropdown-menu dropdown-menu-right\">\n                    <a class=\"dropdown-item\" (click)=\"selectAllInPage()\">\n                        Select all on this page\n                    </a>\n                    <a class=\"dropdown-item\"  (click)=\"deselectAll()\">\n                        Deselect all\n                    </a>\n                </div>\n            </div>\n        </div>\n\n        <mat-paginator\n            [length]=\"results?.totalResults || 0\"\n            [pageSize]=\"query?.pageSize || 10\"\n            [pageSizeOptions]=\"[10, 25, 50, 100]\"\n            (page)=\"onPagingEvent($event)\">\n        </mat-paginator>\n\n        <mat-form-field>\n            <strong matPrefix><span class=\"fas fa-sort-amount-down\"></span> Sort by&nbsp;</strong>\n            <mat-select [(ngModel)]=\"sortValue\" (selectionChange)=\"onSortChange($event)\">\n                <mat-option *ngFor=\"let option of sortOptions\" value=\"{{option.value}}\">{{option.label}}</mat-option>\n            </mat-select>\n        </mat-form-field>\n\n    </div>\n\n    <!-- Loading indicator -->\n    <mat-progress-bar mode=\"indeterminate\" *ngIf=\"isLoading\"></mat-progress-bar>\n\n    <!-- error displayed to user if present -->\n    <div *ngIf=\"error\" class=\"m-message--error\">\n        <div class=\"a-heading\">\n            <span class=\"fas fa-exclamation-circle\"></span>\n            An Error Occurred\n        </div>\n        <div>{{error.message}}</div>\n        <div class=\"d-flex flex-justify-end\">\n            <button type=\"button\" class=\"btn btn-link\" (click)=\"error=null\">DISMISS</button>\n        </div>\n    </div>\n\n    <!-- Search results display -->\n    <div class=\"m-results\" *ngIf=\"results\">\n\n        <div *ngIf=\"!results.totalResults\" class=\"m-message--warning\">\n            <em>No results found matching the specified criteria.</em>\n        </div>\n\n        <div *ngFor=\"let result of results.results\">\n            <gp-search-results-item\n                [item]=\"result\"\n                [adapter]=\"adapter\"\n                [showDesc]=\"showDesc\"\n                [isSelected]=\"isSelected(result)\"\n                [hasPrimaryAction]=\"hasPrimaryAction\"\n                [headingTemplate]=\"itemHeadingTemplate\"\n                [subHeadingTemplate]=\"itemSubHeadingTemplate\"\n                [thumbnailTemplate]=\"itemThumbnailTemplate\"\n                [contentTemplate]=\"itemContentTemplate\"\n                [footerTemplate]=\"itemFooterTemplate\"\n                [statsTemplate]=\"itemStatsTemplate\"\n                [actionsTemplate]=\"itemActionsTemplate\"\n                [primaryActionTemplate]=\"itemPrimaryActionTemplate\"\n                (onEvent)=\"onItemEvent($event)\">\n            </gp-search-results-item>\n        </div>\n    </div>\n\n</div>\n",
                 styles: [":host{display:block;width:100%;height:100%;overflow-y:auto}.o-search-results__toolbar{display:-webkit-box;display:flex;-webkit-box-pack:justify;justify-content:space-between;-webkit-box-align:center;align-items:center;border-bottom:1px solid #ddd;background:#f9f9f9}"]
             })
         ], SearchResultsComponent);
@@ -3292,7 +3416,7 @@
                     VersionResolver,
                     GeoPlatformErrorService,
                     ItemHelper,
-                    SearchService,
+                    GeoPlatformSearchService,
                     // {
                     //     provide: RPMStatsService,
                     //     useFactory: RPMStatsServiceFactory,
@@ -3333,6 +3457,7 @@
         { value: "reliability,asc", label: "Reliability" }
     ];
 
+    exports.AbstractSearchService = AbstractSearchService;
     exports.AppAuthService = AppAuthService;
     exports.ArrayedItemsPipe = ArrayedItemsPipe;
     exports.AuthenticatedComponent = AuthenticatedComponent;
@@ -3349,6 +3474,7 @@
     exports.GeoPlatformErrorService = GeoPlatformErrorService;
     exports.GeoPlatformIconDirective = GeoPlatformIconDirective;
     exports.GeoPlatformResultsItemAdapter = GeoPlatformResultsItemAdapter;
+    exports.GeoPlatformSearchService = GeoPlatformSearchService;
     exports.HeaderComponent = HeaderComponent;
     exports.ImageFallbackDirective = ImageFallbackDirective;
     exports.ItemFactory = ItemFactory;
@@ -3370,7 +3496,6 @@
     exports.SearchEvent = SearchEvent;
     exports.SearchResultsComponent = SearchResultsComponent;
     exports.SearchResultsItemComponent = SearchResultsItemComponent;
-    exports.SearchService = SearchService;
     exports.SelectedItemsComponent = SelectedItemsComponent;
     exports.SemanticFilterComponent = SemanticFilterComponent;
     exports.SemanticFilterDialog = SemanticFilterDialog;
@@ -3389,7 +3514,7 @@
     exports.ɵ1 = ɵ1;
     exports.ɵa = ListSelectDialog;
     exports.ɵb = MessageDialog;
-    exports.ɵba = SearchService;
+    exports.ɵba = GeoPlatformSearchService;
     exports.ɵc = ImageFallbackDirective;
     exports.ɵd = ThumbnailComponent;
     exports.ɵe = SelectedItemsComponent;

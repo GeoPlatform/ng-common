@@ -30,7 +30,7 @@ import { ListSelectDialog, MessageDialog } from './dialogs/';
 
 
 import {
-    SearchService,
+    GeoPlatformSearchService,
     SearchResultsComponent,
     SearchResultsItemComponent,
 
@@ -159,7 +159,7 @@ import { ItemHelper               } from './item-helper';
         VersionResolver,
         GeoPlatformErrorService,
         ItemHelper,
-        SearchService,
+        GeoPlatformSearchService,
         // {
         //     provide: RPMStatsService,
         //     useFactory: RPMStatsServiceFactory,

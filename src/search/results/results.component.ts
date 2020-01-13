@@ -8,7 +8,7 @@ import { Observer, Subscription } from 'rxjs';
 import { Config, Query, SearchResults, Item } from "@geoplatform/client";
 // import { AppAuthService, AuthenticatedComponent } from "../../auth";
 import { SearchEvent, EventTypes } from "../../event";
-import { SearchService, SearchServiceEvent, SearchAwareComponent } from "../search.service";
+import { GeoPlatformSearchService, SearchServiceEvent, SearchAwareComponent } from "../search.service";
 import { SearchResultsItemAdapter, GeoPlatformResultsItemAdapter } from "../item/item-adapter";
 import { logger } from '../../logger';
 
@@ -87,33 +87,39 @@ const DEFAULT_SORT_OPTIONS : SearchSortOption[] = [
   templateUrl: './results.component.html',
   styleUrls: ['./results.component.less']
 })
-export class SearchResultsComponent implements OnInit, OnDestroy, SearchAwareComponent {
+export class SearchResultsComponent
+implements OnInit, OnDestroy, SearchAwareComponent<Query, SearchResults, Item> {
 
-    @Input()  service     : SearchService;
-    @Input()  sortOptions : SearchSortOption[] = DEFAULT_SORT_OPTIONS;
-    @Input() public showDesc   : boolean = false;
-
-    @Input() public adapter : SearchResultsItemAdapter<Item>;
+    @Input() public service           : GeoPlatformSearchService;
+    @Input() public sortOptions       : SearchSortOption[] = DEFAULT_SORT_OPTIONS;
+    @Input() public showDesc          : boolean = false;
+    @Input() public hasPrimaryAction  : boolean = true;
+    @Input() public adapter           : SearchResultsItemAdapter<Item>;
 
     //custom heading template
-    @Input() public itemHeadingTemplate   : TemplateRef<any>;
+    @Input() public itemHeadingTemplate       : TemplateRef<any>;
+    @Input() public itemSubHeadingTemplate    : TemplateRef<any>;
     //custom thumbnail template
-    @Input() public itemThumbnailTemplate : TemplateRef<any>;
+    @Input() public itemThumbnailTemplate     : TemplateRef<any>;
+    //
+    @Input() public itemContentTemplate       : TemplateRef<any>;
     //custom footer (complete)
-    @Input() public itemFooterTemplate    : TemplateRef<any>;
+    @Input() public itemFooterTemplate        : TemplateRef<any>;
     //custom footer stats template
-    @Input() public itemStatsTemplate     : TemplateRef<any>;
+    @Input() public itemStatsTemplate         : TemplateRef<any>;
     //custom footer actions template
-    @Input() public itemActionsTemplate   : TemplateRef<any>;
+    @Input() public itemActionsTemplate       : TemplateRef<any>;
+    //custom primary action template
+    @Input() public itemPrimaryActionTemplate : TemplateRef<any>;
 
     @Output() onEvent     : EventEmitter<SearchEvent> = new EventEmitter<SearchEvent>();
 
-    public query : Query;
-    public results : SearchResults;
-    public selected : Item[];
+    public query     : Query;
+    public results   : SearchResults;
+    public selected  : Item[];
     public sortValue : string;
     public isLoading : boolean = false;
-    public error : Error;
+    public error     : Error;
 
     //listener for when SearchService fires events for change in
     // query, results, or selected items

@@ -1,5 +1,6 @@
 
 export * from './search.service';
+// export * from './simple-search.service';
 export * from './item/item-adapter';
 export * from './item/item.component';
 export * from './results/results.component';
